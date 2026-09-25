@@ -1,4 +1,4 @@
-import os, re, json, urllib.request
+import os, re, json, urllib.request, urllib.error
 import streamlit as st
 import streamlit.components.v1 as components
 from pypdf import PdfReader
@@ -13,7 +13,7 @@ st.set_page_config(
 # CSS 스타일링
 st.markdown("""
 <style>
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+@import url('[https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css](https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css)');
 * { font-family: 'Pretendard', sans-serif; }
 
 /* 1. 사이드바와 메인 타이틀 바의 상단 시작 높이 완벽 일치 */
@@ -167,7 +167,7 @@ div.stButton > button:hover {
 """, unsafe_allow_html=True)
 
 # 파로스 등대 심볼 벡터 SVG
-svg_logo = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 155" width="100%" height="100%">
+svg_logo = """<svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" viewBox="0 0 180 155" width="100%" height="100%">
 <polygon points="12,24 64,42 64,50 12,34" fill="#831843"/>
 <polygon points="12,56 64,56 64,64 12,68" fill="#52525b"/>
 <polygon points="168,24 116,42 116,50 168,34" fill="#52525b"/>
@@ -193,20 +193,20 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 2. 파로스 블로그 바
+# 2. 파로스 블로그 바 (바탕색 투명 일체화, 단일 링크, 밑줄 제거, 새창 열림)
 st.markdown(f"""
 <div class="brand-blog-bar">
     <div class="logo-container">{svg_logo}</div>
     <div class="brand-meta-info">
         <span class="brand-blog-title">파로스대입랩 네이버블로그</span>
-        <a class="brand-blog-link" href="http://blog.naver.com/pharoslab" target="_blank" rel="noopener noreferrer">http://blog.naver.com/pharoslab</a>
+        <a class="brand-blog-link" href="[http://blog.naver.com/pharoslab](http://blog.naver.com/pharoslab)" target="_blank" rel="noopener noreferrer">[http://blog.naver.com/pharoslab](http://blog.naver.com/pharoslab)</a>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# API 키 클렌징 (어떤 특수문자가 섞여 있어도 정상 추출)
+# API 키 클렌징 (불필요한 공백, 따옴표 완벽 제거)
 raw_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
-GEMINI_API_KEY = "".join(re.findall(r'[A-Za-z0-9_\-]+', str(raw_key)))
+GEMINI_API_KEY = str(raw_key).strip().strip("'").strip('"')
 
 def extract_pdf(f):
     reader = PdfReader(f)
@@ -230,25 +230,69 @@ def sanitize_text(text, name=""):
 
 def call_gemini(prompt, count, diff):
     diff_desc = {"하": "기초 사실 확인", "중": "탐구 과정 및 문제해결", "상": "심화 이론 및 메커니즘"}.get(diff, "")
-    endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
-    full_url = f"{endpoint}?key={GEMINI_API_KEY}"
+    url = f"[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=){GEMINI_API_KEY}"
     
-    sys_prompt = f"""당신은 명문대 수석 입학사정관입니다. 학생부를 분석하여 [{diff} 난이도: {diff_desc}]에 부합하는 면접 질문 총 {count}문항을 마크다운 백틱 없이 순수 JSON으로만 출력하세요.
-{{"major":"전공","difficulty":"{diff}","sections":[{{"category":"구분명","questions":[{{"type":"유형","source_quote":"학생부 인용","question":"질문 본문","intent":"출제 의도","high_score_guide":"답변 가이드"}}]}}]}}"""
+    sys_prompt = f"""당신은 대한민국 명문 대학 대입 학생부종합전형 수석 입학사정관입니다.
+제공된 학생부 텍스트를 분석하여 [{diff} 난이도: {diff_desc}]에 부합하는 면접 질문 총 {count}문항을 생성하세요.
+
+반드시 마크다운 백틱 없이 순수 JSON 포맷으로만 응답하세요:
+{{
+  "major": "지원 전공",
+  "difficulty": "{diff}",
+  "sections": [
+    {{
+      "category": "영역 구분명 (예: 창의적 체험활동 진로·자율활동, 교과 세부능력및특기사항 등)",
+      "questions": [
+        {{
+          "type": "문항 유형",
+          "source_quote": "학생부 근거 문맥 인용",
+          "question": "면접 질문 본문",
+          "intent": "면접관 출제 의도",
+          "high_score_guide": "고득점 답변 가이드 및 필수 포함 키워드"
+        }}
+      ]
+    }}
+  ]
+}}"""
+
+    headers = {"Content-Type": "application/json"}
     
-    body = json.dumps({
-        "contents": [{"role": "user", "parts": [{"text": f"{sys_prompt}\n\n{prompt}"}]}],
-        "generationConfig": {"temperature": 0.7, "responseMimeType": "application/json"}
-    }).encode("utf-8")
+    body = {
+        "contents": [
+            {
+                "parts": [
+                    {"text": f"{sys_prompt}\n\n{prompt}"}
+                ]
+            }
+        ],
+        "generationConfig": {
+            "temperature": 0.7
+        }
+    }
     
-    req = urllib.request.Request(full_url, data=body, headers={"Content-Type": "application/json"}, method="POST")
-    with urllib.request.urlopen(req) as resp:
-        res = json.loads(resp.read().decode("utf-8"))
-        txt = res["candidates"][0]["content"]["parts"][0]["text"].strip()
-        if txt.startswith("```json"): txt = txt[7:]
-        if txt.startswith("```"): txt = txt[3:]
-        if txt.endswith("```"): txt = txt[:-3]
-        return json.loads(txt.strip())
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(body).encode("utf-8"),
+        headers=headers,
+        method="POST"
+    )
+    
+    try:
+        with urllib.request.urlopen(req) as resp:
+            res = json.loads(resp.read().decode("utf-8"))
+            txt = res["candidates"][0]["content"]["parts"][0]["text"].strip()
+            if txt.startswith("```json"): txt = txt[7:]
+            if txt.startswith("```"): txt = txt[3:]
+            if txt.endswith("```"): txt = txt[:-3]
+            return json.loads(txt.strip())
+    except urllib.error.HTTPError as e:
+        err_body = e.read().decode("utf-8")
+        try:
+            err_json = json.loads(err_body)
+            err_msg = err_json.get("error", {}).get("message", err_body)
+            raise Exception(f"Google API 오류 안내: {err_msg}")
+        except:
+            raise Exception(f"HTTP 오류 ({e.code}): {err_body}")
 
 def render_tts(text, q_id):
     clean = json.dumps(text, ensure_ascii=False)
@@ -263,7 +307,7 @@ document.getElementById('b_{q_id}').onclick = function() {{
     let v = window.speechSynthesis.getVoices().find(x => x.lang && x.lang.includes('ko'));
     if (v) u.voice = v;
     u.onstart = () => {{ document.getElementById('b_{q_id}').style.background = '#475569'; document.getElementById('s_{q_id}').innerText = '낭독 중...'; }};
-    u.onend = u.onerror = () => {{ document.getElementById('b_{q_id}').style.background = 'linear-gradient(180deg,#0284c7,#0369a1)'; document.getElementById('s_{q_id}').innerText = ''; }};
+    u.onend = () => {{ document.getElementById('b_{q_id}').style.background = 'linear-gradient(180deg,#0284c7,#0369a1)'; document.getElementById('s_{q_id}').innerText = ''; }};
     window.speechSynthesis.speak(u);
 }};
 </script>"""
