@@ -3,6 +3,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 from pypdf import PdfReader
 
+# 1. 페이지 레이아웃 및 탭 기본 설정
 st.set_page_config(
     page_title="2028 대입 학생부 기반 모의 면접",
     page_icon="🎓",
@@ -10,13 +11,13 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# CSS 스타일링
+# 2. 고급 브랜드 CSS 스타일링
 st.markdown("""
 <style>
 @import url('[https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css](https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css)');
 * { font-family: 'Pretendard', sans-serif; }
 
-/* 1. 사이드바와 메인 타이틀 바의 상단 시작 높이 완벽 일치 */
+/* 사이드바와 메인 타이틀 바의 상단 시작 높이 완벽 일치 */
 .block-container {
     padding-top: 2rem !important;
     padding-bottom: 2rem !important;
@@ -25,7 +26,7 @@ st.markdown("""
     padding-top: 2rem !important;
 }
 
-/* 2. 메인 타이틀 배너 (가운데 정렬) */
+/* 메인 타이틀 배너 (가운데 정렬) */
 .header-box {
     background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
     padding: 30px 24px;
@@ -54,7 +55,7 @@ st.markdown("""
     margin-bottom: 0px;
 }
 
-/* 3. 파로스대입랩 블로그 바 (바탕색과 동일, 밑줄 없는 단일 링크) */
+/* 파로스대입랩 블로그 바 (바탕색 투명 일체화, 밑줄 없는 단일 링크) */
 .brand-blog-bar {
     background: transparent;
     padding: 10px 0;
@@ -185,7 +186,7 @@ svg_logo = """<svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/sv
 <rect x="36" y="134" width="108" height="6" rx="2" fill="#831843"/>
 </svg>"""
 
-# 1. 메인 타이틀 배너 (가운데 정렬)
+# 3. 메인 타이틀 배너 (가운데 정렬)
 st.markdown("""
 <div class="header-box">
     <div class="b-title">2028 대입 학생부 기반 모의 면접</div>
@@ -193,7 +194,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 2. 파로스 블로그 바 (바탕색 투명 일체화, 단일 링크, 밑줄 제거, 새창 열림)
+# 4. 파로스 블로그 바 (바탕색 투명 일체화, 순수 HTML 단일 링크, 새창 열림)
 st.markdown(f"""
 <div class="brand-blog-bar">
     <div class="logo-container">{svg_logo}</div>
@@ -204,9 +205,9 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# API 키 클렌징 (불필요한 공백, 따옴표 완벽 제거)
+# API 키 안전 처리 (불필요한 공백, 따옴표, 괄호 완벽 제거)
 raw_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
-GEMINI_API_KEY = str(raw_key).strip().strip("'").strip('"')
+GEMINI_API_KEY = "".join(re.findall(r'[A-Za-z0-9_\-]+', str(raw_key)))
 
 def extract_pdf(f):
     reader = PdfReader(f)
@@ -256,13 +257,11 @@ def call_gemini(prompt, count, diff):
 }}"""
 
     headers = {"Content-Type": "application/json"}
-    
     body = {
         "contents": [
             {
-                "parts": [
-                    {"text": f"{sys_prompt}\n\n{prompt}"}
-                ]
+                "role": "user",
+                "parts": [{"text": f"{sys_prompt}\n\n{prompt}"}]
             }
         ],
         "generationConfig": {
@@ -313,7 +312,7 @@ document.getElementById('b_{q_id}').onclick = function() {{
 </script>"""
     components.html(html, height=46)
 
-# 사이드바
+# 5. 사이드바
 with st.sidebar:
     st.markdown('<div class="side-title">⚙️ 모의 면접 조건 설정</div>', unsafe_allow_html=True)
     student_name = st.text_input("학생 실명 (마스킹용)", placeholder="홍길동 (선택)")
@@ -328,7 +327,7 @@ if not GEMINI_API_KEY:
     st.error("⚠️ 서버 설정(Secrets)에 GEMINI_API_KEY가 등록되지 않았습니다.")
     st.stop()
 
-# 메인 탭
+# 6. 메인 탭
 tab1, tab2 = st.tabs(["✍️ [방법 1] 학생부 텍스트 직접 입력", "📂 [방법 2] 학생부 PDF 업로드"])
 input_text = ""
 
@@ -344,7 +343,7 @@ with tab2:
             input_text = extract_pdf(pdf_file)
             st.success("✅ 학생부 PDF 텍스트 추출 완료")
 
-# 면접 질문 추출 버튼
+# 7. 면접 질문 추출 버튼
 if st.button("🚀 면접 질문 추출하기", use_container_width=True):
     if not input_text.strip():
         st.warning("⚠️ 학생부 내용을 입력하거나 PDF를 올려주세요.")
