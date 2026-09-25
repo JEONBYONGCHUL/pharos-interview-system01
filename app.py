@@ -53,7 +53,7 @@ st.markdown("""
         margin-bottom: 0px;
     }
     
-    /* 로고 & 블로그 안내 링크 영역 */
+    /* 로고 & 블로그 링크 영역 */
     .brand-meta-box {
         margin-top: 18px;
         padding-top: 16px;
@@ -87,7 +87,6 @@ st.markdown("""
         color: #f8fafc;
     }
     
-    /* 블로그 링크 완전한 흰색 */
     .brand-blog-url {
         font-size: 13.5px;
         color: #ffffff !important;
@@ -220,7 +219,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 3. 상단 헤더 및 파로스 등대 심볼 로고 (첨부해주신 2번 이미지 그대로 정밀 벡터화)
+# 3. 상단 헤더 및 파로스 등대 로고 (선명한 벡터 SVG)
 st.markdown("""
 <div class="brand-header-box">
     <div class="brand-title">2028 대입 학생부 기반 모의 면접</div>
@@ -234,33 +233,21 @@ st.markdown("""
                         <stop offset="50%" stop-color="#9d174d"/>
                         <stop offset="100%" stop-color="#701a75"/>
                     </linearGradient>
-                    <linearGradient id="facetGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stop-color="#be185d"/>
-                        <stop offset="100%" stop-color="#831843"/>
-                    </linearGradient>
                 </defs>
-                <!-- 왼쪽 빛살 (상단 와인 / 하단 그레이) -->
                 <polygon points="12,24 64,42 64,50 12,34" fill="url(#purpleGrad)"/>
                 <polygon points="12,56 64,56 64,64 12,68" fill="#52525b"/>
-                <!-- 오른쪽 빛살 (상단 그레이 / 하단 와인) -->
                 <polygon points="168,24 116,42 116,50 168,34" fill="#52525b"/>
                 <polygon points="168,56 116,56 116,64 168,68" fill="url(#purpleGrad)"/>
-                <!-- 돔 지붕 팁 & 원뿔 -->
                 <polygon points="90,10 87,22 93,22" fill="#831843"/>
                 <path d="M72,36 Q90,22 108,36 Z" fill="url(#purpleGrad)"/>
-                <!-- 램프실 (창살 구조) -->
                 <rect x="75" y="36" width="30" height="16" fill="#ffffff" stroke="#831843" stroke-width="2.5"/>
                 <line x1="82" y1="36" x2="82" y2="52" stroke="#831843" stroke-width="2"/>
                 <line x1="90" y1="36" x2="90" y2="52" stroke="#831843" stroke-width="2"/>
                 <line x1="98" y1="36" x2="98" y2="52" stroke="#831843" stroke-width="2"/>
-                <!-- 램프 하단 테라스 발코니 -->
                 <polygon points="70,52 110,52 106,58 74,58" fill="#831843"/>
-                <!-- 등대 기둥 본체 (기하학적 다면체 와인 컬러) -->
                 <polygon points="73,59 107,59 116,134 64,134" fill="url(#purpleGrad)"/>
-                <!-- 화이트 사선 띠 (Stripe 2줄) -->
                 <polygon points="96,59 105,59 74,102 69,96" fill="#ffffff" opacity="0.92"/>
                 <polygon points="107,92 114,103 81,134 71,134" fill="#ffffff" opacity="0.92"/>
-                <!-- 등대 바닥 받침대 -->
                 <rect x="36" y="134" width="108" height="6" rx="2" fill="#831843"/>
             </svg>
         </div>
@@ -273,22 +260,22 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 4. 서버 API 키 로드
-GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))[cite: 15]
+GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
 
 def extract_text_from_pdf(uploaded_file):
-    reader = PdfReader(uploaded_file)[cite: 15]
-    return "\n".join([page.extract_text() for page in reader.pages if page.extract_text()])[cite: 15]
+    reader = PdfReader(uploaded_file)
+    return "\n".join([page.extract_text() for page in reader.pages if page.extract_text()])
 
 def sanitize_student_record(text: str, custom_name: str = "") -> str:
-    sanitized = text[cite: 15]
+    sanitized = text
     if custom_name and len(custom_name.strip()) >= 2:
-        sanitized = re.sub(re.escape(custom_name.strip()), "[OO학생]", sanitized)[cite: 15]
-    sanitized = re.sub(r'[가-힣]{2,10}(고등학교|여고|남고|외고|과고|예고|체고|마이스터고|공고|상고|고)', "[OO고등학교]", sanitized)[cite: 15]
-    sanitized = re.sub(r'\b\d{6}[-\s]?[1-4]\d{6}\b', '[주민번호 마스킹]', sanitized)[cite: 15]
-    sanitized = re.sub(r'\b(19\d{2}|20\d{2})[.-년\s]+(0?[1-9]|1[0-2])[.-월\s]+(0?[1-9]|[12]\d|3[01])일?\b', '[생년월일 마스킹]', sanitized)[cite: 15]
-    sanitized = re.sub(r'01[016789][-\s]?\d{3,4}[-\s]?\d{4}', '[연락처 마스킹]', sanitized)[cite: 15]
-    sanitized = re.sub(r'\b(아버지|어머니|부모님|부친|모친|형|누나|오빠|언니|동생|외조부|조부|외조모|조모|삼촌|이모|고모)\b', "[가족관계]", sanitized)[cite: 15]
-    return sanitized[cite: 15]
+        sanitized = re.sub(re.escape(custom_name.strip()), "[OO학생]", sanitized)
+    sanitized = re.sub(r'[가-힣]{2,10}(고등학교|여고|남고|외고|과고|예고|체고|마이스터고|공고|상고|고)', "[OO고등학교]", sanitized)
+    sanitized = re.sub(r'\b\d{6}[-\s]?[1-4]\d{6}\b', '[주민번호 마스킹]', sanitized)
+    sanitized = re.sub(r'\b(19\d{2}|20\d{2})[.-년\s]+(0?[1-9]|1[0-2])[.-월\s]+(0?[1-9]|[12]\d|3[01])일?\b', '[생년월일 마스킹]', sanitized)
+    sanitized = re.sub(r'01[016789][-\s]?\d{3,4}[-\s]?\d{4}', '[연락처 마스킹]', sanitized)
+    sanitized = re.sub(r'\b(아버지|어머니|부모님|부친|모친|형|누나|오빠|언니|동생|외조부|조부|외조모|조모|삼촌|이모|고모)\b', "[가족관계]", sanitized)
+    return sanitized
 
 def build_system_instruction(question_count: int, difficulty: str) -> str:
     diff_map = {
@@ -321,27 +308,27 @@ def build_system_instruction(question_count: int, difficulty: str) -> str:
     }}
   ]
 }}
-"""[cite: 15]
+"""
 
 def call_gemini_api(prompt: str, count: int, diff: str) -> dict:
     url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
-    headers = {"Content-Type": "application/json", "x-goog-api-key": GEMINI_API_KEY}[cite: 15]
+    headers = {"Content-Type": "application/json", "x-goog-api-key": GEMINI_API_KEY}
     sys_inst = build_system_instruction(count, diff)
     body = {
         "contents": [{"role": "user", "parts": [{"text": f"{sys_inst}\n\n{prompt}"}]}],
         "generationConfig": {"temperature": 0.7, "responseMimeType": "application/json"}
     }
-    req = urllib.request.Request(url, data=json.dumps(body).encode('utf-8'), headers=headers, method='POST')[cite: 15]
-    with urllib.request.urlopen(req) as resp:[cite: 15]
-        data = json.loads(resp.read().decode('utf-8'))[cite: 15]
-        t = data['candidates'][0]['content']['parts'][0]['text'].strip()[cite: 15]
+    req = urllib.request.Request(url, data=json.dumps(body).encode('utf-8'), headers=headers, method='POST')
+    with urllib.request.urlopen(req) as resp:
+        data = json.loads(resp.read().decode('utf-8'))
+        t = data['candidates'][0]['content']['parts'][0]['text'].strip()
         if t.startswith("```json"):
-            t = t[7:][cite: 15]
+            t = t[7:]
         if t.startswith("```"):
-            t = t[3:][cite: 15]
+            t = t[3:]
         if t.endswith("```"):
-            t = t[:-3][cite: 15]
-        return json.loads(t.strip())[cite: 15]
+            t = t[:-3]
+        return json.loads(t.strip())
 
 # 5. 브라우저 음성 재생 (Web Speech API)
 def render_tts_button(text: str, button_id: str):
@@ -410,7 +397,7 @@ def render_tts_button(text: str, button_id: str):
     html_code = template.replace("btn_ID", f"btn_{button_id}").replace("status_ID", f"status_{button_id}").replace("TEXT_PLACEHOLDER", clean_text)
     components.html(html_code, height=48)
 
-# 6. 사이드바 - 모의 면접 조건 설정
+# 6. 사이드바 - 안전한 사전 매핑 방식으로 완벽 수정
 with st.sidebar:
     st.markdown("""
     <div class="sidebar-header-box">
@@ -421,8 +408,29 @@ with st.sidebar:
     student_name = st.text_input("학생 실명 (마스킹용)", placeholder="홍길동 (미입력 가능)")
     target_major = st.text_input("지원 희망 전공/학과", placeholder="예: 신소재공학과, 의예과")
     
+    # 람다식 제거: 안전한 고정 리스트 사용
+    q_count_options = [10, 5, 3]
+    q_count_labels = {
+        10: "🎯 10문항 심층 면접",
+        5: "🎯 5문항 심층 면접",
+        3: "🎯 3문항 심층 면접"
+    }
     q_count = st.selectbox(
         "추출 면접 문항 수", 
-        [10, 5, 3], 
+        q_count_options, 
         index=0, 
-        format_func=lambda x: f"🎯 {x}문
+        format_func=q_count_labels.get
+    )
+    
+    # 람다식 제거: 안전한 고정 리스트 사용
+    diff_options = ["하", "중", "상"]
+    diff_labels = {
+        "하": "난이도 [하]: 기초 사실 확인",
+        "중": "난이도 [중]: 탐구/문제해결",
+        "상": "난이도 [상]: 심화 학술이론"
+    }
+    difficulty = st.selectbox(
+        "평가 난이도", 
+        diff_options, 
+        index=1,
+        format_func=diff_labels.get
