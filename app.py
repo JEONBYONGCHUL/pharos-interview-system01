@@ -1,9 +1,9 @@
-import os, re, json, urllib.request, urllib.error
+import os, json, urllib.request, urllib.error
 import streamlit as st
 import streamlit.components.v1 as components
 from pypdf import PdfReader
 
-# 1. 페이지 레이아웃 및 탭 설정
+# 1. 페이지 레이아웃 및 탭 기본 설정
 st.set_page_config(
     page_title="2028 대입 학생부 기반 모의 면접",
     page_icon="🎓",
@@ -194,7 +194,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 4. 파로스 블로그 바 (순수 HTML 단일 링크, 꺾쇠 없이 1개만 출력, 새창 열림)
+# 4. 파로스 블로그 바 (바탕색 투명 일체화, 1개 단일 링크, 새창 열림)
 st.markdown(f"""
 <div class="brand-blog-bar">
     <div class="logo-container">{svg_logo}</div>
@@ -205,9 +205,12 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# API 키 클렌징 (불필요한 공백, 따옴표, 괄호 완벽 제거)
-raw_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
-GEMINI_API_KEY = "".join(re.findall(r'[A-Za-z0-9_\-]+', str(raw_key)))
+# API 키 원본 순수 로드 (임의의 정규식 왜곡 제거, 앞뒤 공백 및 따옴표만 정리)
+def get_clean_api_key():
+    k = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
+    return str(k).strip().strip("'").strip('"')
+
+GEMINI_API_KEY = get_clean_api_key()
 
 def extract_pdf(f):
     reader = PdfReader(f)
@@ -221,7 +224,9 @@ def extract_pdf(f):
 def sanitize_text(text, name=""):
     t = text
     if name and len(name.strip()) >= 2:
-        t = re.sub(re.escape(name.strip()), "[OO학생]", t)
+        t = t.replace(name.strip(), "[OO학생]")
+    # 기본 블라인드 마스킹
+    import re
     t = re.sub(r'[가-힣]{2,10}(고등학교|여고|남고|외고|과고|예고|체고|마이스터고|공고|상고|고)', "[OO고등학교]", t)
     t = re.sub(r'\b\d{6}[-\s]?[1-4]\d{6}\b', '[주민번호 마스킹]', t)
     t = re.sub(r'\b(19\d{2}|20\d{2})[.-년\s]+(0?[1-9]|1[0-2])[.-월\s]+(0?[1-9]|[12]\d|3[01])일?\b', '[생년월일 마스킹]', t)
@@ -231,7 +236,9 @@ def sanitize_text(text, name=""):
 
 def call_gemini(prompt, count, diff):
     diff_desc = {"하": "기초 사실 확인", "중": "탐구 과정 및 문제해결", "상": "심화 이론 및 메커니즘"}.get(diff, "")
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+    
+    # 공식 엔드포인트 URL (키 파라미터 대신 헤더로 전달하여 특수문자 변형 방지)
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
     
     sys_prompt = f"""당신은 대한민국 명문 대학 대입 학생부종합전형 수석 입학사정관입니다.
 제공된 학생부 텍스트를 분석하여 [{diff} 난이도: {diff_desc}]에 부합하는 면접 질문 총 {count}문항을 생성하세요.
@@ -256,7 +263,11 @@ def call_gemini(prompt, count, diff):
   ]
 }}"""
 
-    headers = {"Content-Type": "application/json"}
+    headers = {
+        "Content-Type": "application/json",
+        "x-goog-api-key": GEMINI_API_KEY
+    }
+    
     body = {
         "contents": [
             {
@@ -289,7 +300,7 @@ def call_gemini(prompt, count, diff):
         try:
             err_json = json.loads(err_body)
             err_msg = err_json.get("error", {}).get("message", err_body)
-            raise Exception(f"Google API 오류 안내: {err_msg}")
+            raise Exception(f"Google API 오류: {err_msg}")
         except:
             raise Exception(f"HTTP 오류 ({e.code}): {err_body}")
 
