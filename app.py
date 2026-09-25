@@ -14,7 +14,7 @@ st.set_page_config(
 # 2. 고급 브랜드 CSS 스타일링
 st.markdown("""
 <style>
-@import url('[https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css](https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css)');
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 * { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; }
 
 /* 사이드바와 메인 타이틀 바의 상단 시작 높이 완벽 일치 */
@@ -168,7 +168,7 @@ div.stButton > button:hover {
 """, unsafe_allow_html=True)
 
 # 파로스 등대 심볼 벡터 SVG
-svg_logo = """<svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" viewBox="0 0 180 155" width="100%" height="100%">
+svg_logo = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 155" width="100%" height="100%">
 <polygon points="12,24 64,42 64,50 12,34" fill="#831843"/>
 <polygon points="12,56 64,56 64,64 12,68" fill="#52525b"/>
 <polygon points="168,24 116,42 116,50 168,34" fill="#52525b"/>
@@ -200,7 +200,7 @@ st.markdown(f"""
     <div class="logo-container">{svg_logo}</div>
     <div class="brand-meta-info">
         <span class="brand-blog-title">파로스대입랩 네이버블로그</span>
-        <a class="brand-blog-link" href="[http://blog.naver.com/pharoslab](http://blog.naver.com/pharoslab)" target="_blank" rel="noopener noreferrer">[http://blog.naver.com/pharoslab](http://blog.naver.com/pharoslab)</a>
+        <a class="brand-blog-link" href="http://blog.naver.com/pharoslab" target="_blank" rel="noopener noreferrer">http://blog.naver.com/pharoslab</a>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -256,7 +256,7 @@ def call_gemini(prompt, count, diff):
   ]
 }}"""
 
-    # 새로운 규격(AQ....)의 키도 완벽히 수용하는 구글 공식 헤더 인증
+    # 새로운 규격(AQ....)의 키를 완벽히 수용하는 구글 공식 헤더 인증
     headers = {
         "Content-Type": "application/json",
         "x-goog-api-key": GEMINI_API_KEY
@@ -275,15 +275,14 @@ def call_gemini(prompt, count, diff):
     }
     encoded_body = json.dumps(body).encode("utf-8")
     
-    # 404 NOT_FOUND를 방지하기 위해 구글 엔드포인트 및 모델을 순차적으로 자동 시도
+    # 404 에러 방지: 구글 최신 모델 순차 자동 시도 (가장 빠른 성공 엔드포인트 자동 선택)
     candidate_urls = [
-        "[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent)",
-        "[https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent](https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent)",
-        "[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent)",
-        "[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent)",
-        "[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-002:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-002:generateContent)",
-        "[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent)",
-        "[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent)"
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent",
+        "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent",
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent",
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent",
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
     ]
     
     last_error = None
