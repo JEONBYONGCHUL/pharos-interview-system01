@@ -1,7 +1,8 @@
-import os, json, urllib.request, urllib.error
+import os, json
 import streamlit as st
 import streamlit.components.v1 as components
 from pypdf import PdfReader
+import google.generativeai as genai
 
 # 1. 페이지 레이아웃 및 설정
 st.set_page_config(
@@ -50,7 +51,7 @@ st.markdown("""
     margin-bottom: 0px;
 }
 
-/* 파로스 블로그 바 (로고 + 블로그명 + 링크 가운데 정렬) */
+/* 파로스 블로그 바 (가운데 정렬, 단일 링크) */
 .brand-blog-center {
     display: flex;
     align-items: center;
@@ -200,9 +201,13 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# API 키 로드 (기본 키 보장)
-raw_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", "AQ.Ab8RN6IS_OUgZ873T4q4PCU7grpIhRjgeUuRc2VQE6NEQ34BEg"))
+# API 키 로드
+raw_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
 GEMINI_API_KEY = str(raw_key).strip().strip("'").strip('"')
+
+# Google GenAI 공식 클라이언트 초기화
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
 
 def extract_pdf(f):
     reader = PdfReader(f)
@@ -251,59 +256,34 @@ def call_gemini(prompt, count, diff):
   ]
 }}"""
 
-    body = {
-        "contents": [
-            {
-                "role": "user",
-                "parts": [{"text": f"{sys_prompt}\n\n{prompt}"}]
-            }
-        ],
-        "generationConfig": {
-            "temperature": 0.7
-        }
-    }
-    encoded_body = json.dumps(body).encode("utf-8")
+    full_prompt = f"{sys_prompt}\n\n{prompt}"
     
-    # AQ. 유료 키를 위한 멀티 인증 헤더 및 URL 조합
-    auth_configs = [
-        # 방식 1: URL 쿼리 파라미터 (Google Cloud API 키 표준)
-        {"url_suffix": f"?key={GEMINI_API_KEY}", "headers": {"Content-Type": "application/json"}},
-        # 방식 2: Bearer 토큰 (Google Cloud 서비스 계정/OAuth 표준)
-        {"url_suffix": "", "headers": {"Content-Type": "application/json", "Authorization": f"Bearer {GEMINI_API_KEY}"}},
-        # 방식 3: x-goog-api-key 헤더
-        {"url_suffix": "", "headers": {"Content-Type": "application/json", "x-goog-api-key": GEMINI_API_KEY}}
+    # 지원 가능한 모델 순차 호출
+    models_to_try = [
+        "gemini-2.0-flash",
+        "gemini-1.5-flash",
+        "gemini-1.5-pro",
+        "gemini-1.0-pro"
     ]
-
-    base_models = [
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
-        "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent",
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent"
-    ]
-
-    last_error = ""
-
-    for cfg in auth_configs:
-        for base_url in base_models:
-            full_url = base_url + cfg["url_suffix"]
-            try:
-                req = urllib.request.Request(full_url, data=encoded_body, headers=cfg["headers"], method="POST")
-                with urllib.request.urlopen(req) as resp:
-                    res = json.loads(resp.read().decode("utf-8"))
-                    txt = res["candidates"][0]["content"]["parts"][0]["text"].strip()
-                    if txt.startswith("```json"): txt = txt[7:]
-                    if txt.startswith("```"): txt = txt[3:]
-                    if txt.endswith("```"): txt = txt[:-3]
-                    return json.loads(txt.strip())
-            except urllib.error.HTTPError as e:
-                err_body = e.read().decode("utf-8")
-                last_error = f"{e.code} - {err_body}"
-                continue
-            except Exception as e:
-                last_error = str(e)
-                continue
-
-    raise Exception(f"API 호출 실패: {last_error}")
+    
+    last_err = ""
+    for m in models_to_try:
+        try:
+            model = genai.GenerativeModel(m)
+            response = model.generate_content(
+                full_prompt,
+                generation_config={"temperature": 0.7}
+            )
+            txt = response.text.strip()
+            if txt.startswith("```json"): txt = txt[7:]
+            if txt.startswith("```"): txt = txt[3:]
+            if txt.endswith("```"): txt = txt[:-3]
+            return json.loads(txt.strip())
+        except Exception as e:
+            last_err = str(e)
+            continue
+            
+    raise Exception(f"AI 모델 응답 생성 실패: {last_err}")
 
 def render_tts(text, q_id):
     clean = json.dumps(text, ensure_ascii=False)
@@ -334,6 +314,10 @@ with st.sidebar:
     diff_sel = st.selectbox("평가 난이도", ["하 (기초 사실 확인)", "중 (탐구/문제해결)", "상 (심화 학술이론)"], index=0)
     difficulty = diff_sel[0]
     st.markdown('<div class="priv-box"><b>🔒 개인정보 안심 처리</b><br>인적사항, 고교명, 가족관계 등 대입 블라인드 항목은 자동 마스킹 처리되니 안심하셔도 됩니다.</div>', unsafe_allow_html=True)
+
+if not GEMINI_API_KEY:
+    st.error("⚠️ 서버 설정(Secrets)에 GEMINI_API_KEY가 등록되지 않았습니다.")
+    st.stop()
 
 # 6. 메인 탭
 tab1, tab2 = st.tabs(["✍️ [방법 1] 학생부 텍스트 직접 입력", "📂 [방법 2] 학생부 PDF 업로드"])
