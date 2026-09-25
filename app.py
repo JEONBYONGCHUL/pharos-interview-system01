@@ -19,6 +19,7 @@ css_code = """
 <style>
 @import url('[https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css](https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css)');
 * { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; }
+
 .brand-header-box {
     background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
     padding: 30px 32px;
@@ -78,12 +79,11 @@ css_code = """
 .brand-blog-url {
     font-size: 13.5px;
     color: #ffffff !important;
-    text-decoration: underline;
+    text-decoration: underline !important;
     opacity: 0.95;
 }
 .brand-blog-url:hover {
     opacity: 1.0;
-    text-decoration: underline;
 }
 [data-testid="stSidebar"] {
     background-color: #f8fafc;
@@ -182,7 +182,7 @@ div.stButton > button {
 """
 st.markdown(css_code, unsafe_allow_html=True)
 
-# 3. 상단 헤더 및 파로스 등대 로고 (선명한 벡터 SVG)
+# 3. 상단 헤더 및 파로스 등대 로고 (선명한 백터 SVG)
 header_html = """
 <div class="brand-header-box">
     <div class="brand-title">2028 대입 학생부 기반 모의 면접</div>
@@ -280,8 +280,9 @@ def build_system_instruction(question_count, difficulty):
     return inst
 
 def call_gemini_api(prompt, count, diff):
-    url = "[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent)"
-    headers = {"Content-Type": "application/json", "x-goog-api-key": GEMINI_API_KEY}
+    clean_key = GEMINI_API_KEY.strip()
+    url = f"[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=){clean_key}"
+    headers = {"Content-Type": "application/json"}
     sys_inst = build_system_instruction(count, diff)
     body = {
         "contents": [{"role": "user", "parts": [{"text": f"{sys_inst}\n\n{prompt}"}]}],
@@ -299,7 +300,7 @@ def call_gemini_api(prompt, count, diff):
             t = t[:-3]
         return json.loads(t.strip())
 
-# 5. 브라우저 음성 재생 (Web Speech API) - 인용부호 충돌 없는 안전 구조
+# 5. 브라우저 음성 재생 (Web Speech API)
 def render_tts_button(text, button_id):
     clean_text = json.dumps(text, ensure_ascii=False)
     html_parts = [
@@ -368,44 +369,4 @@ with tab2:
     uploaded_pdf = st.file_uploader("학생부 PDF 파일을 올려주세요", type=["pdf"])
     if uploaded_pdf:
         with st.spinner("PDF 파일에서 텍스트를 정밀 추출하고 있습니다..."):
-            input_text = extract_text_from_pdf(uploaded_pdf)
-            st.success("✅ 학생부 PDF 텍스트 추출 완료")
-
-# 8. 질문 추출 버튼 및 결과 출력
-if st.button("🚀 면접 질문 추출하기", use_container_width=True):
-    if not input_text.strip():
-        st.warning("⚠️ 학생부 내용을 입력하거나 PDF를 올려주세요.")
-    else:
-        with st.spinner("사정관 AI가 학생부 탐구 인과관계 및 교과 개념을 정밀 분석 중입니다..."):
-            sanitized = sanitize_student_record(input_text, student_name)
-            user_prompt = f"지원 전공: {target_major or '미지정'}\n\n[학생부 원문]\n{sanitized}"
-            try:
-                result = call_gemini_api(user_prompt, q_count, difficulty)
-                st.success(f"🎉 총 {q_count}문항 추출 완료 (난이도: {difficulty})")
-                st.markdown("---")
-
-                q_num = 1
-                for sec in result.get("sections", []):
-                    st.markdown(f"#### 📁 {sec.get('category')}")
-                    for item in sec.get("questions", []):
-                        q_text = item.get('question', '')
-                        source_quote = item.get('source_quote', '')
-                        intent = item.get('intent', '')
-                        high_score = item.get('high_score_guide', '')
-                        q_type = item.get('type', '심층 면접')
-
-                        card_html = (
-                            '<div class="interview-card">'
-                            f'<span class="badge-type">[{q_type}] · 난이도 {difficulty}</span>'
-                            f'<div class="question-title">Q{q_num}. {q_text}</div>'
-                            f'<div class="meta-row">📌 <b>학생부 근거:</b> <i>"{source_quote}"</i></div>'
-                            f'<div class="meta-row">🎯 <b>출제 의도:</b> {intent}</div>'
-                            f'<div class="meta-highlight">💡 <b>고득점 답변 가이드:</b> {high_score}</div>'
-                            '</div>'
-                        )
-                        st.markdown(card_html, unsafe_allow_html=True)
-                        render_tts_button(q_text, f"q_{q_num}")
-                        q_num += 1
-                        
-            except Exception as e:
-                st.error(f"오류가 발생했습니다: {str(e)}")
+            input_text = extract_text_from_pdf(uploaded_
