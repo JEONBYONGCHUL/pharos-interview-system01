@@ -3,7 +3,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 from pypdf import PdfReader
 
-# 1. 페이지 설정
+# 1. 페이지 레이아웃 및 탭 기본 설정
 st.set_page_config(
     page_title="2028 대입 학생부 기반 모의 면접",
     page_icon="🎓",
@@ -11,13 +11,12 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. 고급 브랜드 CSS 스타일링
+# 2. 스타일링 CSS
 st.markdown("""
 <style>
-@import url('[https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css](https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css)');
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 * { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; }
 
-/* 사이드바와 메인 타이틀 바의 상단 시작 높이 완벽 일치 */
 .block-container {
     padding-top: 2rem !important;
     padding-bottom: 2rem !important;
@@ -26,25 +25,21 @@ st.markdown("""
     padding-top: 2rem !important;
 }
 
-/* 메인 타이틀 배너 (가운데 정렬) */
+/* 상단 메인 타이틀 배너 (가운데 정렬) */
 .header-box {
     background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-    padding: 30px 24px;
+    padding: 28px 20px;
     border-radius: 14px;
     color: white;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
     text-align: center;
     box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.25);
-    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 .b-title {
     font-size: clamp(22px, 3.2vw, 34px);
     font-weight: 800;
     letter-spacing: -0.03em;
     color: #f8fafc;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
     margin: 0;
     line-height: 1.2;
 }
@@ -55,40 +50,41 @@ st.markdown("""
     margin-bottom: 0px;
 }
 
-/* 파로스대입랩 블로그 바 (바탕색 투명 일체화, 밑줄 없는 단일 링크) */
-.brand-blog-bar {
-    background: transparent;
-    padding: 10px 0;
+/* 파로스 블로그 바 (로고 + 블로그명 + 링크 가운데 정렬) */
+.brand-blog-center {
     display: flex;
     align-items: center;
-    gap: 16px;
-    margin-bottom: 20px;
+    justify-content: center;
+    gap: 14px;
+    padding: 12px 0 18px 0;
+    margin-bottom: 22px;
     border-bottom: 1px solid #e2e8f0;
 }
-.logo-container {
-    width: 54px;
-    height: 48px;
+.logo-box {
+    width: 46px;
+    height: 42px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
-.brand-meta-info {
+.brand-info-box {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    align-items: flex-start;
+    gap: 2px;
 }
-.brand-blog-title {
-    font-size: 14.5px;
+.brand-title-text {
+    font-size: 15px;
     font-weight: 800;
     color: #0f172a;
 }
-.brand-blog-link {
+.brand-link-text {
     font-size: 13.5px;
     color: #0284c7 !important;
     text-decoration: none !important;
     font-weight: 600;
 }
-.brand-blog-link:hover {
+.brand-link-text:hover {
     color: #0369a1 !important;
     text-decoration: underline !important;
 }
@@ -107,7 +103,6 @@ st.markdown("""
     font-weight: 800;
     font-size: 15.5px;
     margin-bottom: 16px;
-    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.1);
 }
 .priv-box {
     background: #f1f5f9;
@@ -168,7 +163,7 @@ div.stButton > button:hover {
 """, unsafe_allow_html=True)
 
 # 파로스 등대 심볼 벡터 SVG
-svg_logo = """<svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" viewBox="0 0 180 155" width="100%" height="100%">
+svg_logo = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 155" width="100%" height="100%">
 <polygon points="12,24 64,42 64,50 12,34" fill="#831843"/>
 <polygon points="12,56 64,56 64,64 12,68" fill="#52525b"/>
 <polygon points="168,24 116,42 116,50 168,34" fill="#52525b"/>
@@ -194,18 +189,18 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 4. 파로스 블로그 바 (바탕색 투명 일체화, 1개 단일 링크, 새창 열림)
+# 4. 파로스 블로그 바 (가운데 정렬, 꺾쇠 없는 단일 링크, 새창 열림)
 st.markdown(f"""
-<div class="brand-blog-bar">
-    <div class="logo-container">{svg_logo}</div>
-    <div class="brand-meta-info">
-        <span class="brand-blog-title">파로스대입랩 네이버블로그</span>
-        <a class="brand-blog-link" href="[http://blog.naver.com/pharoslab](http://blog.naver.com/pharoslab)" target="_blank" rel="noopener noreferrer">[http://blog.naver.com/pharoslab](http://blog.naver.com/pharoslab)</a>
+<div class="brand-blog-center">
+    <div class="logo-box">{svg_logo}</div>
+    <div class="brand-info-box">
+        <span class="brand-title-text">파로스대입랩 네이버블로그</span>
+        <a class="brand-link-text" href="https://blog.naver.com/pharoslab" target="_blank" rel="noopener noreferrer">https://blog.naver.com/pharoslab</a>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# API 키 원본 순수 로드 (특수문자 및 마침표 원형 그대로 보존)
+# API 키 원본 순수 로드 (마침표 원형 보존)
 raw_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
 GEMINI_API_KEY = str(raw_key).strip().strip("'").strip('"')
 
@@ -230,31 +225,27 @@ def sanitize_text(text, name=""):
     t = re.sub(r'\b(아버지|어머니|부모님|부친|모친|형|누나|오빠|언니|동생|외조부|조부|외조모|조모|삼촌|이모|고모)\b', "[가족관계]", t)
     return t
 
-# 구글 프로젝트에서 활성화된 사용 가능 모델을 자동으로 조회하여 선택하는 지능형 함수
-def find_working_model_and_endpoint():
+# 구글 API 키로 활성화된 모델을 실시간 자동 선택
+def find_working_model():
     headers = {
         "Content-Type": "application/json",
         "x-goog-api-key": GEMINI_API_KEY
     }
     for ver in ["v1beta", "v1"]:
         try:
-            req = urllib.request.Request(f"[https://generativelanguage.googleapis.com/](https://generativelanguage.googleapis.com/){ver}/models", headers=headers, method="GET")
+            req = urllib.request.Request(f"https://generativelanguage.googleapis.com/{ver}/models", headers=headers, method="GET")
             with urllib.request.urlopen(req) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
                 models = data.get("models", [])
-                
                 valid_models = []
                 for m in models:
-                    methods = m.get("supportedGenerationMethods", [])
-                    if "generateContent" in methods:
+                    if "generateContent" in m.get("supportedGenerationMethods", []):
                         valid_models.append(m.get("name", ""))
-                
-                # 최적 모델 우선 순위: flash -> pro -> 기타
                 for m_name in valid_models:
                     if "flash" in m_name.lower():
-                        return f"[https://generativelanguage.googleapis.com/](https://generativelanguage.googleapis.com/){ver}/{m_name}:generateContent"
+                        return f"https://generativelanguage.googleapis.com/{ver}/{m_name}:generateContent"
                 if valid_models:
-                    return f"[https://generativelanguage.googleapis.com/](https://generativelanguage.googleapis.com/){ver}/{valid_models[0]}:generateContent"
+                    return f"https://generativelanguage.googleapis.com/{ver}/{valid_models[0]}:generateContent"
         except Exception:
             continue
     return None
@@ -303,20 +294,17 @@ def call_gemini(prompt, count, diff):
     }
     encoded_body = json.dumps(body).encode("utf-8")
     
-    # 1. 실시간으로 프로젝트에 열려 있는 모델 엔드포인트 자동 조회
-    auto_endpoint = find_working_model_and_endpoint()
-    
+    auto_url = find_working_model()
     candidates = []
-    if auto_endpoint:
-        candidates.append(auto_endpoint)
+    if auto_url:
+        candidates.append(auto_url)
         
     candidates.extend([
-        "[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent)",
-        "[https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent](https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent)",
-        "[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent)",
-        "[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent)",
-        "[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent)",
-        "[https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent](https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent)"
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent",
+        "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent",
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent",
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent"
     ])
     
     unique_candidates = []
@@ -351,7 +339,7 @@ def call_gemini(prompt, count, diff):
         except Exception as e:
             raise e
             
-    raise Exception(f"현재 등록된 프로젝트에서 활성화된 모델을 찾을 수 없습니다. ({last_err_text})")
+    raise Exception(f"현재 등록된 프로젝트에서 모델을 호출할 수 없습니다. ({last_err_text})")
 
 def render_tts(text, q_id):
     clean = json.dumps(text, ensure_ascii=False)
