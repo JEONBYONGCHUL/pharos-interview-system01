@@ -3,7 +3,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 from pypdf import PdfReader
 
-# 1. 페이지 레이아웃 및 탭 기본 설정
+# 1. 페이지 레이아웃 및 탭 설정
 st.set_page_config(
     page_title="2028 대입 학생부 기반 모의 면접",
     page_icon="🎓",
@@ -14,8 +14,8 @@ st.set_page_config(
 # 2. 고급 브랜드 CSS 스타일링
 st.markdown("""
 <style>
-@import url('[https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css](https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css)');
-* { font-family: 'Pretendard', sans-serif; }
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+* { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; }
 
 /* 사이드바와 메인 타이틀 바의 상단 시작 높이 완벽 일치 */
 .block-container {
@@ -168,7 +168,7 @@ div.stButton > button:hover {
 """, unsafe_allow_html=True)
 
 # 파로스 등대 심볼 벡터 SVG
-svg_logo = """<svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" viewBox="0 0 180 155" width="100%" height="100%">
+svg_logo = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 155" width="100%" height="100%">
 <polygon points="12,24 64,42 64,50 12,34" fill="#831843"/>
 <polygon points="12,56 64,56 64,64 12,68" fill="#52525b"/>
 <polygon points="168,24 116,42 116,50 168,34" fill="#52525b"/>
@@ -194,18 +194,18 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 4. 파로스 블로그 바 (바탕색 투명 일체화, 순수 HTML 단일 링크, 새창 열림)
+# 4. 파로스 블로그 바 (순수 HTML 단일 링크, 꺾쇠 없이 1개만 출력, 새창 열림)
 st.markdown(f"""
 <div class="brand-blog-bar">
     <div class="logo-container">{svg_logo}</div>
     <div class="brand-meta-info">
         <span class="brand-blog-title">파로스대입랩 네이버블로그</span>
-        <a class="brand-blog-link" href="[http://blog.naver.com/pharoslab](http://blog.naver.com/pharoslab)" target="_blank" rel="noopener noreferrer">[http://blog.naver.com/pharoslab](http://blog.naver.com/pharoslab)</a>
+        <a class="brand-blog-link" href="http://blog.naver.com/pharoslab" target="_blank" rel="noopener noreferrer">http://blog.naver.com/pharoslab</a>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# API 키 안전 처리 (불필요한 공백, 따옴표, 괄호 완벽 제거)
+# API 키 클렌징 (불필요한 공백, 따옴표, 괄호 완벽 제거)
 raw_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
 GEMINI_API_KEY = "".join(re.findall(r'[A-Za-z0-9_\-]+', str(raw_key)))
 
@@ -231,7 +231,7 @@ def sanitize_text(text, name=""):
 
 def call_gemini(prompt, count, diff):
     diff_desc = {"하": "기초 사실 확인", "중": "탐구 과정 및 문제해결", "상": "심화 이론 및 메커니즘"}.get(diff, "")
-    url = f"[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=){GEMINI_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
     
     sys_prompt = f"""당신은 대한민국 명문 대학 대입 학생부종합전형 수석 입학사정관입니다.
 제공된 학생부 텍스트를 분석하여 [{diff} 난이도: {diff_desc}]에 부합하는 면접 질문 총 {count}문항을 생성하세요.
