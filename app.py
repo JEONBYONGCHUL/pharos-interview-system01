@@ -3,9 +3,15 @@ import streamlit as st
 import streamlit.components.v1 as components
 from pypdf import PdfReader
 
-st.set_page_config(page_title="2028 대입 학생부 기반 모의 면접", page_icon="🎓", layout="wide")
+# 1. 페이지 레이아웃 및 탭 기본 설정
+st.set_page_config(
+    page_title="2028 대입 학생부 기반 모의 면접",
+    page_icon="🎓",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-# CSS 스타일링
+# 2. 고급 브랜드 CSS 스타일링
 st.markdown("""
 <style>
 @import url('[https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css](https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css)');
@@ -44,12 +50,10 @@ st.markdown("""
     background: #ffffff;
     border-radius: 12px;
     padding: 10px 18px;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 16px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-    width: fit-content;
-    max-width: 100%;
 }
 .logo-container {
     width: 60px;
@@ -61,7 +65,7 @@ st.markdown("""
 .brand-meta-info {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 4px;
 }
 .brand-blog-title {
     font-size: 15px;
@@ -70,16 +74,20 @@ st.markdown("""
 }
 .brand-blog-link {
     font-size: 13.5px;
-    color: #0284c7;
-    text-decoration: underline;
+    color: #0284c7 !important;
+    text-decoration: underline !important;
     font-weight: 600;
+    display: inline-block;
 }
 .brand-blog-link:hover {
-    color: #0369a1;
+    color: #0369a1 !important;
 }
 
 /* 사이드바 스타일링 */
-[data-testid="stSidebar"] { background-color: #f8fafc; border-right: 1px solid #e2e8f0; }
+[data-testid="stSidebar"] {
+    background-color: #f8fafc;
+    border-right: 1px solid #e2e8f0;
+}
 .side-title {
     background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
     color: white;
@@ -114,8 +122,12 @@ div.stButton > button {
     font-weight: 800 !important;
     box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35) !important;
 }
+div.stButton > button:hover {
+    background: linear-gradient(135deg, #0369a1 0%, #075985 100%) !important;
+    box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45) !important;
+}
 
-/* 면접 결과 카드 */
+/* 질문 카드 디자인 */
 .card {
     background: white;
     border: 1px solid #e2e8f0;
@@ -125,7 +137,13 @@ div.stButton > button {
     margin-bottom: 14px;
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
 }
-.q-title { font-size: 17px; font-weight: 700; color: #0f172a; margin: 10px 0; line-height: 1.5; }
+.q-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 10px 0;
+    line-height: 1.5;
+}
 .guide {
     background: #f0fdf4;
     border: 1px solid #bbf7d0;
@@ -139,7 +157,7 @@ div.stButton > button {
 </style>
 """, unsafe_allow_html=True)
 
-# 파로스 등대 원본 벡터 SVG
+# 파로스 등대 심볼 벡터 SVG
 svg_logo = """<svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" viewBox="0 0 180 155" width="100%" height="100%">
 <polygon points="12,24 64,42 64,50 12,34" fill="#831843"/>
 <polygon points="12,56 64,56 64,64 12,68" fill="#52525b"/>
@@ -158,7 +176,7 @@ svg_logo = """<svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/sv
 <rect x="36" y="134" width="108" height="6" rx="2" fill="#831843"/>
 </svg>"""
 
-# 상단 헤더 (흰색 바탕 카드 적용)
+# 상단 헤더: 순수 HTML <a> 태그를 사용하여 정확히 1개의 주소만 새창(target="_blank")으로 열림
 st.markdown(f"""
 <div class="header-box">
     <div class="b-title">2028 대입 학생부 기반 모의 면접</div>
@@ -167,21 +185,23 @@ st.markdown(f"""
         <div class="logo-container">{svg_logo}</div>
         <div class="brand-meta-info">
             <span class="brand-blog-title">파로스대입랩 네이버블로그</span>
-            <a class="brand-blog-link" href="[http://blog.naver.com/pharoslab](http://blog.naver.com/pharoslab)" target="_blank">[http://blog.naver.com/pharoslab](http://blog.naver.com/pharoslab)</a>
+            <a class="brand-blog-link" href="[http://blog.naver.com/pharoslab](http://blog.naver.com/pharoslab)" target="_blank" rel="noopener noreferrer">[http://blog.naver.com/pharoslab](http://blog.naver.com/pharoslab)</a>
         </div>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
+# API 키 안전 처리
 raw_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
-GEMINI_API_KEY = str(raw_key).strip().strip("'").strip('"')
+GEMINI_API_KEY = str(raw_key).strip().strip("'").strip('"').replace("[", "").replace("]", "")
 
 def extract_pdf(f):
     reader = PdfReader(f)
     pages = []
     for p in reader.pages:
         txt = p.extract_text()
-        if txt: pages.append(txt)
+        if txt:
+            pages.append(txt)
     return "\n".join(pages)
 
 def sanitize_text(text, name=""):
@@ -198,13 +218,16 @@ def sanitize_text(text, name=""):
 def call_gemini(prompt, count, diff):
     diff_desc = {"하": "기초 사실 확인", "중": "탐구 과정 및 문제해결", "상": "심화 이론 및 메커니즘"}.get(diff, "")
     endpoint = "[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent)"
-    full_url = endpoint + "?key=" + GEMINI_API_KEY
+    full_url = f"{endpoint}?key={GEMINI_API_KEY}"
+    
     sys_prompt = f"""당신은 명문대 수석 입학사정관입니다. 학생부를 분석하여 [{diff} 난이도: {diff_desc}]에 부합하는 면접 질문 총 {count}문항을 마크다운 백틱 없이 순수 JSON으로만 출력하세요.
 {{"major":"전공","difficulty":"{diff}","sections":[{{"category":"구분명","questions":[{{"type":"유형","source_quote":"학생부 인용","question":"질문 본문","intent":"출제 의도","high_score_guide":"답변 가이드"}}]}}]}}"""
+    
     body = json.dumps({
         "contents": [{"role": "user", "parts": [{"text": f"{sys_prompt}\n\n{prompt}"}]}],
         "generationConfig": {"temperature": 0.7, "responseMimeType": "application/json"}
     }).encode("utf-8")
+    
     req = urllib.request.Request(full_url, data=body, headers={"Content-Type": "application/json"}, method="POST")
     with urllib.request.urlopen(req) as resp:
         res = json.loads(resp.read().decode("utf-8"))
@@ -248,12 +271,12 @@ if not GEMINI_API_KEY:
     st.error("⚠️ 서버 설정(Secrets)에 GEMINI_API_KEY가 등록되지 않았습니다.")
     st.stop()
 
-# 메인 탭 (방법 1 우선)
+# 메인 탭
 tab1, tab2 = st.tabs(["✍️ [방법 1] 학생부 텍스트 직접 입력", "📂 [방법 2] 학생부 PDF 업로드"])
 input_text = ""
 
 with tab1:
-    txt_input = st.text_area("학생부 내용을 복사해 붙여넣으세요", height=220, placeholder="과세특, 창체, 행특 내용을 입력하세요...")
+    txt_input = st.text_area("학생부 내용을 복사해 붙여넣으세요", height=220, placeholder="과세특, 창체, 행특 내용을 이곳에 붙여넣으세요...")
     if txt_input:
         input_text = txt_input
 
@@ -264,7 +287,7 @@ with tab2:
             input_text = extract_pdf(pdf_file)
             st.success("✅ 학생부 PDF 텍스트 추출 완료")
 
-# 추출 버튼
+# 면접 질문 추출 버튼
 if st.button("🚀 면접 질문 추출하기", use_container_width=True):
     if not input_text.strip():
         st.warning("⚠️ 학생부 내용을 입력하거나 PDF를 올려주세요.")
