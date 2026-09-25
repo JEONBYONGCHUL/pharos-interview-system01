@@ -3,7 +3,6 @@ import streamlit as st
 import streamlit.components.v1 as components
 from pypdf import PdfReader
 
-# 1. 페이지 레이아웃 및 탭 기본 설정
 st.set_page_config(
     page_title="2028 대입 학생부 기반 모의 면접",
     page_icon="🎓",
@@ -11,33 +10,34 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. 고급 브랜드 CSS 스타일링
+# CSS 스타일링
 st.markdown("""
 <style>
-@import url('[https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css](https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css)');
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 * { font-family: 'Pretendard', sans-serif; }
 
-/* 1. 상단 여백 일치: 사이드바와 메인 콘텐츠 상단 높이 정렬 */
+/* 1. 사이드바와 메인 타이틀 바의 상단 시작 높이 완벽 일치 */
 .block-container {
-    padding-top: 1.8rem !important;
+    padding-top: 2rem !important;
     padding-bottom: 2rem !important;
 }
 [data-testid="stSidebar"] > div:first-child {
-    padding-top: 1.8rem !important;
+    padding-top: 2rem !important;
 }
 
-/* 2. 메인 네이비 타이틀 배너 (로고 영역 제외하여 깔끔한 타이틀만 배치) */
+/* 2. 메인 타이틀 배너 (가운데 정렬) */
 .header-box {
     background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-    padding: 24px 28px;
+    padding: 30px 24px;
     border-radius: 14px;
     color: white;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
+    text-align: center;
     box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.25);
     border: 1px solid rgba(255, 255, 255, 0.08);
 }
 .b-title {
-    font-size: clamp(20px, 3.0vw, 32px);
+    font-size: clamp(22px, 3.2vw, 34px);
     font-weight: 800;
     letter-spacing: -0.03em;
     color: #f8fafc;
@@ -50,21 +50,19 @@ st.markdown("""
 .b-sub {
     font-size: clamp(13px, 1.3vw, 15px);
     color: #94a3b8;
-    margin-top: 6px;
+    margin-top: 8px;
     margin-bottom: 0px;
 }
 
-/* 3. 횡으로 전체 흰색 바탕인 파로스 블로그 바 (밑줄 제거 및 깔끔한 단일 링크) */
-.brand-full-white-bar {
-    background: #ffffff;
-    border-radius: 12px;
-    padding: 12px 20px;
+/* 3. 파로스대입랩 블로그 바 (바탕색과 동일, 밑줄 없는 단일 링크) */
+.brand-blog-bar {
+    background: transparent;
+    padding: 10px 0;
     display: flex;
     align-items: center;
     gap: 16px;
-    margin-bottom: 22px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
+    margin-bottom: 20px;
+    border-bottom: 1px solid #e2e8f0;
 }
 .logo-container {
     width: 54px;
@@ -84,17 +82,17 @@ st.markdown("""
     color: #0f172a;
 }
 .brand-blog-link {
-    font-size: 13px;
+    font-size: 13.5px;
     color: #0284c7 !important;
-    text-decoration: none !important; /* 밑줄 완벽 제거 */
+    text-decoration: none !important;
     font-weight: 600;
 }
 .brand-blog-link:hover {
     color: #0369a1 !important;
-    text-decoration: none !important;
+    text-decoration: underline !important;
 }
 
-/* 사이드바 스타일링 및 상단 제목 맞춤 */
+/* 사이드바 스타일링 */
 [data-testid="stSidebar"] {
     background-color: #f8fafc;
     border-right: 1px solid #e2e8f0;
@@ -169,7 +167,7 @@ div.stButton > button:hover {
 """, unsafe_allow_html=True)
 
 # 파로스 등대 심볼 벡터 SVG
-svg_logo = """<svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" viewBox="0 0 180 155" width="100%" height="100%">
+svg_logo = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 155" width="100%" height="100%">
 <polygon points="12,24 64,42 64,50 12,34" fill="#831843"/>
 <polygon points="12,56 64,56 64,64 12,68" fill="#52525b"/>
 <polygon points="168,24 116,42 116,50 168,34" fill="#52525b"/>
@@ -187,7 +185,7 @@ svg_logo = """<svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/sv
 <rect x="36" y="134" width="108" height="6" rx="2" fill="#831843"/>
 </svg>"""
 
-# 1. 메인 타이틀 배너 (상단 정렬)
+# 1. 메인 타이틀 배너 (가운데 정렬)
 st.markdown("""
 <div class="header-box">
     <div class="b-title">2028 대입 학생부 기반 모의 면접</div>
@@ -195,20 +193,20 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 2. 횡으로 전체 흰색 바탕인 블로그 & 로고 바 (밑줄 제거된 단 1개의 새창 링크)
+# 2. 파로스 블로그 바
 st.markdown(f"""
-<div class="brand-full-white-bar">
+<div class="brand-blog-bar">
     <div class="logo-container">{svg_logo}</div>
     <div class="brand-meta-info">
         <span class="brand-blog-title">파로스대입랩 네이버블로그</span>
-        <a class="brand-blog-link" href="[http://blog.naver.com/pharoslab](http://blog.naver.com/pharoslab)" target="_blank" rel="noopener noreferrer">[http://blog.naver.com/pharoslab](http://blog.naver.com/pharoslab)</a>
+        <a class="brand-blog-link" href="http://blog.naver.com/pharoslab" target="_blank" rel="noopener noreferrer">http://blog.naver.com/pharoslab</a>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# API 키 클렌징 (괄호, 따옴표 오인식 방지)
+# API 키 클렌징 (어떤 특수문자가 섞여 있어도 정상 추출)
 raw_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
-GEMINI_API_KEY = str(raw_key).strip().strip("'").strip('"').replace("[", "").replace("]", "")
+GEMINI_API_KEY = "".join(re.findall(r'[A-Za-z0-9_\-]+', str(raw_key)))
 
 def extract_pdf(f):
     reader = PdfReader(f)
@@ -232,7 +230,7 @@ def sanitize_text(text, name=""):
 
 def call_gemini(prompt, count, diff):
     diff_desc = {"하": "기초 사실 확인", "중": "탐구 과정 및 문제해결", "상": "심화 이론 및 메커니즘"}.get(diff, "")
-    endpoint = "[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent)"
+    endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
     full_url = f"{endpoint}?key={GEMINI_API_KEY}"
     
     sys_prompt = f"""당신은 명문대 수석 입학사정관입니다. 학생부를 분석하여 [{diff} 난이도: {diff_desc}]에 부합하는 면접 질문 총 {count}문항을 마크다운 백틱 없이 순수 JSON으로만 출력하세요.
@@ -265,7 +263,7 @@ document.getElementById('b_{q_id}').onclick = function() {{
     let v = window.speechSynthesis.getVoices().find(x => x.lang && x.lang.includes('ko'));
     if (v) u.voice = v;
     u.onstart = () => {{ document.getElementById('b_{q_id}').style.background = '#475569'; document.getElementById('s_{q_id}').innerText = '낭독 중...'; }};
-    u.onend = () => {{ document.getElementById('b_{q_id}').style.background = 'linear-gradient(180deg,#0284c7,#0369a1)'; document.getElementById('s_{q_id}').innerText = ''; }};
+    u.onend = u.onerror = () => {{ document.getElementById('b_{q_id}').style.background = 'linear-gradient(180deg,#0284c7,#0369a1)'; document.getElementById('s_{q_id}').innerText = ''; }};
     window.speechSynthesis.speak(u);
 }};
 </script>"""
