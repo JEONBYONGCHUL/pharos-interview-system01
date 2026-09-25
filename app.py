@@ -205,12 +205,9 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# API 키 원본 순수 로드 (임의의 정규식 왜곡 제거, 앞뒤 공백 및 따옴표만 정리)
-def get_clean_api_key():
-    k = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
-    return str(k).strip().strip("'").strip('"')
-
-GEMINI_API_KEY = get_clean_api_key()
+# API 키 원본 순수 로드 (마침표나 언더바 등 어떤 특수문자도 훼손하지 않고 그대로 보존)
+raw_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
+GEMINI_API_KEY = str(raw_key).strip().strip("'").strip('"')
 
 def extract_pdf(f):
     reader = PdfReader(f)
@@ -225,7 +222,6 @@ def sanitize_text(text, name=""):
     t = text
     if name and len(name.strip()) >= 2:
         t = t.replace(name.strip(), "[OO학생]")
-    # 기본 블라인드 마스킹
     import re
     t = re.sub(r'[가-힣]{2,10}(고등학교|여고|남고|외고|과고|예고|체고|마이스터고|공고|상고|고)', "[OO고등학교]", t)
     t = re.sub(r'\b\d{6}[-\s]?[1-4]\d{6}\b', '[주민번호 마스킹]', t)
@@ -237,7 +233,7 @@ def sanitize_text(text, name=""):
 def call_gemini(prompt, count, diff):
     diff_desc = {"하": "기초 사실 확인", "중": "탐구 과정 및 문제해결", "상": "심화 이론 및 메커니즘"}.get(diff, "")
     
-    # 공식 엔드포인트 URL (키 파라미터 대신 헤더로 전달하여 특수문자 변형 방지)
+    # URL 쿼리 파라미터가 아닌 표준 API 엔드포인트
     url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
     
     sys_prompt = f"""당신은 대한민국 명문 대학 대입 학생부종합전형 수석 입학사정관입니다.
@@ -263,6 +259,7 @@ def call_gemini(prompt, count, diff):
   ]
 }}"""
 
+    # 새로운 규격(AQ....)의 키도 완벽히 수용하는 구글 공식 헤더 인증
     headers = {
         "Content-Type": "application/json",
         "x-goog-api-key": GEMINI_API_KEY
