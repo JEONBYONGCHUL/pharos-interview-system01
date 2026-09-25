@@ -3,7 +3,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 from pypdf import PdfReader
 
-# 1. 페이지 레이아웃 및 탭 기본 설정
+# 1. 페이지 설정
 st.set_page_config(
     page_title="2028 대입 학생부 기반 모의 면접",
     page_icon="🎓",
@@ -14,7 +14,7 @@ st.set_page_config(
 # 2. 고급 브랜드 CSS 스타일링
 st.markdown("""
 <style>
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+@import url('[https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css](https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css)');
 * { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; }
 
 /* 사이드바와 메인 타이틀 바의 상단 시작 높이 완벽 일치 */
@@ -168,7 +168,7 @@ div.stButton > button:hover {
 """, unsafe_allow_html=True)
 
 # 파로스 등대 심볼 벡터 SVG
-svg_logo = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 155" width="100%" height="100%">
+svg_logo = """<svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" viewBox="0 0 180 155" width="100%" height="100%">
 <polygon points="12,24 64,42 64,50 12,34" fill="#831843"/>
 <polygon points="12,56 64,56 64,64 12,68" fill="#52525b"/>
 <polygon points="168,24 116,42 116,50 168,34" fill="#52525b"/>
@@ -200,7 +200,7 @@ st.markdown(f"""
     <div class="logo-container">{svg_logo}</div>
     <div class="brand-meta-info">
         <span class="brand-blog-title">파로스대입랩 네이버블로그</span>
-        <a class="brand-blog-link" href="http://blog.naver.com/pharoslab" target="_blank" rel="noopener noreferrer">http://blog.naver.com/pharoslab</a>
+        <a class="brand-blog-link" href="[http://blog.naver.com/pharoslab](http://blog.naver.com/pharoslab)" target="_blank" rel="noopener noreferrer">[http://blog.naver.com/pharoslab](http://blog.naver.com/pharoslab)</a>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -230,6 +230,35 @@ def sanitize_text(text, name=""):
     t = re.sub(r'\b(아버지|어머니|부모님|부친|모친|형|누나|오빠|언니|동생|외조부|조부|외조모|조모|삼촌|이모|고모)\b', "[가족관계]", t)
     return t
 
+# 구글 프로젝트에서 활성화된 사용 가능 모델을 자동으로 조회하여 선택하는 지능형 함수
+def find_working_model_and_endpoint():
+    headers = {
+        "Content-Type": "application/json",
+        "x-goog-api-key": GEMINI_API_KEY
+    }
+    for ver in ["v1beta", "v1"]:
+        try:
+            req = urllib.request.Request(f"[https://generativelanguage.googleapis.com/](https://generativelanguage.googleapis.com/){ver}/models", headers=headers, method="GET")
+            with urllib.request.urlopen(req) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                models = data.get("models", [])
+                
+                valid_models = []
+                for m in models:
+                    methods = m.get("supportedGenerationMethods", [])
+                    if "generateContent" in methods:
+                        valid_models.append(m.get("name", ""))
+                
+                # 최적 모델 우선 순위: flash -> pro -> 기타
+                for m_name in valid_models:
+                    if "flash" in m_name.lower():
+                        return f"[https://generativelanguage.googleapis.com/](https://generativelanguage.googleapis.com/){ver}/{m_name}:generateContent"
+                if valid_models:
+                    return f"[https://generativelanguage.googleapis.com/](https://generativelanguage.googleapis.com/){ver}/{valid_models[0]}:generateContent"
+        except Exception:
+            continue
+    return None
+
 def call_gemini(prompt, count, diff):
     diff_desc = {"하": "기초 사실 확인", "중": "탐구 과정 및 문제해결", "상": "심화 이론 및 메커니즘"}.get(diff, "")
     
@@ -256,7 +285,6 @@ def call_gemini(prompt, count, diff):
   ]
 }}"""
 
-    # 새로운 규격(AQ....)의 키를 완벽히 수용하는 구글 공식 헤더 인증
     headers = {
         "Content-Type": "application/json",
         "x-goog-api-key": GEMINI_API_KEY
@@ -275,18 +303,29 @@ def call_gemini(prompt, count, diff):
     }
     encoded_body = json.dumps(body).encode("utf-8")
     
-    # 404 에러 방지: 구글 최신 모델 순차 자동 시도 (가장 빠른 성공 엔드포인트 자동 선택)
-    candidate_urls = [
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent",
-        "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent",
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent",
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent",
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
-    ]
+    # 1. 실시간으로 프로젝트에 열려 있는 모델 엔드포인트 자동 조회
+    auto_endpoint = find_working_model_and_endpoint()
     
-    last_error = None
-    for target_url in candidate_urls:
+    candidates = []
+    if auto_endpoint:
+        candidates.append(auto_endpoint)
+        
+    candidates.extend([
+        "[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent)",
+        "[https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent](https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent)",
+        "[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent)",
+        "[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent)",
+        "[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent)",
+        "[https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent](https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent)"
+    ])
+    
+    unique_candidates = []
+    for c in candidates:
+        if c not in unique_candidates:
+            unique_candidates.append(c)
+            
+    last_err_text = ""
+    for target_url in unique_candidates:
         try:
             req = urllib.request.Request(target_url, data=encoded_body, headers=headers, method="POST")
             with urllib.request.urlopen(req) as resp:
@@ -299,20 +338,20 @@ def call_gemini(prompt, count, diff):
         except urllib.error.HTTPError as e:
             err_body = e.read().decode("utf-8")
             if e.code == 404:
-                last_error = err_body
+                last_err_text = err_body
                 continue
             else:
                 try:
                     err_json = json.loads(err_body)
-                    err_msg = err_json.get("error", {}).get("message", err_body)
-                    raise Exception(f"Google API 오류 ({e.code}): {err_msg}")
-                except Exception as inner_e:
-                    if "Google API 오류" in str(inner_e): raise inner_e
+                    msg = err_json.get("error", {}).get("message", err_body)
+                    raise Exception(f"Google API 에러 ({e.code}): {msg}")
+                except Exception as inner:
+                    if "Google API 에러" in str(inner): raise inner
                     raise Exception(f"HTTP 오류 ({e.code}): {err_body}")
         except Exception as e:
             raise e
             
-    raise Exception(f"사용 가능한 모델을 찾을 수 없습니다: {last_error}")
+    raise Exception(f"현재 등록된 프로젝트에서 활성화된 모델을 찾을 수 없습니다. ({last_err_text})")
 
 def render_tts(text, q_id):
     clean = json.dumps(text, ensure_ascii=False)
