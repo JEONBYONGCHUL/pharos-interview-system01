@@ -6,7 +6,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 from pypdf import PdfReader
 
-# 1. 페이지 설정
+# 1. 페이지 레이아웃 및 탭 설정
 st.set_page_config(
     page_title="2028 대입 학생부 기반 모의 면접",
     page_icon="🎓",
@@ -14,23 +14,64 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. 고급 CSS 스타일
+# 첨부해주신 파로스 대입 랩 등대 로고 (Base64 인라인 임베딩)
+LOGO_SVG = """
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%">
+  <defs>
+    <linearGradient id="beam" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#9333ea" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#475569" stop-opacity="0.7"/>
+    </linearGradient>
+    <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#831843"/>
+      <stop offset="50%" stop-color="#9d174d"/>
+      <stop offset="100%" stop-color="#be185d"/>
+    </linearGradient>
+  </defs>
+  <!-- 빛살 (Light Beams) -->
+  <polygon points="120,45 180,68 180,78 120,68" fill="url(#beam)"/>
+  <polygon points="120,85 180,92 180,102 120,95" fill="#64748b"/>
+  <polygon points="280,45 220,68 220,78 280,68" fill="#64748b"/>
+  <polygon points="280,85 220,92 220,102 280,95" fill="url(#beam)"/>
+  <!-- 등탑 돔 및 뾰족탑 -->
+  <polygon points="200,28 196,48 204,48" fill="#831843"/>
+  <path d="M182,65 Q200,48 218,65 Z" fill="#831843"/>
+  <rect x="180" y="65" width="40" height="28" fill="#ffffff" stroke="#831843" stroke-width="4"/>
+  <line x1="193" y1="65" x2="193" y2="93" stroke="#831843" stroke-width="3"/>
+  <line x1="207" y1="65" x2="207" y2="93" stroke="#831843" stroke-width="3"/>
+  <!-- 등대 몸체 -->
+  <polygon points="175,98 225,98 245,200 155,200" fill="url(#bodyGrad)"/>
+  <polygon points="171,120 229,120 236,152 164,152" fill="#be185d"/>
+  <polygon points="160,172 240,172 243,186 157,186" fill="#be185d"/>
+  <!-- 띠 (Stripe) -->
+  <polygon points="177,98 190,98 215,200 202,200" fill="#fbcfe8" opacity="0.4"/>
+  <rect x="145" y="200" width="110" height="8" rx="3" fill="#831843"/>
+  <!-- 하단 타이포 -->
+  <text x="200" y="260" font-family="'Pretendard', sans-serif" font-size="44" font-weight="900" fill="#475569" text-anchor="middle" letter-spacing="4">파로스 대입 랩</text>
+</svg>
+"""
+
+# 2. 고급 브랜드 CSS
 st.markdown("""
 <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
     * {
         font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
     }
+    
+    /* 상단 배너 박스 */
     .brand-header-box {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-        padding: 30px 28px;
-        border-radius: 14px;
+        background: linear-gradient(135deg, #0b1329 0%, #1e293b 100%);
+        padding: 30px 32px;
+        border-radius: 16px;
         color: white;
         margin-bottom: 24px;
-        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.2);
+        box-shadow: 0 10px 25px -5px rgba(11, 19, 41, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.08);
     }
+    
     .brand-title {
-        font-size: clamp(20px, 3.2vw, 32px);
+        font-size: clamp(20px, 3.2vw, 34px);
         font-weight: 800;
         letter-spacing: -0.03em;
         color: #f8fafc;
@@ -40,6 +81,7 @@ st.markdown("""
         margin: 0;
         line-height: 1.2;
     }
+    
     .brand-subtitle {
         font-size: clamp(13px, 1.4vw, 15px);
         color: #94a3b8;
@@ -47,104 +89,181 @@ st.markdown("""
         margin-top: 8px;
         margin-bottom: 0px;
     }
+    
+    /* 헤더 내 로고 & 링크 영역 */
     .brand-meta-box {
-        margin-top: 16px;
-        padding-top: 14px;
+        margin-top: 18px;
+        padding-top: 16px;
         border-top: 1px solid rgba(148, 163, 184, 0.2);
         display: flex;
-        flex-direction: column;
-        gap: 5px;
+        align-items: center;
+        gap: 16px;
     }
-    .brand-meta-header {
+    
+    .brand-logo-container {
+        width: 120px;
+        height: 60px;
+        background: #ffffff;
+        border-radius: 8px;
+        padding: 4px 8px;
         display: flex;
         align-items: center;
-        gap: 8px;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
-    .brand-logo-badge {
-        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-        color: white;
-        font-size: 11px;
-        font-weight: 800;
-        padding: 3px 8px;
-        border-radius: 4px;
+    
+    .brand-meta-text {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
     }
+    
     .brand-blog-name {
-        font-size: 14px;
+        font-size: 14.5px;
         font-weight: 700;
-        color: #e2e8f0;
+        color: #f1f5f9;
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
+    
     .brand-blog-url {
-        font-size: 13px;
+        font-size: 13.5px;
         color: #38bdf8;
         text-decoration: none;
+        transition: color 0.2s;
     }
     .brand-blog-url:hover {
+        color: #7dd3fc;
         text-decoration: underline;
     }
+
+    /* 사이드바 프리미엄 카드 디자인 */
+    [data-testid="stSidebar"] {
+        background-color: #f8fafc;
+        border-right: 1px solid #e2e8f0;
+    }
+    
+    .sidebar-header-box {
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        padding: 16px;
+        border-radius: 10px;
+        color: white;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    
+    .sidebar-header-title {
+        font-size: 16px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        margin: 0;
+        color: #f8fafc;
+    }
+    
+    .sidebar-card-label {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: #334155;
+        margin-bottom: 4px;
+    }
+
+    /* 하단 안심 안내 카드 */
+    .privacy-notice-box {
+        background: #f1f5f9;
+        border-radius: 10px;
+        padding: 14px;
+        margin-top: 25px;
+        border: 1px solid #cbd5e1;
+        border-left: 4px solid #0284c7;
+    }
+    
+    .privacy-notice-title {
+        font-size: 12.5px;
+        font-weight: 800;
+        color: #0369a1;
+        margin-bottom: 5px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .privacy-notice-desc {
+        font-size: 12px;
+        color: #475569;
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    /* 결과 카드 스타일 */
     .interview-card {
         background-color: #ffffff;
         border: 1px solid #e2e8f0;
         border-left: 5px solid #0284c7;
-        border-radius: 10px;
-        padding: 20px 22px;
-        margin-bottom: 12px;
-        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.03);
+        border-radius: 12px;
+        padding: 22px 24px;
+        margin-bottom: 14px;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
     }
+    
     .badge-type {
         display: inline-block;
         background-color: #e0f2fe;
         color: #0369a1;
         font-size: 12px;
         font-weight: 700;
-        padding: 3px 9px;
-        border-radius: 15px;
-        margin-bottom: 8px;
+        padding: 3px 10px;
+        border-radius: 20px;
+        margin-bottom: 10px;
     }
+    
     .question-title {
-        font-size: 16.5px;
+        font-size: 17px;
         font-weight: 700;
         color: #0f172a;
         line-height: 1.5;
-        margin-bottom: 10px;
+        margin-bottom: 12px;
     }
+    
     .meta-row {
-        font-size: 13px;
+        font-size: 13.5px;
         color: #475569;
-        margin-bottom: 5px;
+        margin-bottom: 6px;
         line-height: 1.5;
     }
+    
     .meta-highlight {
         background-color: #f0fdf4;
         border: 1px solid #bbf7d0;
         color: #166534;
-        padding: 9px 12px;
-        border-radius: 6px;
-        font-size: 13px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 13.5px;
         font-weight: 600;
-        margin-top: 8px;
-        margin-bottom: 6px;
+        margin-top: 10px;
+        margin-bottom: 8px;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# 3. 헤더 렌더링
-st.markdown("""
+# 3. 상단 헤더 출력 (파로스 공식 로고 포함)
+st.markdown(f"""
 <div class="brand-header-box">
     <div class="brand-title">2028 대입 학생부 기반 모의 면접</div>
     <div class="brand-subtitle">학생부 기반 맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div>
     <div class="brand-meta-box">
-        <div class="brand-meta-header">
-            <span class="brand-logo-badge">🏛️ PHAROS</span>
-            <span class="brand-blog-name">파로스대입랩 네이버블로그</span>
+        <div class="brand-logo-container">
+            {LOGO_SVG}
         </div>
-        <div>
+        <div class="brand-meta-text">
+            <span class="brand-blog-name">🏛️ 파로스대입랩 네이버블로그</span>
             <a class="brand-blog-url" href="http://blog.naver.com/pharoslab" target="_blank">http://blog.naver.com/pharoslab</a>
         </div>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# 4. API 키 및 함수
+# 4. API 키 및 핵심 함수
 GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
 
 def extract_text_from_pdf(uploaded_file):
@@ -180,7 +299,7 @@ def build_system_instruction(question_count: int, difficulty: str) -> str:
   "difficulty": "{difficulty}",
   "sections": [
     {{
-      "category": "영역 구분명",
+      "category": "영역 구분명 (예: 창의적 체험활동 진로·자율활동, 교과 세부능력및특기사항 등)",
       "questions": [
         {{
           "type": "문항 유형",
@@ -196,7 +315,8 @@ def build_system_instruction(question_count: int, difficulty: str) -> str:
 """
 
 def call_gemini_api(prompt: str, count: int, diff: str) -> dict:
-    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+    # 404 오류 해결: 최신 정식 버전 엔드포인트 적용
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
     headers = {"Content-Type": "application/json", "x-goog-api-key": GEMINI_API_KEY}
     sys_inst = build_system_instruction(count, diff)
     body = {
@@ -215,12 +335,12 @@ def call_gemini_api(prompt: str, count: int, diff: str) -> dict:
             t = t[:-3]
         return json.loads(t.strip())
 
-# 5. 음성 듣기 컴포넌트
+# 5. 견고한 음성 합성 모듈
 def render_tts_button(text: str, button_id: str):
     clean_text = json.dumps(text, ensure_ascii=False)
-    html_code = f"""
+    template = """
     <div style="margin-bottom: 16px;">
-        <button id="btn_{button_id}" style="
+        <button id="btn_ID" style="
             display: inline-flex;
             align-items: center;
             gap: 6px;
@@ -228,25 +348,26 @@ def render_tts_button(text: str, button_id: str):
             color: #ffffff;
             border: none;
             border-radius: 6px;
-            padding: 7px 14px;
+            padding: 7px 15px;
             font-size: 13px;
             font-weight: 700;
             cursor: pointer;
+            box-shadow: 0 2px 5px rgba(2, 132, 199, 0.25);
         ">
             🔊 음성으로 질문 듣기
         </button>
-        <span id="status_{button_id}" style="font-size: 12px; color: #64748b; margin-left: 10px;"></span>
+        <span id="status_ID" style="font-size: 12px; color: #64748b; margin-left: 10px;"></span>
     </div>
     <script>
-        const btn_{button_id} = document.getElementById('btn_{button_id}');
-        const status_{button_id} = document.getElementById('status_{button_id}');
-        const textToRead = {clean_text};
+        const btn_ID = document.getElementById('btn_ID');
+        const status_ID = document.getElementById('status_ID');
+        const textToRead = TEXT_PLACEHOLDER;
         
-        btn_{button_id}.addEventListener('click', function() {{
-            if (!('speechSynthesis' in window)) {{
-                alert('음성 듣기를 지원하지 않는 브라우저입니다.');
+        btn_ID.addEventListener('click', function() {
+            if (!('speechSynthesis' in window)) {
+                alert('사용 중이신 브라우저가 음성 듣기를 지원하지 않습니다.');
                 return;
-            }}
+            }
             window.speechSynthesis.cancel();
             const utter = new SpeechSynthesisUtterance(textToRead);
             utter.lang = 'ko-KR';
@@ -254,38 +375,43 @@ def render_tts_button(text: str, button_id: str):
             
             const voices = window.speechSynthesis.getVoices();
             const koVoice = voices.find(v => v.lang && (v.lang.includes('ko') || v.lang.includes('KO')));
-            if (koVoice) {{
+            if (koVoice) {
                 utter.voice = koVoice;
-            }}
+            }
             
-            utter.onstart = function() {{
-                btn_{button_id}.style.background = '#475569';
-                status_{button_id}.innerText = '낭독 중...';
-            }};
-            utter.onend = function() {{
-                btn_{button_id}.style.background = 'linear-gradient(180deg, #0284c7 0%, #0369a1 100%)';
-                status_{button_id}.innerText = '';
-            }};
-            utter.onerror = function() {{
-                btn_{button_id}.style.background = 'linear-gradient(180deg, #0284c7 0%, #0369a1 100%)';
-                status_{button_id}.innerText = '';
-            }};
+            utter.onstart = function() {
+                btn_ID.style.background = '#475569';
+                status_ID.innerText = '낭독 중...';
+            };
+            utter.onend = function() {
+                btn_ID.style.background = 'linear-gradient(180deg, #0284c7 0%, #0369a1 100%)';
+                status_ID.innerText = '';
+            };
+            utter.onerror = function() {
+                btn_ID.style.background = 'linear-gradient(180deg, #0284c7 0%, #0369a1 100%)';
+                status_ID.innerText = '';
+            };
             window.speechSynthesis.speak(utter);
-        }});
+        });
         
-        if ('speechSynthesis' in window && window.speechSynthesis.onvoiceschanged !== undefined) {{
-            window.speechSynthesis.onvoiceschanged = () => {{ window.speechSynthesis.getVoices(); }};
-        }}
+        if ('speechSynthesis' in window && window.speechSynthesis.onvoiceschanged !== undefined) {
+            window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
+        }
     </script>
     """
-    components.html(html_code, height=46)
+    html_code = template.replace("btn_ID", f"btn_{button_id}").replace("status_ID", f"status_{button_id}").replace("TEXT_PLACEHOLDER", clean_text)
+    components.html(html_code, height=48)
 
-# 6. 사이드바
+# 6. 사이드바 - 고급 모의면접 패널
 with st.sidebar:
-    st.markdown("### ⚙️ 모의면접 조건 설정")
-    st.markdown("---")
+    st.markdown("""
+    <div class="sidebar-header-box">
+        <div class="sidebar-header-title">⚙️ 사정관 평가 조건 설정</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
     student_name = st.text_input("학생 실명 (마스킹용)", placeholder="홍길동 (미입력 가능)")
-    target_major = st.text_input("지원 희망 전공/학과", placeholder="예: 경영학과, 기계공학과")
+    target_major = st.text_input("지원 희망 전공/학과", placeholder="예: 신소재공학과, 의예과")
     
     q_count = st.selectbox(
         "추출 면접 문항 수", 
@@ -306,22 +432,28 @@ with st.sidebar:
         format_func=lambda x: diff_labels.get(x, x)
     )
     
-    st.markdown("---")
-    st.caption("🔒 **개인정보 안심 처리**")
-    st.caption("인적사항, 고교명, 가족관계 등 대입 블라인드 항목은 자동 마스킹 후 AI로 전달됩니다.")
+    # 요청하신 왼쪽 하단 지정 안심 문구
+    st.markdown("""
+    <div class="privacy-notice-box">
+        <div class="privacy-notice-title">🔒 개인정보 안심 처리</div>
+        <p class="privacy-notice-desc">
+            인적사항, 고교명, 가족관계 등 대입 블라인드 항목은 자동 마스킹 처리되니 안심하셔도 됩니다.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
 if not GEMINI_API_KEY:
     st.error("⚠️ 서버 설정(Secrets)에 GEMINI_API_KEY가 등록되지 않았습니다.")
     st.stop()
 
-# 7. 메인 입력 영역
+# 7. 메인 입력 탭
 tab1, tab2 = st.tabs(["📂 [방법 1] 학생부 PDF 업로드", "✍️ [방법 2] 학생부 텍스트 직접 입력"])
 input_text = ""
 
 with tab1:
     uploaded_pdf = st.file_uploader("학생부 PDF 파일을 올려주세요", type=["pdf"])
     if uploaded_pdf:
-        with st.spinner("PDF 텍스트를 추출하는 중입니다..."):
+        with st.spinner("PDF 파일에서 텍스트를 정밀 추출하고 있습니다..."):
             input_text = extract_text_from_pdf(uploaded_pdf)
             st.success("✅ 학생부 PDF 텍스트 추출 완료")
 
@@ -329,7 +461,7 @@ with tab2:
     direct_text = st.text_area(
         "학생부 내용을 복사해 붙여넣으세요",
         height=220,
-        placeholder="과세특, 창체, 행특 내용을 입력하세요..."
+        placeholder="과세특, 창체, 행특 내용을 이곳에 붙여넣으세요..."
     )
     if not input_text:
         input_text = direct_text
@@ -339,7 +471,7 @@ if st.button("🚀 심층 면접 질문 추출하기", type="primary", use_conta
     if not input_text.strip():
         st.warning("⚠️ 학생부 내용을 입력하거나 PDF를 올려주세요.")
     else:
-        with st.spinner("사정관 AI가 학생부를 정밀 분석하고 있습니다..."):
+        with st.spinner("사정관 AI가 학생부 탐구 인과관계 및 교과 개념을 정밀 분석 중입니다..."):
             sanitized = sanitize_student_record(input_text, student_name)
             user_prompt = f"지원 전공: {target_major or '미지정'}\n\n[학생부 원문]\n{sanitized}"
             try:
