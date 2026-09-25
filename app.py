@@ -17,18 +17,27 @@ st.markdown("""
 @import url('[https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css](https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css)');
 * { font-family: 'Pretendard', sans-serif; }
 
-/* 메인 다크 헤더 */
+/* 1. 상단 여백 일치: 사이드바와 메인 콘텐츠 상단 높이 정렬 */
+.block-container {
+    padding-top: 1.8rem !important;
+    padding-bottom: 2rem !important;
+}
+[data-testid="stSidebar"] > div:first-child {
+    padding-top: 1.8rem !important;
+}
+
+/* 2. 메인 네이비 타이틀 배너 (로고 영역 제외하여 깔끔한 타이틀만 배치) */
 .header-box {
     background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-    padding: 28px 30px;
-    border-radius: 16px;
+    padding: 24px 28px;
+    border-radius: 14px;
     color: white;
-    margin-bottom: 22px;
-    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25);
+    margin-bottom: 12px;
+    box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.25);
     border: 1px solid rgba(255, 255, 255, 0.08);
 }
 .b-title {
-    font-size: clamp(20px, 3.2vw, 34px);
+    font-size: clamp(20px, 3.0vw, 32px);
     font-weight: 800;
     letter-spacing: -0.03em;
     color: #f8fafc;
@@ -39,25 +48,27 @@ st.markdown("""
     line-height: 1.2;
 }
 .b-sub {
-    font-size: clamp(13px, 1.4vw, 15px);
+    font-size: clamp(13px, 1.3vw, 15px);
     color: #94a3b8;
-    margin-top: 8px;
-    margin-bottom: 18px;
+    margin-top: 6px;
+    margin-bottom: 0px;
 }
 
-/* 요청하신 흰색 블로그 & 로고 카드 영역 */
-.brand-white-card {
+/* 3. 횡으로 전체 흰색 바탕인 파로스 블로그 바 (밑줄 제거 및 깔끔한 단일 링크) */
+.brand-full-white-bar {
     background: #ffffff;
     border-radius: 12px;
-    padding: 10px 18px;
-    display: inline-flex;
+    padding: 12px 20px;
+    display: flex;
     align-items: center;
     gap: 16px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    margin-bottom: 22px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
 }
 .logo-container {
-    width: 60px;
-    height: 52px;
+    width: 54px;
+    height: 48px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -65,25 +76,25 @@ st.markdown("""
 .brand-meta-info {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 3px;
 }
 .brand-blog-title {
-    font-size: 15px;
+    font-size: 14.5px;
     font-weight: 800;
     color: #0f172a;
 }
 .brand-blog-link {
-    font-size: 13.5px;
+    font-size: 13px;
     color: #0284c7 !important;
-    text-decoration: underline !important;
+    text-decoration: none !important; /* 밑줄 완벽 제거 */
     font-weight: 600;
-    display: inline-block;
 }
 .brand-blog-link:hover {
     color: #0369a1 !important;
+    text-decoration: none !important;
 }
 
-/* 사이드바 스타일링 */
+/* 사이드바 스타일링 및 상단 제목 맞춤 */
 [data-testid="stSidebar"] {
     background-color: #f8fafc;
     border-right: 1px solid #e2e8f0;
@@ -111,7 +122,7 @@ st.markdown("""
     border: 1px solid #cbd5e1;
 }
 
-/* 로열 블루 메인 버튼 */
+/* 실행 버튼 */
 div.stButton > button {
     background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
     color: white !important;
@@ -176,22 +187,26 @@ svg_logo = """<svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/sv
 <rect x="36" y="134" width="108" height="6" rx="2" fill="#831843"/>
 </svg>"""
 
-# 상단 헤더: 순수 HTML <a> 태그를 사용하여 정확히 1개의 주소만 새창(target="_blank")으로 열림
-st.markdown(f"""
+# 1. 메인 타이틀 배너 (상단 정렬)
+st.markdown("""
 <div class="header-box">
     <div class="b-title">2028 대입 학생부 기반 모의 면접</div>
     <div class="b-sub">학생부 기반 맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div>
-    <div class="brand-white-card">
-        <div class="logo-container">{svg_logo}</div>
-        <div class="brand-meta-info">
-            <span class="brand-blog-title">파로스대입랩 네이버블로그</span>
-            <a class="brand-blog-link" href="[http://blog.naver.com/pharoslab](http://blog.naver.com/pharoslab)" target="_blank" rel="noopener noreferrer">[http://blog.naver.com/pharoslab](http://blog.naver.com/pharoslab)</a>
-        </div>
+</div>
+""", unsafe_allow_html=True)
+
+# 2. 횡으로 전체 흰색 바탕인 블로그 & 로고 바 (밑줄 제거된 단 1개의 새창 링크)
+st.markdown(f"""
+<div class="brand-full-white-bar">
+    <div class="logo-container">{svg_logo}</div>
+    <div class="brand-meta-info">
+        <span class="brand-blog-title">파로스대입랩 네이버블로그</span>
+        <a class="brand-blog-link" href="[http://blog.naver.com/pharoslab](http://blog.naver.com/pharoslab)" target="_blank" rel="noopener noreferrer">[http://blog.naver.com/pharoslab](http://blog.naver.com/pharoslab)</a>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# API 키 안전 처리
+# API 키 클렌징 (괄호, 따옴표 오인식 방지)
 raw_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
 GEMINI_API_KEY = str(raw_key).strip().strip("'").strip('"').replace("[", "").replace("]", "")
 
@@ -250,7 +265,7 @@ document.getElementById('b_{q_id}').onclick = function() {{
     let v = window.speechSynthesis.getVoices().find(x => x.lang && x.lang.includes('ko'));
     if (v) u.voice = v;
     u.onstart = () => {{ document.getElementById('b_{q_id}').style.background = '#475569'; document.getElementById('s_{q_id}').innerText = '낭독 중...'; }};
-    u.onend = u.onerror = () => {{ document.getElementById('b_{q_id}').style.background = 'linear-gradient(180deg,#0284c7,#0369a1)'; document.getElementById('s_{q_id}').innerText = ''; }};
+    u.onend = () => {{ document.getElementById('b_{q_id}').style.background = 'linear-gradient(180deg,#0284c7,#0369a1)'; document.getElementById('s_{q_id}').innerText = ''; }};
     window.speechSynthesis.speak(u);
 }};
 </script>"""
