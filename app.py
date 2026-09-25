@@ -6,7 +6,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 from pypdf import PdfReader
 
-# 1. 페이지 레이아웃 및 탭 설정
+# 1. 페이지 레이아웃 및 브라우저 탭 설정
 st.set_page_config(
     page_title="2028 대입 학생부 기반 모의 면접",
     page_icon="🎓",
@@ -14,44 +14,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 첨부해주신 파로스 대입 랩 등대 로고 (Base64 인라인 임베딩)
-LOGO_SVG = """
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%">
-  <defs>
-    <linearGradient id="beam" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#9333ea" stop-opacity="0.9"/>
-      <stop offset="100%" stop-color="#475569" stop-opacity="0.7"/>
-    </linearGradient>
-    <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#831843"/>
-      <stop offset="50%" stop-color="#9d174d"/>
-      <stop offset="100%" stop-color="#be185d"/>
-    </linearGradient>
-  </defs>
-  <!-- 빛살 (Light Beams) -->
-  <polygon points="120,45 180,68 180,78 120,68" fill="url(#beam)"/>
-  <polygon points="120,85 180,92 180,102 120,95" fill="#64748b"/>
-  <polygon points="280,45 220,68 220,78 280,68" fill="#64748b"/>
-  <polygon points="280,85 220,92 220,102 280,95" fill="url(#beam)"/>
-  <!-- 등탑 돔 및 뾰족탑 -->
-  <polygon points="200,28 196,48 204,48" fill="#831843"/>
-  <path d="M182,65 Q200,48 218,65 Z" fill="#831843"/>
-  <rect x="180" y="65" width="40" height="28" fill="#ffffff" stroke="#831843" stroke-width="4"/>
-  <line x1="193" y1="65" x2="193" y2="93" stroke="#831843" stroke-width="3"/>
-  <line x1="207" y1="65" x2="207" y2="93" stroke="#831843" stroke-width="3"/>
-  <!-- 등대 몸체 -->
-  <polygon points="175,98 225,98 245,200 155,200" fill="url(#bodyGrad)"/>
-  <polygon points="171,120 229,120 236,152 164,152" fill="#be185d"/>
-  <polygon points="160,172 240,172 243,186 157,186" fill="#be185d"/>
-  <!-- 띠 (Stripe) -->
-  <polygon points="177,98 190,98 215,200 202,200" fill="#fbcfe8" opacity="0.4"/>
-  <rect x="145" y="200" width="110" height="8" rx="3" fill="#831843"/>
-  <!-- 하단 타이포 -->
-  <text x="200" y="260" font-family="'Pretendard', sans-serif" font-size="44" font-weight="900" fill="#475569" text-anchor="middle" letter-spacing="4">파로스 대입 랩</text>
-</svg>
-"""
-
-# 2. 고급 브랜드 CSS
+# 2. 고급 브랜드 CSS 스타일링
 st.markdown("""
 <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -59,14 +22,14 @@ st.markdown("""
         font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
     }
     
-    /* 상단 배너 박스 */
+    /* 상단 프리미엄 헤더 박스 */
     .brand-header-box {
-        background: linear-gradient(135deg, #0b1329 0%, #1e293b 100%);
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
         padding: 30px 32px;
         border-radius: 16px;
         color: white;
         margin-bottom: 24px;
-        box-shadow: 0 10px 25px -5px rgba(11, 19, 41, 0.3);
+        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25);
         border: 1px solid rgba(255, 255, 255, 0.08);
     }
     
@@ -90,7 +53,7 @@ st.markdown("""
         margin-bottom: 0px;
     }
     
-    /* 헤더 내 로고 & 링크 영역 */
+    /* 로고 & 블로그 안내 링크 영역 */
     .brand-meta-box {
         margin-top: 18px;
         padding-top: 16px;
@@ -102,14 +65,14 @@ st.markdown("""
     
     .brand-logo-container {
         width: 120px;
-        height: 60px;
+        height: 52px;
         background: #ffffff;
         border-radius: 8px;
         padding: 4px 8px;
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     }
     
     .brand-meta-text {
@@ -138,7 +101,7 @@ st.markdown("""
         text-decoration: underline;
     }
 
-    /* 사이드바 프리미엄 카드 디자인 */
+    /* 사이드바 프리미엄 스타일 */
     [data-testid="stSidebar"] {
         background-color: #f8fafc;
         border-right: 1px solid #e2e8f0;
@@ -146,28 +109,22 @@ st.markdown("""
     
     .sidebar-header-box {
         background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-        padding: 16px;
+        padding: 15px;
         border-radius: 10px;
         color: white;
         margin-bottom: 20px;
         text-align: center;
+        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.1);
     }
     
     .sidebar-header-title {
-        font-size: 16px;
+        font-size: 15.5px;
         font-weight: 800;
         letter-spacing: -0.02em;
         margin: 0;
         color: #f8fafc;
     }
     
-    .sidebar-card-label {
-        font-size: 12.5px;
-        font-weight: 700;
-        color: #334155;
-        margin-bottom: 4px;
-    }
-
     /* 하단 안심 안내 카드 */
     .privacy-notice-box {
         background: #f1f5f9;
@@ -195,14 +152,32 @@ st.markdown("""
         margin: 0;
     }
 
-    /* 결과 카드 스타일 */
+    /* 실행 버튼 고급 로열 블루 그라데이션 커스텀 */
+    div.stButton > button {
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+        color: #ffffff !important;
+        border: none !important;
+        border-radius: 10px !important;
+        padding: 14px 24px !important;
+        font-size: 16px !important;
+        font-weight: 800 !important;
+        box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35) !important;
+        transition: all 0.2s ease !important;
+    }
+    div.stButton > button:hover {
+        background: linear-gradient(135deg, #0369a1 0%, #075985 100%) !important;
+        box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45) !important;
+        transform: translateY(-1px) !important;
+    }
+
+    /* 면접 결과 카드 디자인 */
     .interview-card {
         background-color: #ffffff;
         border: 1px solid #e2e8f0;
         border-left: 5px solid #0284c7;
         border-radius: 12px;
         padding: 22px 24px;
-        margin-bottom: 14px;
+        margin-bottom: 12px;
         box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
     }
     
@@ -246,14 +221,41 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 3. 상단 헤더 출력 (파로스 공식 로고 포함)
-st.markdown(f"""
+# 3. 상단 헤더 및 파로스 등대 로고 (코드 깨짐 없는 완전 격리 렌더링)
+st.markdown("""
 <div class="brand-header-box">
     <div class="brand-title">2028 대입 학생부 기반 모의 면접</div>
     <div class="brand-subtitle">학생부 기반 맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div>
     <div class="brand-meta-box">
         <div class="brand-logo-container">
-            {LOGO_SVG}
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%">
+                <defs>
+                    <linearGradient id="beam" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#9333ea" stop-opacity="0.9"/>
+                        <stop offset="100%" stop-color="#475569" stop-opacity="0.7"/>
+                    </linearGradient>
+                    <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#831843"/>
+                        <stop offset="50%" stop-color="#9d174d"/>
+                        <stop offset="100%" stop-color="#be185d"/>
+                    </linearGradient>
+                </defs>
+                <polygon points="120,45 180,68 180,78 120,68" fill="url(#beam)"/>
+                <polygon points="120,85 180,92 180,102 120,95" fill="#64748b"/>
+                <polygon points="280,45 220,68 220,78 280,68" fill="#64748b"/>
+                <polygon points="280,85 220,92 220,102 280,95" fill="url(#beam)"/>
+                <polygon points="200,28 196,48 204,48" fill="#831843"/>
+                <path d="M182,65 Q200,48 218,65 Z" fill="#831843"/>
+                <rect x="180" y="65" width="40" height="28" fill="#ffffff" stroke="#831843" stroke-width="4"/>
+                <line x1="193" y1="65" x2="193" y2="93" stroke="#831843" stroke-width="3"/>
+                <line x1="207" y1="65" x2="207" y2="93" stroke="#831843" stroke-width="3"/>
+                <polygon points="175,98 225,98 245,200 155,200" fill="url(#bodyGrad)"/>
+                <polygon points="171,120 229,120 236,152 164,152" fill="#be185d"/>
+                <polygon points="160,172 240,172 243,186 157,186" fill="#be185d"/>
+                <polygon points="177,98 190,98 215,200 202,200" fill="#fbcfe8" opacity="0.4"/>
+                <rect x="145" y="200" width="110" height="8" rx="3" fill="#831843"/>
+                <text x="200" y="260" font-family="'Pretendard', sans-serif" font-size="44" font-weight="900" fill="#475569" text-anchor="middle" letter-spacing="4">파로스 대입 랩</text>
+            </svg>
         </div>
         <div class="brand-meta-text">
             <span class="brand-blog-name">🏛️ 파로스대입랩 네이버블로그</span>
@@ -263,7 +265,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# 4. API 키 및 핵심 함수
+# 4. 서버 API 키 로드
 GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
 
 def extract_text_from_pdf(uploaded_file):
@@ -315,7 +317,6 @@ def build_system_instruction(question_count: int, difficulty: str) -> str:
 """
 
 def call_gemini_api(prompt: str, count: int, diff: str) -> dict:
-    # 404 오류 해결: 최신 정식 버전 엔드포인트 적용
     url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
     headers = {"Content-Type": "application/json", "x-goog-api-key": GEMINI_API_KEY}
     sys_inst = build_system_instruction(count, diff)
@@ -335,7 +336,7 @@ def call_gemini_api(prompt: str, count: int, diff: str) -> dict:
             t = t[:-3]
         return json.loads(t.strip())
 
-# 5. 견고한 음성 합성 모듈
+# 5. 브라우저 음성 재생 (Web Speech API)
 def render_tts_button(text: str, button_id: str):
     clean_text = json.dumps(text, ensure_ascii=False)
     template = """
@@ -402,11 +403,11 @@ def render_tts_button(text: str, button_id: str):
     html_code = template.replace("btn_ID", f"btn_{button_id}").replace("status_ID", f"status_{button_id}").replace("TEXT_PLACEHOLDER", clean_text)
     components.html(html_code, height=48)
 
-# 6. 사이드바 - 고급 모의면접 패널
+# 6. 사이드바 - 고급 모의 면접 조건 설정
 with st.sidebar:
     st.markdown("""
     <div class="sidebar-header-box">
-        <div class="sidebar-header-title">⚙️ 사정관 평가 조건 설정</div>
+        <div class="sidebar-header-title">⚙️ 모의 면접 조건 설정</div>
     </div>
     """, unsafe_allow_html=True)
     
@@ -432,7 +433,7 @@ with st.sidebar:
         format_func=lambda x: diff_labels.get(x, x)
     )
     
-    # 요청하신 왼쪽 하단 지정 안심 문구
+    # 하단 개인정보 안심 처리 안내 문구
     st.markdown("""
     <div class="privacy-notice-box">
         <div class="privacy-notice-title">🔒 개인정보 안심 처리</div>
@@ -466,8 +467,8 @@ with tab2:
     if not input_text:
         input_text = direct_text
 
-# 8. 질문 생성 및 출력
-if st.button("🚀 심층 면접 질문 추출하기", type="primary", use_container_width=True):
+# 8. 질문 추출 버튼 및 렌더링
+if st.button("🚀 면접 질문 추출하기", use_container_width=True):
     if not input_text.strip():
         st.warning("⚠️ 학생부 내용을 입력하거나 PDF를 올려주세요.")
     else:
