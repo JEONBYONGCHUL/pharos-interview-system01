@@ -1,11 +1,12 @@
-import os, json, urllib.request, urllib.error
+import os, json
 import streamlit as st
 import streamlit.components.v1 as components
 from pypdf import PdfReader
+import google.generativeai as genai
 
-# 1. 페이지 레이아웃 및 설정
+# 1. 페이지 설정 (2027 대입 적용)
 st.set_page_config(
-    page_title="2028 대입 학생부 기반 모의 면접",
+    page_title="2027 대입 학생부 기반 모의 면접",
     page_icon="🎓",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -181,15 +182,15 @@ svg_logo = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 155" widt
 <rect x="36" y="134" width="108" height="6" rx="2" fill="#831843"/>
 </svg>"""
 
-# 3. 메인 타이틀 배너 (가운데 정렬)
+# 3. 메인 타이틀 배너 (2027 대입 적용)
 st.markdown("""
 <div class="header-box">
-    <div class="b-title">2028 대입 학생부 기반 모의 면접</div>
+    <div class="b-title">2027 대입 학생부 기반 모의 면접</div>
     <div class="b-sub">학생부 기반 맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div>
 </div>
 """, unsafe_allow_html=True)
 
-# 4. 파로스 블로그 바 (가운데 정렬, 단일 링크)
+# 4. 파로스 블로그 바
 st.markdown(f"""
 <div class="brand-blog-center">
     <div class="logo-box">{svg_logo}</div>
@@ -200,9 +201,20 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# API 키 로드
-raw_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
+# =====================================================================
+# 핵심 수정: Streamlit Secrets가 없거나 꼬여도 제공해주신 키로 무조건 강제 실행
+# =====================================================================
+FALLBACK_KEY = "AQ.Ab8RN6IS_OUgZ873T4q4PCU7grpIhRjgeUuRc2VQE6NEQ34BEg"
+raw_key = st.secrets.get("GEMINI_API_KEY", FALLBACK_KEY)
+
+# 만약 Secrets에 빈 값이 들어있을 경우를 대비해 한 번 더 체크
+if not raw_key or str(raw_key).strip() == "":
+    raw_key = FALLBACK_KEY
+
 GEMINI_API_KEY = str(raw_key).strip().strip("'").strip('"')
+
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
 
 def extract_pdf(f):
     reader = PdfReader(f)
@@ -250,53 +262,21 @@ def call_gemini(prompt, count, diff):
     }}
   ]
 }}"""
-
-    body = {
-        "contents": [
-            {
-                "role": "user",
-                "parts": [{"text": f"{sys_prompt}\n\n{prompt}"}]
-            }
-        ],
-        "generationConfig": {
-            "temperature": 0.7
-        }
-    }
-    encoded_body = json.dumps(body).encode("utf-8")
-
-    # Bearer 헤더를 완전히 배제하고, 구글이 승인하는 정식 URL ?key= 쿼리 파라미터 방식으로만 호출
-    endpoints_to_try = [
-        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}",
-        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}",
-        f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}",
-        f"https://aiplatform.googleapis.com/v1/publishers/google/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
-    ]
-
-    last_error = ""
-    for url in endpoints_to_try:
-        try:
-            req = urllib.request.Request(
-                url,
-                data=encoded_body,
-                headers={"Content-Type": "application/json"},
-                method="POST"
-            )
-            with urllib.request.urlopen(req) as resp:
-                res = json.loads(resp.read().decode("utf-8"))
-                txt = res["candidates"][0]["content"]["parts"][0]["text"].strip()
-                if txt.startswith("```json"): txt = txt[7:]
-                if txt.startswith("```"): txt = txt[3:]
-                if txt.endswith("```"): txt = txt[:-3]
-                return json.loads(txt.strip())
-        except urllib.error.HTTPError as e:
-            err_body = e.read().decode("utf-8")
-            last_error = f"{e.code} : {err_body}"
-            continue
-        except Exception as e:
-            last_error = str(e)
-            continue
-
-    raise Exception(f"AI 호출 오류: {last_error}")
+    
+    try:
+        # 공식 파이썬 SDK 사용 (AQ키 호환 완벽 지원)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        response = model.generate_content(
+            f"{sys_prompt}\n\n{prompt}",
+            generation_config={"temperature": 0.7}
+        )
+        txt = response.text.strip()
+        if txt.startswith("```json"): txt = txt[7:]
+        if txt.startswith("```"): txt = txt[3:]
+        if txt.endswith("```"): txt = txt[:-3]
+        return json.loads(txt.strip())
+    except Exception as e:
+        raise Exception(f"Google AI 응답 실패: {str(e)}")
 
 def render_tts(text, q_id):
     clean = json.dumps(text, ensure_ascii=False)
@@ -304,7 +284,7 @@ def render_tts(text, q_id):
 <span id="s_{q_id}" style="font-size:12px;color:#64748b;margin-left:10px;"></span>
 <script>
 document.getElementById('b_{q_id}').onclick = function() {{
-    if (!('speechSynthesis' in window)) {{ alert('음성 재생을 지원하지 않는 브라우저입니다.'); return; }}
+    if (!('speechSynthesis' in window)) {{ alert('음성 재생을 지원하지 않는 브라우저 지원 불가'); return; }}
     window.speechSynthesis.cancel();
     let u = new SpeechSynthesisUtterance({clean});
     u.lang = 'ko-KR'; u.rate = 0.93;
