@@ -3,57 +3,186 @@ import streamlit as st
 import streamlit.components.v1 as components
 from pypdf import PdfReader
 
-# 1. 페이지 레이아웃 및 탭 설정
 st.set_page_config(page_title="2028 대입 학생부 기반 모의 면접", page_icon="🎓", layout="wide")
 
-# 2. 고급 브랜드 CSS 스타일링
+# CSS 스타일링
 st.markdown("""
 <style>
 @import url('[https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css](https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css)');
 * { font-family: 'Pretendard', sans-serif; }
-.header-box { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 26px 28px; border-radius: 14px; color: white; margin-bottom: 20px; }
-.b-title { font-size: clamp(20px, 3.2vw, 32px); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
-.b-sub { font-size: 14px; color: #94a3b8; margin: 6px 0 16px 0; }
-.meta-row { display: flex; align-items: center; gap: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.15); }
-.logo-box { width: 62px; height: 52px; background: white; border-radius: 8px; padding: 3px; display: flex; align-items: center; justify-content: center; }
-.blog-name { font-size: 14.5px; font-weight: 700; color: #f8fafc; margin-bottom: 2px; }
-.blog-url { font-size: 13px; color: #ffffff !important; text-decoration: underline !important; }
+
+/* 메인 다크 헤더 */
+.header-box {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    padding: 28px 30px;
+    border-radius: 16px;
+    color: white;
+    margin-bottom: 22px;
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.b-title {
+    font-size: clamp(20px, 3.2vw, 34px);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: #f8fafc;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0;
+    line-height: 1.2;
+}
+.b-sub {
+    font-size: clamp(13px, 1.4vw, 15px);
+    color: #94a3b8;
+    margin-top: 8px;
+    margin-bottom: 18px;
+}
+
+/* 요청하신 흰색 블로그 & 로고 카드 영역 */
+.brand-white-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    width: fit-content;
+    max-width: 100%;
+}
+.logo-container {
+    width: 60px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.brand-meta-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.brand-blog-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: #0f172a;
+}
+.brand-blog-link {
+    font-size: 13.5px;
+    color: #0284c7;
+    text-decoration: underline;
+    font-weight: 600;
+}
+.brand-blog-link:hover {
+    color: #0369a1;
+}
+
+/* 사이드바 스타일링 */
 [data-testid="stSidebar"] { background-color: #f8fafc; border-right: 1px solid #e2e8f0; }
-.side-title { background: #1e293b; color: white; padding: 12px; border-radius: 8px; text-align: center; font-weight: 700; font-size: 15px; margin-bottom: 16px; }
-.priv-box { background: #f1f5f9; padding: 12px; border-radius: 8px; border-left: 4px solid #0284c7; margin-top: 24px; font-size: 12px; color: #475569; }
-div.stButton > button { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important; color: white !important; border: none !important; border-radius: 8px !important; padding: 12px !important; font-size: 16px !important; font-weight: 700 !important; }
-.card { background: white; border: 1px solid #e2e8f0; border-left: 5px solid #0284c7; border-radius: 10px; padding: 18px 20px; margin-bottom: 12px; }
-.q-title { font-size: 16.5px; font-weight: 700; color: #0f172a; margin: 8px 0; }
-.guide { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 8px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; margin-top: 8px; }
+.side-title {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    color: white;
+    padding: 14px;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: 800;
+    font-size: 15.5px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.1);
+}
+.priv-box {
+    background: #f1f5f9;
+    padding: 14px;
+    border-radius: 10px;
+    border-left: 4px solid #0284c7;
+    margin-top: 25px;
+    font-size: 12px;
+    color: #475569;
+    line-height: 1.5;
+    border: 1px solid #cbd5e1;
+}
+
+/* 로열 블루 메인 버튼 */
+div.stButton > button {
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 10px !important;
+    padding: 14px 24px !important;
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35) !important;
+}
+
+/* 면접 결과 카드 */
+.card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-left: 5px solid #0284c7;
+    border-radius: 12px;
+    padding: 20px 22px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+.q-title { font-size: 17px; font-weight: 700; color: #0f172a; margin: 10px 0; line-height: 1.5; }
+.guide {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 600;
+    margin-top: 10px;
+}
 </style>
 """, unsafe_allow_html=True)
 
-# 3. 상단 헤더 및 파로스 등대 심볼 로고
-svg_logo = """<svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" viewBox="0 0 180 155" width="100%" height="100%"><polygon points="12,24 64,42 64,50 12,34" fill="#831843"/><polygon points="12,56 64,56 64,64 12,68" fill="#52525b"/><polygon points="168,24 116,42 116,50 168,34" fill="#52525b"/><polygon points="168,56 116,56 116,64 168,68" fill="#831843"/><polygon points="90,10 87,22 93,22" fill="#831843"/><path d="M72,36 Q90,22 108,36 Z" fill="#831843"/><rect x="75" y="36" width="30" height="16" fill="#fff" stroke="#831843" stroke-width="2.5"/><line x1="82" y1="36" x2="82" y2="52" stroke="#831843" stroke-width="2"/><line x1="90" y1="36" x2="90" y2="52" stroke="#831843" stroke-width="2"/><line x1="98" y1="36" x2="98" y2="52" stroke="#831843" stroke-width="2"/><polygon points="70,52 110,52 106,58 74,58" fill="#831843"/><polygon points="73,59 107,59 116,134 64,134" fill="#831843"/><polygon points="96,59 105,59 74,102 69,96" fill="#fff" opacity="0.92"/><polygon points="107,92 114,103 81,134 71,134" fill="#fff" opacity="0.92"/><rect x="36" y="134" width="108" height="6" rx="2" fill="#831843"/></svg>"""
+# 파로스 등대 원본 벡터 SVG
+svg_logo = """<svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" viewBox="0 0 180 155" width="100%" height="100%">
+<polygon points="12,24 64,42 64,50 12,34" fill="#831843"/>
+<polygon points="12,56 64,56 64,64 12,68" fill="#52525b"/>
+<polygon points="168,24 116,42 116,50 168,34" fill="#52525b"/>
+<polygon points="168,56 116,56 116,64 168,68" fill="#831843"/>
+<polygon points="90,10 87,22 93,22" fill="#831843"/>
+<path d="M72,36 Q90,22 108,36 Z" fill="#831843"/>
+<rect x="75" y="36" width="30" height="16" fill="#fff" stroke="#831843" stroke-width="2.5"/>
+<line x1="82" y1="36" x2="82" y2="52" stroke="#831843" stroke-width="2"/>
+<line x1="90" y1="36" x2="90" y2="52" stroke="#831843" stroke-width="2"/>
+<line x1="98" y1="36" x2="98" y2="52" stroke="#831843" stroke-width="2"/>
+<polygon points="70,52 110,52 106,58 74,58" fill="#831843"/>
+<polygon points="73,59 107,59 116,134 64,134" fill="#831843"/>
+<polygon points="96,59 105,59 74,102 69,96" fill="#fff" opacity="0.95"/>
+<polygon points="107,92 114,103 81,134 71,134" fill="#fff" opacity="0.95"/>
+<rect x="36" y="134" width="108" height="6" rx="2" fill="#831843"/>
+</svg>"""
 
+# 상단 헤더 (흰색 바탕 카드 적용)
 st.markdown(f"""
 <div class="header-box">
     <div class="b-title">2028 대입 학생부 기반 모의 면접</div>
     <div class="b-sub">학생부 기반 맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div>
-    <div class="meta-row">
-        <div class="logo-box">{svg_logo}</div>
-        <div>
-            <div class="blog-name">파로스대입랩 네이버블로그</div>
-            <a class="blog-url" href="[http://blog.naver.com/pharoslab](http://blog.naver.com/pharoslab)" target="_blank">[http://blog.naver.com/pharoslab](http://blog.naver.com/pharoslab)</a>
+    <div class="brand-white-card">
+        <div class="logo-container">{svg_logo}</div>
+        <div class="brand-meta-info">
+            <span class="brand-blog-title">파로스대입랩 네이버블로그</span>
+            <a class="brand-blog-link" href="[http://blog.naver.com/pharoslab](http://blog.naver.com/pharoslab)" target="_blank">[http://blog.naver.com/pharoslab](http://blog.naver.com/pharoslab)</a>
         </div>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", "")).strip()
+raw_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
+GEMINI_API_KEY = str(raw_key).strip().strip("'").strip('"')
 
 def extract_pdf(f):
     reader = PdfReader(f)
-    pages_text = []
+    pages = []
     for p in reader.pages:
         txt = p.extract_text()
-        if txt: pages_text.append(txt)
-    return "\n".join(pages_text)
+        if txt: pages.append(txt)
+    return "\n".join(pages)
 
 def sanitize_text(text, name=""):
     t = text
@@ -68,14 +197,15 @@ def sanitize_text(text, name=""):
 
 def call_gemini(prompt, count, diff):
     diff_desc = {"하": "기초 사실 확인", "중": "탐구 과정 및 문제해결", "상": "심화 이론 및 메커니즘"}.get(diff, "")
-    url = f"[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=){GEMINI_API_KEY}"
+    endpoint = "[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent)"
+    full_url = endpoint + "?key=" + GEMINI_API_KEY
     sys_prompt = f"""당신은 명문대 수석 입학사정관입니다. 학생부를 분석하여 [{diff} 난이도: {diff_desc}]에 부합하는 면접 질문 총 {count}문항을 마크다운 백틱 없이 순수 JSON으로만 출력하세요.
 {{"major":"전공","difficulty":"{diff}","sections":[{{"category":"구분명","questions":[{{"type":"유형","source_quote":"학생부 인용","question":"질문 본문","intent":"출제 의도","high_score_guide":"답변 가이드"}}]}}]}}"""
     body = json.dumps({
         "contents": [{"role": "user", "parts": [{"text": f"{sys_prompt}\n\n{prompt}"}]}],
         "generationConfig": {"temperature": 0.7, "responseMimeType": "application/json"}
     }).encode("utf-8")
-    req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"}, method="POST")
+    req = urllib.request.Request(full_url, data=body, headers={"Content-Type": "application/json"}, method="POST")
     with urllib.request.urlopen(req) as resp:
         res = json.loads(resp.read().decode("utf-8"))
         txt = res["candidates"][0]["content"]["parts"][0]["text"].strip()
@@ -86,8 +216,8 @@ def call_gemini(prompt, count, diff):
 
 def render_tts(text, q_id):
     clean = json.dumps(text, ensure_ascii=False)
-    html = f"""<button id="b_{q_id}" style="background:linear-gradient(180deg,#0284c7,#0369a1);color:white;border:none;border-radius:6px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer;">🔊 음성으로 질문 듣기</button>
-<span id="s_{q_id}" style="font-size:12px;color:#64748b;margin-left:8px;"></span>
+    html = f"""<button id="b_{q_id}" style="background:linear-gradient(180deg,#0284c7,#0369a1);color:white;border:none;border-radius:6px;padding:7px 15px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 5px rgba(2,132,199,0.25);">🔊 음성으로 질문 듣기</button>
+<span id="s_{q_id}" style="font-size:12px;color:#64748b;margin-left:10px;"></span>
 <script>
 document.getElementById('b_{q_id}').onclick = function() {{
     if (!('speechSynthesis' in window)) {{ alert('음성 재생을 지원하지 않는 브라우저입니다.'); return; }}
@@ -101,16 +231,16 @@ document.getElementById('b_{q_id}').onclick = function() {{
     window.speechSynthesis.speak(u);
 }};
 </script>"""
-    components.html(html, height=44)
+    components.html(html, height=46)
 
-# 4. 사이드바 설정
+# 사이드바
 with st.sidebar:
     st.markdown('<div class="side-title">⚙️ 모의 면접 조건 설정</div>', unsafe_allow_html=True)
     student_name = st.text_input("학생 실명 (마스킹용)", placeholder="홍길동 (선택)")
-    target_major = st.text_input("지원 희망 전공/학과", placeholder="예: 신소재공학과, 의예과")
-    q_sel = st.selectbox("추출 면접 문항 수", ["10문항", "5문항", "3문항"], index=0)
+    target_major = st.text_input("지원 희망 전공/학과", placeholder="예: 컴퓨터공학과, 의예과")
+    q_sel = st.selectbox("추출 면접 문항 수", ["10문항", "5문항", "3문항"], index=2)
     q_count = int(q_sel.replace("문항", ""))
-    diff_sel = st.selectbox("평가 난이도", ["중 (탐구/문제해결)", "상 (심화 학술이론)", "하 (기초 사실 확인)"], index=0)
+    diff_sel = st.selectbox("평가 난이도", ["하 (기초 사실 확인)", "중 (탐구/문제해결)", "상 (심화 학술이론)"], index=0)
     difficulty = diff_sel[0]
     st.markdown('<div class="priv-box"><b>🔒 개인정보 안심 처리</b><br>인적사항, 고교명, 가족관계 등 대입 블라인드 항목은 자동 마스킹 처리되니 안심하셔도 됩니다.</div>', unsafe_allow_html=True)
 
@@ -118,7 +248,7 @@ if not GEMINI_API_KEY:
     st.error("⚠️ 서버 설정(Secrets)에 GEMINI_API_KEY가 등록되지 않았습니다.")
     st.stop()
 
-# 5. 본문 입력 탭
+# 메인 탭 (방법 1 우선)
 tab1, tab2 = st.tabs(["✍️ [방법 1] 학생부 텍스트 직접 입력", "📂 [방법 2] 학생부 PDF 업로드"])
 input_text = ""
 
@@ -134,7 +264,7 @@ with tab2:
             input_text = extract_pdf(pdf_file)
             st.success("✅ 학생부 PDF 텍스트 추출 완료")
 
-# 6. 질문 추출 실행 버튼
+# 추출 버튼
 if st.button("🚀 면접 질문 추출하기", use_container_width=True):
     if not input_text.strip():
         st.warning("⚠️ 학생부 내용을 입력하거나 PDF를 올려주세요.")
