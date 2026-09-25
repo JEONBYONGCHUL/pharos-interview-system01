@@ -14,7 +14,7 @@ st.set_page_config(
 # 2. 고급 브랜드 CSS 스타일링
 st.markdown("""
 <style>
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+@import url('[https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css](https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css)');
 * { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; }
 
 /* 사이드바와 메인 타이틀 바의 상단 시작 높이 완벽 일치 */
@@ -168,7 +168,7 @@ div.stButton > button:hover {
 """, unsafe_allow_html=True)
 
 # 파로스 등대 심볼 벡터 SVG
-svg_logo = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 155" width="100%" height="100%">
+svg_logo = """<svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" viewBox="0 0 180 155" width="100%" height="100%">
 <polygon points="12,24 64,42 64,50 12,34" fill="#831843"/>
 <polygon points="12,56 64,56 64,64 12,68" fill="#52525b"/>
 <polygon points="168,24 116,42 116,50 168,34" fill="#52525b"/>
@@ -200,12 +200,12 @@ st.markdown(f"""
     <div class="logo-container">{svg_logo}</div>
     <div class="brand-meta-info">
         <span class="brand-blog-title">파로스대입랩 네이버블로그</span>
-        <a class="brand-blog-link" href="http://blog.naver.com/pharoslab" target="_blank" rel="noopener noreferrer">http://blog.naver.com/pharoslab</a>
+        <a class="brand-blog-link" href="[http://blog.naver.com/pharoslab](http://blog.naver.com/pharoslab)" target="_blank" rel="noopener noreferrer">[http://blog.naver.com/pharoslab](http://blog.naver.com/pharoslab)</a>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# API 키 원본 순수 로드 (마침표나 언더바 등 어떤 특수문자도 훼손하지 않고 그대로 보존)
+# API 키 원본 순수 로드 (특수문자 및 마침표 원형 그대로 보존)
 raw_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
 GEMINI_API_KEY = str(raw_key).strip().strip("'").strip('"')
 
@@ -232,9 +232,6 @@ def sanitize_text(text, name=""):
 
 def call_gemini(prompt, count, diff):
     diff_desc = {"하": "기초 사실 확인", "중": "탐구 과정 및 문제해결", "상": "심화 이론 및 메커니즘"}.get(diff, "")
-    
-    # URL 쿼리 파라미터가 아닌 표준 API 엔드포인트
-    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
     
     sys_prompt = f"""당신은 대한민국 명문 대학 대입 학생부종합전형 수석 입학사정관입니다.
 제공된 학생부 텍스트를 분석하여 [{diff} 난이도: {diff_desc}]에 부합하는 면접 질문 총 {count}문항을 생성하세요.
@@ -276,30 +273,47 @@ def call_gemini(prompt, count, diff):
             "temperature": 0.7
         }
     }
+    encoded_body = json.dumps(body).encode("utf-8")
     
-    req = urllib.request.Request(
-        url,
-        data=json.dumps(body).encode("utf-8"),
-        headers=headers,
-        method="POST"
-    )
+    # 404 NOT_FOUND를 방지하기 위해 구글 엔드포인트 및 모델을 순차적으로 자동 시도
+    candidate_urls = [
+        "[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent)",
+        "[https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent](https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent)",
+        "[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent)",
+        "[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent)",
+        "[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-002:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-002:generateContent)",
+        "[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent)",
+        "[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent)"
+    ]
     
-    try:
-        with urllib.request.urlopen(req) as resp:
-            res = json.loads(resp.read().decode("utf-8"))
-            txt = res["candidates"][0]["content"]["parts"][0]["text"].strip()
-            if txt.startswith("```json"): txt = txt[7:]
-            if txt.startswith("```"): txt = txt[3:]
-            if txt.endswith("```"): txt = txt[:-3]
-            return json.loads(txt.strip())
-    except urllib.error.HTTPError as e:
-        err_body = e.read().decode("utf-8")
+    last_error = None
+    for target_url in candidate_urls:
         try:
-            err_json = json.loads(err_body)
-            err_msg = err_json.get("error", {}).get("message", err_body)
-            raise Exception(f"Google API 오류: {err_msg}")
-        except:
-            raise Exception(f"HTTP 오류 ({e.code}): {err_body}")
+            req = urllib.request.Request(target_url, data=encoded_body, headers=headers, method="POST")
+            with urllib.request.urlopen(req) as resp:
+                res = json.loads(resp.read().decode("utf-8"))
+                txt = res["candidates"][0]["content"]["parts"][0]["text"].strip()
+                if txt.startswith("```json"): txt = txt[7:]
+                if txt.startswith("```"): txt = txt[3:]
+                if txt.endswith("```"): txt = txt[:-3]
+                return json.loads(txt.strip())
+        except urllib.error.HTTPError as e:
+            err_body = e.read().decode("utf-8")
+            if e.code == 404:
+                last_error = err_body
+                continue
+            else:
+                try:
+                    err_json = json.loads(err_body)
+                    err_msg = err_json.get("error", {}).get("message", err_body)
+                    raise Exception(f"Google API 오류 ({e.code}): {err_msg}")
+                except Exception as inner_e:
+                    if "Google API 오류" in str(inner_e): raise inner_e
+                    raise Exception(f"HTTP 오류 ({e.code}): {err_body}")
+        except Exception as e:
+            raise e
+            
+    raise Exception(f"사용 가능한 모델을 찾을 수 없습니다: {last_error}")
 
 def render_tts(text, q_id):
     clean = json.dumps(text, ensure_ascii=False)
