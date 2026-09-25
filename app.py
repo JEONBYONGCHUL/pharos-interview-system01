@@ -1,10 +1,9 @@
-import os, json
+import os, json, urllib.request, urllib.error
 import streamlit as st
 import streamlit.components.v1 as components
 from pypdf import PdfReader
-import google.generativeai as genai
 
-# 1. 페이지 설정 (2027 대입 적용)
+# 1. 페이지 설정
 st.set_page_config(
     page_title="2027 대입 학생부 기반 모의 면접",
     page_icon="🎓",
@@ -18,148 +17,30 @@ st.markdown("""
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 * { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; }
 
-.block-container {
-    padding-top: 2rem !important;
-    padding-bottom: 2rem !important;
-}
-[data-testid="stSidebar"] > div:first-child {
-    padding-top: 2rem !important;
-}
+.block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; }
+[data-testid="stSidebar"] > div:first-child { padding-top: 2rem !important; }
 
-/* 상단 메인 타이틀 배너 (가운데 정렬) */
-.header-box {
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-    padding: 28px 20px;
-    border-radius: 14px;
-    color: white;
-    margin-bottom: 16px;
-    text-align: center;
-    box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.25);
-}
-.b-title {
-    font-size: clamp(22px, 3.2vw, 34px);
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    color: #f8fafc;
-    margin: 0;
-    line-height: 1.2;
-}
-.b-sub {
-    font-size: clamp(13px, 1.3vw, 15px);
-    color: #94a3b8;
-    margin-top: 8px;
-    margin-bottom: 0px;
-}
+.header-box { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 28px 20px; border-radius: 14px; color: white; margin-bottom: 16px; text-align: center; box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.25); }
+.b-title { font-size: clamp(22px, 3.2vw, 34px); font-weight: 800; letter-spacing: -0.03em; color: #f8fafc; margin: 0; line-height: 1.2; }
+.b-sub { font-size: clamp(13px, 1.3vw, 15px); color: #94a3b8; margin-top: 8px; margin-bottom: 0px; }
 
-/* 파로스 블로그 바 (가운데 정렬, 단일 링크) */
-.brand-blog-center {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-    padding: 12px 0 18px 0;
-    margin-bottom: 22px;
-    border-bottom: 1px solid #e2e8f0;
-}
-.logo-box {
-    width: 46px;
-    height: 42px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.brand-info-box {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-}
-.brand-title-text {
-    font-size: 15px;
-    font-weight: 800;
-    color: #0f172a;
-}
-.brand-link-text {
-    font-size: 13.5px;
-    color: #0284c7 !important;
-    text-decoration: none !important;
-    font-weight: 600;
-}
-.brand-link-text:hover {
-    color: #0369a1 !important;
-    text-decoration: underline !important;
-}
+.brand-blog-center { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 12px 0 18px 0; margin-bottom: 22px; border-bottom: 1px solid #e2e8f0; }
+.logo-box { width: 46px; height: 42px; display: flex; align-items: center; justify-content: center; }
+.brand-info-box { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.brand-title-text { font-size: 15px; font-weight: 800; color: #0f172a; }
+.brand-link-text { font-size: 13.5px; color: #0284c7 !important; text-decoration: none !important; font-weight: 600; }
+.brand-link-text:hover { color: #0369a1 !important; text-decoration: underline !important; }
 
-/* 사이드바 스타일링 */
-[data-testid="stSidebar"] {
-    background-color: #f8fafc;
-    border-right: 1px solid #e2e8f0;
-}
-.side-title {
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-    color: white;
-    padding: 14px;
-    border-radius: 10px;
-    text-align: center;
-    font-weight: 800;
-    font-size: 15.5px;
-    margin-bottom: 16px;
-}
-.priv-box {
-    background: #f1f5f9;
-    padding: 14px;
-    border-radius: 10px;
-    border-left: 4px solid #0284c7;
-    margin-top: 25px;
-    font-size: 12px;
-    color: #475569;
-    line-height: 1.5;
-    border: 1px solid #cbd5e1;
-}
+[data-testid="stSidebar"] { background-color: #f8fafc; border-right: 1px solid #e2e8f0; }
+.side-title { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white; padding: 14px; border-radius: 10px; text-align: center; font-weight: 800; font-size: 15.5px; margin-bottom: 16px; }
+.priv-box { background: #f1f5f9; padding: 14px; border-radius: 10px; border-left: 4px solid #0284c7; margin-top: 25px; font-size: 12px; color: #475569; line-height: 1.5; border: 1px solid #cbd5e1; }
 
-/* 실행 버튼 */
-div.stButton > button {
-    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
-    color: white !important;
-    border: none !important;
-    border-radius: 10px !important;
-    padding: 14px 24px !important;
-    font-size: 16px !important;
-    font-weight: 800 !important;
-    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35) !important;
-}
-div.stButton > button:hover {
-    background: linear-gradient(135deg, #0369a1 0%, #075985 100%) !important;
-    box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45) !important;
-}
+div.stButton > button { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important; color: white !important; border: none !important; border-radius: 10px !important; padding: 14px 24px !important; font-size: 16px !important; font-weight: 800 !important; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35) !important; }
+div.stButton > button:hover { background: linear-gradient(135deg, #0369a1 0%, #075985 100%) !important; box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45) !important; }
 
-/* 질문 카드 디자인 */
-.card {
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-left: 5px solid #0284c7;
-    border-radius: 12px;
-    padding: 20px 22px;
-    margin-bottom: 14px;
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
-}
-.q-title {
-    font-size: 17px;
-    font-weight: 700;
-    color: #0f172a;
-    margin: 10px 0;
-    line-height: 1.5;
-}
-.guide {
-    background: #f0fdf4;
-    border: 1px solid #bbf7d0;
-    color: #166534;
-    padding: 10px 14px;
-    border-radius: 8px;
-    font-size: 13.5px;
-    font-weight: 600;
-    margin-top: 10px;
-}
+.card { background: white; border: 1px solid #e2e8f0; border-left: 5px solid #0284c7; border-radius: 12px; padding: 20px 22px; margin-bottom: 14px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04); }
+.q-title { font-size: 17px; font-weight: 700; color: #0f172a; margin: 10px 0; line-height: 1.5; }
+.guide { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 10px 14px; border-radius: 8px; font-size: 13.5px; font-weight: 600; margin-top: 10px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -182,7 +63,7 @@ svg_logo = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 155" widt
 <rect x="36" y="134" width="108" height="6" rx="2" fill="#831843"/>
 </svg>"""
 
-# 3. 메인 타이틀 배너 (2027 대입 적용)
+# 3. 메인 배너
 st.markdown("""
 <div class="header-box">
     <div class="b-title">2027 대입 학생부 기반 모의 면접</div>
@@ -196,33 +77,23 @@ st.markdown(f"""
     <div class="logo-box">{svg_logo}</div>
     <div class="brand-info-box">
         <span class="brand-title-text">파로스대입랩 네이버블로그</span>
-        <a class="brand-link-text" href="https://blog.naver.com/pharoslab" target="_blank" rel="noopener noreferrer">https://blog.naver.com/pharoslab</a>
+        <a class="brand-link-text" href="https://blog.naver.com/pharoslab" target="_blank">https://blog.naver.com/pharoslab</a>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
 # =====================================================================
-# 핵심 수정: Streamlit Secrets가 없거나 꼬여도 제공해주신 키로 무조건 강제 실행
+# API 키 로드 (어떤 AQ 키든 전부 호환됩니다)
 # =====================================================================
-FALLBACK_KEY = "AQ.Ab8RN6IS_OUgZ873T4q4PCU7grpIhRjgeUuRc2VQE6NEQ34BEg"
-raw_key = st.secrets.get("GEMINI_API_KEY", FALLBACK_KEY)
-
-# 만약 Secrets에 빈 값이 들어있을 경우를 대비해 한 번 더 체크
-if not raw_key or str(raw_key).strip() == "":
-    raw_key = FALLBACK_KEY
-
+raw_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
 GEMINI_API_KEY = str(raw_key).strip().strip("'").strip('"')
-
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
 
 def extract_pdf(f):
     reader = PdfReader(f)
     pages = []
     for p in reader.pages:
         txt = p.extract_text()
-        if txt:
-            pages.append(txt)
+        if txt: pages.append(txt)
     return "\n".join(pages)
 
 def sanitize_text(text, name=""):
@@ -237,6 +108,9 @@ def sanitize_text(text, name=""):
     t = re.sub(r'\b(아버지|어머니|부모님|부친|모친|형|누나|오빠|언니|동생|외조부|조부|외조모|조모|삼촌|이모|고모)\b', "[가족관계]", t)
     return t
 
+# =====================================================================
+# 핵심 수정: 구글 SDK를 버리고, 순수 HTTP 직통 코드로 AQ. 키를 안전하게 전송
+# =====================================================================
 def call_gemini(prompt, count, diff):
     diff_desc = {"하": "기초 사실 확인", "중": "탐구 과정 및 문제해결", "상": "심화 이론 및 메커니즘"}.get(diff, "")
     
@@ -263,20 +137,38 @@ def call_gemini(prompt, count, diff):
   ]
 }}"""
     
+    body = {
+        "contents": [{"role": "user", "parts": [{"text": f"{sys_prompt}\n\n{prompt}"}]}],
+        "generationConfig": {"temperature": 0.7, "response_mime_type": "application/json"}
+    }
+    encoded_body = json.dumps(body).encode("utf-8")
+    
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+    
+    # x-goog-api-key 전용 헤더를 통해 AQ. 키를 안전하게 전달합니다.
+    req = urllib.request.Request(
+        url,
+        data=encoded_body,
+        headers={
+            "Content-Type": "application/json",
+            "x-goog-api-key": GEMINI_API_KEY
+        },
+        method="POST"
+    )
+    
     try:
-        # 공식 파이썬 SDK 사용 (AQ키 호환 완벽 지원)
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        response = model.generate_content(
-            f"{sys_prompt}\n\n{prompt}",
-            generation_config={"temperature": 0.7}
-        )
-        txt = response.text.strip()
-        if txt.startswith("```json"): txt = txt[7:]
-        if txt.startswith("```"): txt = txt[3:]
-        if txt.endswith("```"): txt = txt[:-3]
-        return json.loads(txt.strip())
+        with urllib.request.urlopen(req) as resp:
+            res = json.loads(resp.read().decode("utf-8"))
+            txt = res["candidates"][0]["content"]["parts"][0]["text"].strip()
+            if txt.startswith("```json"): txt = txt[7:]
+            if txt.startswith("```"): txt = txt[3:]
+            if txt.endswith("```"): txt = txt[:-3]
+            return json.loads(txt.strip())
+    except urllib.error.HTTPError as e:
+        err_msg = e.read().decode("utf-8")
+        raise Exception(f"HTTP {e.code} 에러: {err_msg}")
     except Exception as e:
-        raise Exception(f"Google AI 응답 실패: {str(e)}")
+        raise Exception(f"API 요청 실패: {str(e)}")
 
 def render_tts(text, q_id):
     clean = json.dumps(text, ensure_ascii=False)
@@ -284,7 +176,7 @@ def render_tts(text, q_id):
 <span id="s_{q_id}" style="font-size:12px;color:#64748b;margin-left:10px;"></span>
 <script>
 document.getElementById('b_{q_id}').onclick = function() {{
-    if (!('speechSynthesis' in window)) {{ alert('음성 재생을 지원하지 않는 브라우저 지원 불가'); return; }}
+    if (!('speechSynthesis' in window)) {{ alert('음성 재생을 지원하지 않는 브라우저입니다.'); return; }}
     window.speechSynthesis.cancel();
     let u = new SpeechSynthesisUtterance({clean});
     u.lang = 'ko-KR'; u.rate = 0.93;
