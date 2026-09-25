@@ -1,10 +1,9 @@
-import os, json
+import os, json, urllib.request, urllib.error
 import streamlit as st
 import streamlit.components.v1 as components
 from pypdf import PdfReader
-import google.generativeai as genai
 
-# 1. 페이지 레이아웃 및 설정
+# 1. 페이지 설정
 st.set_page_config(
     page_title="2028 대입 학생부 기반 모의 면접",
     page_icon="🎓",
@@ -26,7 +25,7 @@ st.markdown("""
     padding-top: 2rem !important;
 }
 
-/* 상단 메인 타이틀 배너 (가운데 정렬) */
+/* 상단 메인 타이틀 배너 (정확한 문구 & 가운데 정렬) */
 .header-box {
     background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
     padding: 28px 20px;
@@ -51,7 +50,7 @@ st.markdown("""
     margin-bottom: 0px;
 }
 
-/* 파로스 블로그 바 (가운데 정렬, 단일 링크) */
+/* 파로스 블로그 바 */
 .brand-blog-center {
     display: flex;
     align-items: center;
@@ -90,7 +89,7 @@ st.markdown("""
     text-decoration: underline !important;
 }
 
-/* 사이드바 스타일링 */
+/* 사이드바 */
 [data-testid="stSidebar"] {
     background-color: #f8fafc;
     border-right: 1px solid #e2e8f0;
@@ -133,7 +132,7 @@ div.stButton > button:hover {
     box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45) !important;
 }
 
-/* 질문 카드 디자인 */
+/* 결과 카드 */
 .card {
     background: white;
     border: 1px solid #e2e8f0;
@@ -163,7 +162,7 @@ div.stButton > button:hover {
 </style>
 """, unsafe_allow_html=True)
 
-# 파로스 등대 심볼 벡터 SVG
+# 로고 SVG
 svg_logo = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 155" width="100%" height="100%">
 <polygon points="12,24 64,42 64,50 12,34" fill="#831843"/>
 <polygon points="12,56 64,56 64,64 12,68" fill="#52525b"/>
@@ -182,7 +181,7 @@ svg_logo = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 155" widt
 <rect x="36" y="134" width="108" height="6" rx="2" fill="#831843"/>
 </svg>"""
 
-# 3. 메인 타이틀 배너 (가운데 정렬)
+# 3. 배너 (정확한 텍스트로 고정)
 st.markdown("""
 <div class="header-box">
     <div class="b-title">2028 대입 학생부 기반 모의 면접</div>
@@ -190,7 +189,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 4. 파로스 블로그 바 (가운데 정렬, 꺾쇠 없는 단일 링크)
+# 4. 블로그 바 (단일 링크, 꺾쇠 없음)
 st.markdown(f"""
 <div class="brand-blog-center">
     <div class="logo-box">{svg_logo}</div>
@@ -201,13 +200,9 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# API 키 로드
+# API 키 불러오기
 raw_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
 GEMINI_API_KEY = str(raw_key).strip().strip("'").strip('"')
-
-# Google GenAI 공식 클라이언트 초기화
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
 
 def extract_pdf(f):
     reader = PdfReader(f)
@@ -256,34 +251,62 @@ def call_gemini(prompt, count, diff):
   ]
 }}"""
 
-    full_prompt = f"{sys_prompt}\n\n{prompt}"
-    
-    # 지원 가능한 모델 순차 호출
-    models_to_try = [
-        "gemini-2.0-flash",
-        "gemini-1.5-flash",
-        "gemini-1.5-pro",
-        "gemini-1.0-pro"
+    body = {
+        "contents": [
+            {
+                "role": "user",
+                "parts": [{"text": f"{sys_prompt}\n\n{prompt}"}]
+            }
+        ],
+        "generationConfig": {
+            "temperature": 0.7
+        }
+    }
+    encoded_body = json.dumps(body).encode("utf-8")
+
+    # AQ. 유료 키를 구글 클라우드가 거부하지 못하도록 지원하는 3대 호출 규격
+    call_attempts = [
+        # 규격 1: URL query 파라미터 (Google Cloud API Key 공식 규격)
+        {
+            "url": f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}",
+            "headers": {"Content-Type": "application/json"}
+        },
+        {
+            "url": f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}",
+            "headers": {"Content-Type": "application/json"}
+        },
+        # 규격 2: x-goog-api-key 헤더
+        {
+            "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
+            "headers": {"Content-Type": "application/json", "x-goog-api-key": GEMINI_API_KEY}
+        },
+        # 규격 3: Bearer OAuth/Token 헤더
+        {
+            "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
+            "headers": {"Content-Type": "application/json", "Authorization": f"Bearer {GEMINI_API_KEY}"}
+        }
     ]
-    
-    last_err = ""
-    for m in models_to_try:
+
+    last_error = ""
+    for attempt in call_attempts:
         try:
-            model = genai.GenerativeModel(m)
-            response = model.generate_content(
-                full_prompt,
-                generation_config={"temperature": 0.7}
-            )
-            txt = response.text.strip()
-            if txt.startswith("```json"): txt = txt[7:]
-            if txt.startswith("```"): txt = txt[3:]
-            if txt.endswith("```"): txt = txt[:-3]
-            return json.loads(txt.strip())
-        except Exception as e:
-            last_err = str(e)
+            req = urllib.request.Request(attempt["url"], data=encoded_body, headers=attempt["headers"], method="POST")
+            with urllib.request.urlopen(req) as resp:
+                res = json.loads(resp.read().decode("utf-8"))
+                txt = res["candidates"][0]["content"]["parts"][0]["text"].strip()
+                if txt.startswith("```json"): txt = txt[7:]
+                if txt.startswith("```"): txt = txt[3:]
+                if txt.endswith("```"): txt = txt[:-3]
+                return json.loads(txt.strip())
+        except urllib.error.HTTPError as e:
+            err_body = e.read().decode("utf-8")
+            last_error = f"{e.code} : {err_body}"
             continue
-            
-    raise Exception(f"AI 모델 응답 생성 실패: {last_err}")
+        except Exception as e:
+            last_error = str(e)
+            continue
+
+    raise Exception(f"AI 호출 오류: {last_error}")
 
 def render_tts(text, q_id):
     clean = json.dumps(text, ensure_ascii=False)
@@ -335,7 +358,7 @@ with tab2:
             input_text = extract_pdf(pdf_file)
             st.success("✅ 학생부 PDF 텍스트 추출 완료")
 
-# 7. 면접 질문 추출 버튼
+# 7. 질문 추출 실행 버튼
 if st.button("🚀 면접 질문 추출하기", use_container_width=True):
     if not input_text.strip():
         st.warning("⚠️ 학생부 내용을 입력하거나 PDF를 올려주세요.")
