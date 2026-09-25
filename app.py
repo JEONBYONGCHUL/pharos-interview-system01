@@ -6,7 +6,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 from pypdf import PdfReader
 
-# 1. 페이지 레이아웃 및 브라우저 탭 설정
+# 1. 페이지 레이아웃 및 탭 타이틀 설정
 st.set_page_config(
     page_title="2028 대입 학생부 기반 모의 면접",
     page_icon="🎓",
@@ -14,7 +14,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. 고급스러운 디자인 CSS 스타일링
+# 2. 고급 브랜드 CSS 스타일링
 st.markdown("""
 <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -23,10 +23,10 @@ st.markdown("""
         font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
     }
     
-    /* 상단 프리미엄 헤더 박스 */
+    /* 상단 헤더 박스 */
     .brand-header-box {
         background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-        padding: 34px 30px;
+        padding: 32px 30px;
         border-radius: 16px;
         color: white;
         margin-bottom: 25px;
@@ -56,9 +56,9 @@ st.markdown("""
         letter-spacing: -0.01em;
     }
     
-    /* 블로그 안내 메타 박스 */
+    /* 블로그 메타 박스 */
     .brand-meta-box {
-        margin-top: 20px;
+        margin-top: 18px;
         padding-top: 16px;
         border-top: 1px solid rgba(148, 163, 184, 0.2);
         display: flex;
@@ -97,7 +97,6 @@ st.markdown("""
         text-decoration: none;
         transition: color 0.2s;
     }
-    
     .brand-blog-url:hover {
         color: #7dd3fc;
         text-decoration: underline;
@@ -109,14 +108,14 @@ st.markdown("""
         border-right: 1px solid #e2e8f0;
     }
     
-    /* 면접 질문 카드 디자인 */
+    /* 질문 카드 디자인 */
     .interview-card {
         background-color: #ffffff;
         border: 1px solid #e2e8f0;
         border-left: 5px solid #0284c7;
         border-radius: 12px;
         padding: 22px 24px;
-        margin-bottom: 15px;
+        margin-bottom: 12px;
         box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
     }
     
@@ -155,12 +154,12 @@ st.markdown("""
         font-size: 13.5px;
         font-weight: 600;
         margin-top: 10px;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# 3. 타이틀 및 블로그 헤더 출력
+# 3. 브랜드 헤더 렌더링
 st.markdown("""
 <div class="brand-header-box">
     <div class="brand-title">2028 대입 학생부 기반 모의 면접</div>
@@ -177,7 +176,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 4. API 키 로드
+# 4. API 키 연동
 GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
 
 def extract_text_from_pdf(uploaded_file):
@@ -212,7 +211,7 @@ def build_system_instruction(question_count: int, difficulty: str) -> str:
   "difficulty": "{difficulty}",
   "sections": [
     {{
-      "category": "영역 구분명 (예: 자율·진로활동, 국어·사회 교과 과세특 등)",
+      "category": "영역 구분명 (예: 창체 진로·자율활동, 교과 세부능력및특기사항 등)",
       "questions": [
         {{
           "type": "문항 유형",
@@ -244,12 +243,12 @@ def call_gemini_api(prompt: str, count: int, diff: str) -> dict:
         if t.endswith("```"): t = t[:-3]
         return json.loads(t.strip())
 
-# 5. 브라우저 음성 재생 (Web Speech API)
+# 5. 브라우저 내장 음성 합성 모듈 (문법 오류 없는 안전 템플릿)
 def render_tts_button(text: str, button_id: str):
-    clean_text = text.replace('"', '\\"').replace("'", "\\'").replace('\n', ' ')
-    html_code = f"""
-    <div style="margin-bottom: 20px;">
-        <button id="btn_{button_id}" style="
+    clean_text = json.dumps(text, ensure_ascii=False)
+    template = """
+    <div style="margin-bottom: 18px;">
+        <button id="btn_ID" style="
             display: inline-flex;
             align-items: center;
             gap: 6px;
@@ -266,40 +265,74 @@ def render_tts_button(text: str, button_id: str):
         ">
             🔊 음성으로 질문 듣기
         </button>
-        <span id="status_{button_id}" style="font-size: 12px; color: #64748b; margin-left: 10px;"></span>
+        <span id="status_ID" style="font-size: 12px; color: #64748b; margin-left: 10px;"></span>
     </div>
     <script>
-        const btn_{button_id} = document.getElementById('btn_{button_id}');
-        const status_{button_id} = document.getElementById('status_{button_id}');
+        const btn_ID = document.getElementById('btn_ID');
+        const status_ID = document.getElementById('status_ID');
+        const textToRead = TEXT_PLACEHOLDER;
         
-        btn_{button_id}.addEventListener('click', function() {{
-            if (!('speechSynthesis' in window)) {{
+        btn_ID.addEventListener('click', function() {
+            if (!('speechSynthesis' in window)) {
                 alert('사용 중이신 브라우저가 음성 듣기를 지원하지 않습니다. Chrome 또는 Edge 브라우저를 권장합니다.');
                 return;
-            }}
+            }
             
             window.speechSynthesis.cancel();
             
-            const utter = new SpeechSynthesisUtterance("{clean_text}");
+            const utter = new SpeechSynthesisUtterance(textToRead);
             utter.lang = 'ko-KR';
-            utter.rate = 0.95;
+            utter.rate = 0.93;
             utter.pitch = 1.0;
             
-            let voices = window.speechSynthesis.getVoices();
-            let koVoice = voices.find(v => v.lang.includes('ko') || v.lang.includes('KO'));
-            if (koVoice) {{
+            const voices = window.speechSynthesis.getVoices();
+            const koVoice = voices.find(v => v.lang && (v.lang.includes('ko') || v.lang.includes('KO')));
+            if (koVoice) {
                 utter.voice = koVoice;
-            }}
+            }
             
-            utter.onstart = function() {{
-                btn_{button_id}.style.background = '#475569';
-                status_{button_id}.innerText = '낭독 중...';
-            }};
+            utter.onstart = function() {
+                btn_ID.style.background = '#475569';
+                status_ID.innerText = '낭독 중...';
+            };
             
-            utter.onend = function() {{
-                btn_{button_id}.style.background = 'linear-gradient(180deg, #0284c7 0%, #0369a1 100%)';
-                status_{button_id}.innerText = '';
-            }};
+            utter.onend = function() {
+                btn_ID.style.background = 'linear-gradient(180deg, #0284c7 0%, #0369a1 100%)';
+                status_ID.innerText = '';
+            };
             
-            utter.onerror = function() {{
-                btn_{button_id}.
+            utter.onerror = function() {
+                btn_ID.style.background = 'linear-gradient(180deg, #0284c7 0%, #0369a1 100%)';
+                status_ID.innerText = '';
+            };
+            
+            window.speechSynthesis.speak(utter);
+        });
+        
+        if ('speechSynthesis' in window && window.speechSynthesis.onvoiceschanged !== undefined) {
+            window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
+        }
+    </script>
+    """
+    html_code = template.replace("btn_ID", f"btn_{button_id}").replace("status_ID", f"status_{button_id}").replace("TEXT_PLACEHOLDER", clean_text)
+    components.html(html_code, height=48)
+
+# 6. 사이드바 - 고급 모의면접 조건 설정
+with st.sidebar:
+    st.markdown("### ⚙️ 모의면접 조건 설정")
+    st.markdown("---")
+    student_name = st.text_input("학생 실명 (마스킹용)", placeholder="홍길동 (미입력 가능)")
+    target_major = st.text_input("지원 희망 전공/학과", placeholder="예: 경영학과, 인공지능학과")
+    
+    q_count = st.selectbox(
+        "추출 면접 문항 수", 
+        [10, 5, 3], 
+        index=0, 
+        format_func=lambda x: f"🎯 {x}문항 심층 면접"
+    )
+    
+    difficulty = st.selectbox(
+        "평가 난이도", 
+        ["하", "중", "상"], 
+        index=1,
+        format_func=lambda x: f"난이도 [{x}]: " + {"하": "기초 사실 확인", "중": "탐구/문제해결", "상": "심화 학술이
