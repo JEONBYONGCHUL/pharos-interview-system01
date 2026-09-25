@@ -3,13 +3,13 @@ import streamlit as st
 import streamlit.components.v1 as components
 from pypdf import PdfReader
 
-# 1. 페이지 설정
+# 1. 페이지 레이아웃 및 탭 설정
 st.set_page_config(page_title="2028 대입 학생부 기반 모의 면접", page_icon="🎓", layout="wide")
 
 # 2. 고급 브랜드 CSS 스타일링
 st.markdown("""
 <style>
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+@import url('[https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css](https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css)');
 * { font-family: 'Pretendard', sans-serif; }
 .header-box { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 26px 28px; border-radius: 14px; color: white; margin-bottom: 20px; }
 .b-title { font-size: clamp(20px, 3.2vw, 32px); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
@@ -29,7 +29,7 @@ div.stButton > button { background: linear-gradient(135deg, #0284c7 0%, #0369a1 
 """, unsafe_allow_html=True)
 
 # 3. 상단 헤더 및 파로스 등대 심볼 로고
-svg_logo = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 155" width="100%" height="100%"><polygon points="12,24 64,42 64,50 12,34" fill="#831843"/><polygon points="12,56 64,56 64,64 12,68" fill="#52525b"/><polygon points="168,24 116,42 116,50 168,34" fill="#52525b"/><polygon points="168,56 116,56 116,64 168,68" fill="#831843"/><polygon points="90,10 87,22 93,22" fill="#831843"/><path d="M72,36 Q90,22 108,36 Z" fill="#831843"/><rect x="75" y="36" width="30" height="16" fill="#fff" stroke="#831843" stroke-width="2.5"/><line x1="82" y1="36" x2="82" y2="52" stroke="#831843" stroke-width="2"/><line x1="90" y1="36" x2="90" y2="52" stroke="#831843" stroke-width="2"/><line x1="98" y1="36" x2="98" y2="52" stroke="#831843" stroke-width="2"/><polygon points="70,52 110,52 106,58 74,58" fill="#831843"/><polygon points="73,59 107,59 116,134 64,134" fill="#831843"/><polygon points="96,59 105,59 74,102 69,96" fill="#fff" opacity="0.92"/><polygon points="107,92 114,103 81,134 71,134" fill="#fff" opacity="0.92"/><rect x="36" y="134" width="108" height="6" rx="2" fill="#831843"/></svg>"""
+svg_logo = """<svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" viewBox="0 0 180 155" width="100%" height="100%"><polygon points="12,24 64,42 64,50 12,34" fill="#831843"/><polygon points="12,56 64,56 64,64 12,68" fill="#52525b"/><polygon points="168,24 116,42 116,50 168,34" fill="#52525b"/><polygon points="168,56 116,56 116,64 168,68" fill="#831843"/><polygon points="90,10 87,22 93,22" fill="#831843"/><path d="M72,36 Q90,22 108,36 Z" fill="#831843"/><rect x="75" y="36" width="30" height="16" fill="#fff" stroke="#831843" stroke-width="2.5"/><line x1="82" y1="36" x2="82" y2="52" stroke="#831843" stroke-width="2"/><line x1="90" y1="36" x2="90" y2="52" stroke="#831843" stroke-width="2"/><line x1="98" y1="36" x2="98" y2="52" stroke="#831843" stroke-width="2"/><polygon points="70,52 110,52 106,58 74,58" fill="#831843"/><polygon points="73,59 107,59 116,134 64,134" fill="#831843"/><polygon points="96,59 105,59 74,102 69,96" fill="#fff" opacity="0.92"/><polygon points="107,92 114,103 81,134 71,134" fill="#fff" opacity="0.92"/><rect x="36" y="134" width="108" height="6" rx="2" fill="#831843"/></svg>"""
 
 st.markdown(f"""
 <div class="header-box">
@@ -39,7 +39,7 @@ st.markdown(f"""
         <div class="logo-box">{svg_logo}</div>
         <div>
             <div class="blog-name">파로스대입랩 네이버블로그</div>
-            <a class="blog-url" href="http://blog.naver.com/pharoslab" target="_blank">http://blog.naver.com/pharoslab</a>
+            <a class="blog-url" href="[http://blog.naver.com/pharoslab](http://blog.naver.com/pharoslab)" target="_blank">[http://blog.naver.com/pharoslab](http://blog.naver.com/pharoslab)</a>
         </div>
     </div>
 </div>
@@ -68,7 +68,7 @@ def sanitize_text(text, name=""):
 
 def call_gemini(prompt, count, diff):
     diff_desc = {"하": "기초 사실 확인", "중": "탐구 과정 및 문제해결", "상": "심화 이론 및 메커니즘"}.get(diff, "")
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+    url = f"[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=){GEMINI_API_KEY}"
     sys_prompt = f"""당신은 명문대 수석 입학사정관입니다. 학생부를 분석하여 [{diff} 난이도: {diff_desc}]에 부합하는 면접 질문 총 {count}문항을 마크다운 백틱 없이 순수 JSON으로만 출력하세요.
 {{"major":"전공","difficulty":"{diff}","sections":[{{"category":"구분명","questions":[{{"type":"유형","source_quote":"학생부 인용","question":"질문 본문","intent":"출제 의도","high_score_guide":"답변 가이드"}}]}}]}}"""
     body = json.dumps({
@@ -148,4 +148,18 @@ if st.button("🚀 면접 질문 추출하기", use_container_width=True):
                 st.markdown("---")
                 q_num = 1
                 for sec in res.get("sections", []):
-                    st
+                    st.markdown(f"#### 📁 {sec.get('category')}")
+                    for item in sec.get("questions", []):
+                        st.markdown(f"""
+                        <div class="card">
+                            <span style="background:#e0f2fe;color:#0369a1;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;">[{item.get('type', '심층 면접')}] · 난이도 {difficulty}</span>
+                            <div class="q-title">Q{q_num}. {item.get('question')}</div>
+                            <div style="font-size:13.5px;color:#475569;margin-bottom:5px;">📌 <b>학생부 근거:</b> <i>"{item.get('source_quote')}"</i></div>
+                            <div style="font-size:13.5px;color:#475569;margin-bottom:5px;">🎯 <b>출제 의도:</b> {item.get('intent')}</div>
+                            <div class="guide">💡 <b>고득점 답변 가이드:</b> {item.get('high_score_guide')}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        render_tts(item.get('question'), f"q_{q_num}")
+                        q_num += 1
+            except Exception as e:
+                st.error(f"오류가 발생했습니다: {str(e)}")
