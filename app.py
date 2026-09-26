@@ -75,7 +75,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # =====================================================================
-# API 키 직접 연동 방식 (오류 제로)
+# API 키 직접 연동 방식
 # =====================================================================
 try:
     API_KEY = st.secrets["GEMINI_API_KEY"]
@@ -135,8 +135,8 @@ def call_gemini(prompt, count, diff):
     }
     encoded_body = json.dumps(body).encode("utf-8")
     
-    # 더 이상 403, 404가 발생하지 않는 순수 API 호환 서버 주소입니다.
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
+    # 💡 [핵심 수정 부분] 단종된 gemini-1.5-flash 대신 최신 모델인 gemini-2.5-flash 적용
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
     
     req = urllib.request.Request(
         url,
