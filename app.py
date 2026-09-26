@@ -135,8 +135,8 @@ def call_gemini(prompt, count, diff):
     }
     encoded_body = json.dumps(body).encode("utf-8")
     
-    # 💡 [핵심 수정 부분] 단종된 gemini-1.5-flash 대신 최신 모델인 gemini-2.5-flash 적용
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
+    # 💡 [핵심 수정 부분] 구글의 최신 정책에 맞춰 gemini-3.8-flash 모델 적용!
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={API_KEY}"
     
     req = urllib.request.Request(
         url,
