@@ -85,11 +85,12 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # =====================================================================
-# 서비스 계정(JSON) 인증 완벽 연동
+# 서비스 계정(JSON) 인증 연동
 # =====================================================================
 try:
     GCP_SA_JSON = st.secrets["GCP_SA_JSON"]
     sa_info = json.loads(GCP_SA_JSON)
+    GCP_PROJECT_ID = sa_info["project_id"]
 except Exception:
     st.error("⚠️ Streamlit Secrets에 올바른 GCP_SA_JSON이 등록되지 않았습니다.")
     st.stop()
@@ -124,7 +125,7 @@ def sanitize_text(text, name=""):
     return t
 
 # =====================================================================
-# 404 오류 해결: 올바른 표준 AI Studio 주소로 요청 전송
+# 기업용 Vertex AI 정식 서버 (버전 -001 명시)
 # =====================================================================
 def call_gemini(prompt, count, diff):
     diff_desc = {"하": "기초 사실 확인", "중": "탐구 과정 및 문제해결", "상": "심화 이론 및 메커니즘"}.get(diff, "")
@@ -154,12 +155,11 @@ def call_gemini(prompt, count, diff):
     
     body = {
         "contents": [{"role": "user", "parts": [{"text": f"{sys_prompt}\n\n{prompt}"}]}],
-        "generationConfig": {"temperature": 0.7, "response_mime_type": "application/json"}
+        "generationConfig": {"temperature": 0.7}
     }
     encoded_body = json.dumps(body).encode("utf-8")
     
-    # 404가 발생했던 주소를 정확한 서버로 교체했습니다.
-    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+    url = f"https://us-central1-aiplatform.googleapis.com/v1/projects/{GCP_PROJECT_ID}/locations/us-central1/publishers/google/models/gemini-1.5-flash-001:generateContent"
     token = get_token()
     
     req = urllib.request.Request(
