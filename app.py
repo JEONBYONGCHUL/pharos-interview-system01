@@ -85,17 +85,16 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # =====================================================================
-# 구글 고장난 API 키 시스템을 우회하는 정식 인증 (Vertex AI Service Account)
+# 서비스 계정(JSON) 인증 완벽 연동
 # =====================================================================
 try:
     GCP_SA_JSON = st.secrets["GCP_SA_JSON"]
     sa_info = json.loads(GCP_SA_JSON)
-    GCP_PROJECT_ID = sa_info["project_id"]
 except Exception:
     st.error("⚠️ Streamlit Secrets에 올바른 GCP_SA_JSON이 등록되지 않았습니다.")
     st.stop()
 
-def get_vertex_token():
+def get_token():
     credentials = service_account.Credentials.from_service_account_info(
         sa_info,
         scopes=["https://www.googleapis.com/auth/cloud-platform"]
@@ -124,7 +123,10 @@ def sanitize_text(text, name=""):
     t = re.sub(r'\b(아버지|어머니|부모님|부친|모친|형|누나|오빠|언니|동생|외조부|조부|외조모|조모|삼촌|이모|고모)\b', "[가족관계]", t)
     return t
 
-def call_vertex_gemini(prompt, count, diff):
+# =====================================================================
+# 404 오류 해결: 올바른 표준 AI Studio 주소로 요청 전송
+# =====================================================================
+def call_gemini(prompt, count, diff):
     diff_desc = {"하": "기초 사실 확인", "중": "탐구 과정 및 문제해결", "상": "심화 이론 및 메커니즘"}.get(diff, "")
     
     sys_prompt = f"""당신은 대한민국 명문 대학 대입 학생부종합전형 수석 입학사정관입니다.
@@ -152,12 +154,13 @@ def call_vertex_gemini(prompt, count, diff):
     
     body = {
         "contents": [{"role": "user", "parts": [{"text": f"{sys_prompt}\n\n{prompt}"}]}],
-        "generationConfig": {"temperature": 0.7}
+        "generationConfig": {"temperature": 0.7, "response_mime_type": "application/json"}
     }
     encoded_body = json.dumps(body).encode("utf-8")
     
-    url = f"https://us-central1-aiplatform.googleapis.com/v1/projects/{GCP_PROJECT_ID}/locations/us-central1/publishers/google/models/gemini-1.5-flash:generateContent"
-    token = get_vertex_token()
+    # 404가 발생했던 주소를 정확한 서버로 교체했습니다.
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+    token = get_token()
     
     req = urllib.request.Request(
         url,
@@ -240,7 +243,7 @@ if st.button("🚀 면접 질문 추출하기", use_container_width=True):
             sanitized = sanitize_text(input_text, student_name)
             prompt = f"지원 전공: {target_major or '미지정'}\n\n[학생부 원문]\n{sanitized}"
             try:
-                res = call_vertex_gemini(prompt, q_count, difficulty)
+                res = call_gemini(prompt, q_count, difficulty)
                 st.success(f"🎉 총 {q_count}문항 추출 완료 (난이도: {difficulty})")
                 st.markdown("---")
                 q_num = 1
