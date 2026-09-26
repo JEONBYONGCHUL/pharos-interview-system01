@@ -2,6 +2,8 @@ import os, json, urllib.request, urllib.error
 import streamlit as st
 import streamlit.components.v1 as components
 from pypdf import PdfReader
+from google.oauth2 import service_account
+from google.auth.transport.requests import Request as AuthRequest
 
 # 1. 페이지 설정
 st.set_page_config(
@@ -83,10 +85,24 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # =====================================================================
-# API 키 로드 (어떤 AQ 키든 전부 호환됩니다)
+# 구글 고장난 API 키 시스템을 우회하는 정식 인증 (Vertex AI Service Account)
 # =====================================================================
-raw_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
-GEMINI_API_KEY = str(raw_key).strip().strip("'").strip('"')
+try:
+    GCP_SA_JSON = st.secrets["GCP_SA_JSON"]
+    sa_info = json.loads(GCP_SA_JSON)
+    GCP_PROJECT_ID = sa_info["project_id"]
+except Exception:
+    st.error("⚠️ Streamlit Secrets에 올바른 GCP_SA_JSON이 등록되지 않았습니다.")
+    st.stop()
+
+def get_vertex_token():
+    credentials = service_account.Credentials.from_service_account_info(
+        sa_info,
+        scopes=["https://www.googleapis.com/auth/cloud-platform"]
+    )
+    request = AuthRequest()
+    credentials.refresh(request)
+    return credentials.token
 
 def extract_pdf(f):
     reader = PdfReader(f)
@@ -108,10 +124,7 @@ def sanitize_text(text, name=""):
     t = re.sub(r'\b(아버지|어머니|부모님|부친|모친|형|누나|오빠|언니|동생|외조부|조부|외조모|조모|삼촌|이모|고모)\b', "[가족관계]", t)
     return t
 
-# =====================================================================
-# 핵심 수정: 구글 SDK를 버리고, 순수 HTTP 직통 코드로 AQ. 키를 안전하게 전송
-# =====================================================================
-def call_gemini(prompt, count, diff):
+def call_vertex_gemini(prompt, count, diff):
     diff_desc = {"하": "기초 사실 확인", "중": "탐구 과정 및 문제해결", "상": "심화 이론 및 메커니즘"}.get(diff, "")
     
     sys_prompt = f"""당신은 대한민국 명문 대학 대입 학생부종합전형 수석 입학사정관입니다.
@@ -139,19 +152,19 @@ def call_gemini(prompt, count, diff):
     
     body = {
         "contents": [{"role": "user", "parts": [{"text": f"{sys_prompt}\n\n{prompt}"}]}],
-        "generationConfig": {"temperature": 0.7, "response_mime_type": "application/json"}
+        "generationConfig": {"temperature": 0.7}
     }
     encoded_body = json.dumps(body).encode("utf-8")
     
-    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+    url = f"https://us-central1-aiplatform.googleapis.com/v1/projects/{GCP_PROJECT_ID}/locations/us-central1/publishers/google/models/gemini-1.5-flash:generateContent"
+    token = get_vertex_token()
     
-    # x-goog-api-key 전용 헤더를 통해 AQ. 키를 안전하게 전달합니다.
     req = urllib.request.Request(
         url,
         data=encoded_body,
         headers={
             "Content-Type": "application/json",
-            "x-goog-api-key": GEMINI_API_KEY
+            "Authorization": f"Bearer {token}"
         },
         method="POST"
     )
@@ -159,6 +172,8 @@ def call_gemini(prompt, count, diff):
     try:
         with urllib.request.urlopen(req) as resp:
             res = json.loads(resp.read().decode("utf-8"))
+            if "candidates" not in res:
+                raise Exception("생성된 응답이 없습니다.")
             txt = res["candidates"][0]["content"]["parts"][0]["text"].strip()
             if txt.startswith("```json"): txt = txt[7:]
             if txt.startswith("```"): txt = txt[3:]
@@ -200,10 +215,6 @@ with st.sidebar:
     difficulty = diff_sel[0]
     st.markdown('<div class="priv-box"><b>🔒 개인정보 안심 처리</b><br>인적사항, 고교명, 가족관계 등 대입 블라인드 항목은 자동 마스킹 처리되니 안심하셔도 됩니다.</div>', unsafe_allow_html=True)
 
-if not GEMINI_API_KEY:
-    st.error("⚠️ 서버 설정(Secrets)에 GEMINI_API_KEY가 등록되지 않았습니다.")
-    st.stop()
-
 # 6. 메인 탭
 tab1, tab2 = st.tabs(["✍️ [방법 1] 학생부 텍스트 직접 입력", "📂 [방법 2] 학생부 PDF 업로드"])
 input_text = ""
@@ -229,7 +240,7 @@ if st.button("🚀 면접 질문 추출하기", use_container_width=True):
             sanitized = sanitize_text(input_text, student_name)
             prompt = f"지원 전공: {target_major or '미지정'}\n\n[학생부 원문]\n{sanitized}"
             try:
-                res = call_gemini(prompt, q_count, difficulty)
+                res = call_vertex_gemini(prompt, q_count, difficulty)
                 st.success(f"🎉 총 {q_count}문항 추출 완료 (난이도: {difficulty})")
                 st.markdown("---")
                 q_num = 1
