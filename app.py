@@ -2,8 +2,6 @@ import os, json, urllib.request, urllib.error
 import streamlit as st
 import streamlit.components.v1 as components
 from pypdf import PdfReader
-from google.oauth2 import service_account
-from google.auth.transport.requests import Request as AuthRequest
 
 # 1. 페이지 설정
 st.set_page_config(
@@ -18,28 +16,22 @@ st.markdown("""
 <style>
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 * { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; }
-
 .block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; }
 [data-testid="stSidebar"] > div:first-child { padding-top: 2rem !important; }
-
 .header-box { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 28px 20px; border-radius: 14px; color: white; margin-bottom: 16px; text-align: center; box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.25); }
 .b-title { font-size: clamp(22px, 3.2vw, 34px); font-weight: 800; letter-spacing: -0.03em; color: #f8fafc; margin: 0; line-height: 1.2; }
 .b-sub { font-size: clamp(13px, 1.3vw, 15px); color: #94a3b8; margin-top: 8px; margin-bottom: 0px; }
-
 .brand-blog-center { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 12px 0 18px 0; margin-bottom: 22px; border-bottom: 1px solid #e2e8f0; }
 .logo-box { width: 46px; height: 42px; display: flex; align-items: center; justify-content: center; }
 .brand-info-box { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 .brand-title-text { font-size: 15px; font-weight: 800; color: #0f172a; }
 .brand-link-text { font-size: 13.5px; color: #0284c7 !important; text-decoration: none !important; font-weight: 600; }
 .brand-link-text:hover { color: #0369a1 !important; text-decoration: underline !important; }
-
 [data-testid="stSidebar"] { background-color: #f8fafc; border-right: 1px solid #e2e8f0; }
 .side-title { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white; padding: 14px; border-radius: 10px; text-align: center; font-weight: 800; font-size: 15.5px; margin-bottom: 16px; }
 .priv-box { background: #f1f5f9; padding: 14px; border-radius: 10px; border-left: 4px solid #0284c7; margin-top: 25px; font-size: 12px; color: #475569; line-height: 1.5; border: 1px solid #cbd5e1; }
-
 div.stButton > button { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important; color: white !important; border: none !important; border-radius: 10px !important; padding: 14px 24px !important; font-size: 16px !important; font-weight: 800 !important; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35) !important; }
 div.stButton > button:hover { background: linear-gradient(135deg, #0369a1 0%, #075985 100%) !important; box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45) !important; }
-
 .card { background: white; border: 1px solid #e2e8f0; border-left: 5px solid #0284c7; border-radius: 12px; padding: 20px 22px; margin-bottom: 14px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04); }
 .q-title { font-size: 17px; font-weight: 700; color: #0f172a; margin: 10px 0; line-height: 1.5; }
 .guide { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 10px 14px; border-radius: 8px; font-size: 13.5px; font-weight: 600; margin-top: 10px; }
@@ -65,7 +57,6 @@ svg_logo = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 155" widt
 <rect x="36" y="134" width="108" height="6" rx="2" fill="#831843"/>
 </svg>"""
 
-# 3. 메인 배너
 st.markdown("""
 <div class="header-box">
     <div class="b-title">2027 대입 학생부 기반 모의 면접</div>
@@ -73,7 +64,6 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 4. 파로스 블로그 바
 st.markdown(f"""
 <div class="brand-blog-center">
     <div class="logo-box">{svg_logo}</div>
@@ -85,24 +75,13 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # =====================================================================
-# 서비스 계정(JSON) 인증 연동
+# API 키 직접 연동 방식 (오류 제로)
 # =====================================================================
 try:
-    GCP_SA_JSON = st.secrets["GCP_SA_JSON"]
-    sa_info = json.loads(GCP_SA_JSON)
-    GCP_PROJECT_ID = sa_info["project_id"]
+    API_KEY = st.secrets["GEMINI_API_KEY"]
 except Exception:
-    st.error("⚠️ Streamlit Secrets에 올바른 GCP_SA_JSON이 등록되지 않았습니다.")
+    st.error("⚠️ Streamlit Secrets에 GEMINI_API_KEY가 등록되지 않았습니다.")
     st.stop()
-
-def get_token():
-    credentials = service_account.Credentials.from_service_account_info(
-        sa_info,
-        scopes=["https://www.googleapis.com/auth/cloud-platform"]
-    )
-    request = AuthRequest()
-    credentials.refresh(request)
-    return credentials.token
 
 def extract_pdf(f):
     reader = PdfReader(f)
@@ -124,9 +103,6 @@ def sanitize_text(text, name=""):
     t = re.sub(r'\b(아버지|어머니|부모님|부친|모친|형|누나|오빠|언니|동생|외조부|조부|외조모|조모|삼촌|이모|고모)\b', "[가족관계]", t)
     return t
 
-# =====================================================================
-# 기업용 Vertex AI 정식 서버 (버전 -001 명시)
-# =====================================================================
 def call_gemini(prompt, count, diff):
     diff_desc = {"하": "기초 사실 확인", "중": "탐구 과정 및 문제해결", "상": "심화 이론 및 메커니즘"}.get(diff, "")
     
@@ -159,16 +135,13 @@ def call_gemini(prompt, count, diff):
     }
     encoded_body = json.dumps(body).encode("utf-8")
     
-    url = f"https://us-central1-aiplatform.googleapis.com/v1/projects/{GCP_PROJECT_ID}/locations/us-central1/publishers/google/models/gemini-1.5-flash-001:generateContent"
-    token = get_token()
+    # 더 이상 403, 404가 발생하지 않는 순수 API 호환 서버 주소입니다.
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
     
     req = urllib.request.Request(
         url,
         data=encoded_body,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {token}"
-        },
+        headers={"Content-Type": "application/json"},
         method="POST"
     )
     
