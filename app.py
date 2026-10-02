@@ -11,13 +11,24 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. 스타일링 CSS
+# 2. 스타일링 CSS (디자인 및 워터마크/메뉴/헤더 숨기기)
 st.markdown("""
 <style>
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 * { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; }
 .block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; }
 [data-testid="stSidebar"] > div:first-child { padding-top: 2rem !important; }
+
+/* 🚫 하단 Streamlit 워터마크(광고) 완벽하게 숨기기 */
+footer {visibility: hidden;}
+
+/* 🚫 우측 상단 햄버거 메뉴(점 3개) 숨기기 */
+#MainMenu {visibility: hidden;}
+
+/* 🚫 상단 헤더 빈 여백 숨기기 */
+header {visibility: hidden;}
+
+/* 🎨 파로스 랩 커스텀 디자인 요소 */
 .header-box { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 28px 20px; border-radius: 14px; color: white; margin-bottom: 16px; text-align: center; box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.25); }
 .b-title { font-size: clamp(22px, 3.2vw, 34px); font-weight: 800; letter-spacing: -0.03em; color: #f8fafc; margin: 0; line-height: 1.2; }
 .b-sub { font-size: clamp(13px, 1.3vw, 15px); color: #94a3b8; margin-top: 8px; margin-bottom: 0px; }
@@ -192,7 +203,7 @@ with st.sidebar:
     st.markdown('<div class="priv-box"><b>🔒 개인정보 안심 처리</b><br>인적사항, 고교명, 가족관계 등 대입 블라인드 항목은 자동 마스킹 처리되니 안심하셔도 됩니다.</div>', unsafe_allow_html=True)
 
 # 6. 메인 탭
-tab1, tab2 = st.tabs(["✍️ [방법 1] 학생부 텍스트 직접 입력", "📂 [방법 2] 학생부 PDF 업로드"])
+tab1, tab2 = st.tabs(["✍️️ [방법 1] 학생부 텍스트 직접 입력", "📂 [방법 2] 학생부 PDF 업로드"])
 input_text = ""
 
 with tab1:
