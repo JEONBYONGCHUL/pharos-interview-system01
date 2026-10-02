@@ -3,10 +3,10 @@ import streamlit as st
 import streamlit.components.v1 as components
 from pypdf import PdfReader
 
-# 1. 페이지 설정
+# 1. 페이지 설정 (파로스 로고로 변경 완료)
 st.set_page_config(
     page_title="2027 대입 학생부 기반 모의 면접",
-    page_icon="🎓",
+    page_icon="logo.png",  # 👈 브라우저 탭 아이콘을 파로스 로고로 변경
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -227,7 +227,7 @@ with st.sidebar:
     st.markdown('<div class="priv-box"><b>🔒 개인정보 안심 처리</b><br>인적사항, 고교명, 가족관계 등 대입 블라인드 항목은 자동 마스킹 처리되니 안심하셔도 됩니다.</div>', unsafe_allow_html=True)
 
 # 6. 메인 탭
-tab1, tab2 = st.tabs(["✍️ [방법 1] 학생부 텍스트 직접 입력", "📂 [방법 2] 학생부 PDF 업로드"])
+tab1, tab2 = st.tabs(["✍️️ [방법 1] 학생부 텍스트 직접 입력", "📂 [방법 2] 학생부 PDF 업로드"])
 input_text = ""
 
 with tab1:
@@ -247,7 +247,8 @@ if st.button("🚀 면접 질문 추출하기", use_container_width=True):
     if not input_text.strip():
         st.warning("⚠️ 학생부 내용을 입력하거나 PDF를 올려주세요.")
     else:
-        with st.spinner("사정관 AI가 학생부 탐구 내용 및 교과 개념을 정밀 분석 중입니다..."):
+        # 👇 로딩 안내 문구 수정 (모의 면접관께서...)
+        with st.spinner("모의 면접관께서 학생부 탐구 내용 및 교과 개념을 정밀 분석 중입니다..."):
             sanitized = sanitize_text(input_text, student_name)
             prompt = f"지원 전공: {target_major or '미지정'}\n\n[학생부 원문]\n{sanitized}"
             try:
