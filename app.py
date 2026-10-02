@@ -51,15 +51,15 @@ div[class^="viewerBadge"] {
 
 /* 👇 핵심 수정: white-space: nowrap; 으로 절대 밑으로 떨어지지 않고 무조건 한 줄에 나오도록 강제 고정 */
 .b-title { 
-    font-size: clamp(16px, 4vw, 32px); /* 모바일 화면에 한 줄로 들어가도록 최소 크기(16px) 최적화 */
+    font-size: clamp(16px, 4vw, 32px); 
     font-weight: 800; 
     letter-spacing: -0.04em; 
     color: #f8fafc; 
     margin: 0; 
     line-height: 1.3; 
-    white-space: nowrap; /* 글씨가 절대 두 줄로 나뉘지 않음 */
+    white-space: nowrap; 
     overflow: hidden; 
-    text-overflow: ellipsis; /* 혹시라도 기기가 너무 작으면 말줄임표(...) 처리 */
+    text-overflow: ellipsis; 
 }
 .b-sub { font-size: clamp(11.5px, 2.5vw, 15px); color: #94a3b8; margin-top: 8px; margin-bottom: 0px; word-break: keep-all; }
 
@@ -247,4 +247,27 @@ if st.button("🚀 면접 질문 추출하기", use_container_width=True):
     if not input_text.strip():
         st.warning("⚠️ 학생부 내용을 입력하거나 PDF를 올려주세요.")
     else:
-        with st.spinner("사정관 AI가 학생부 탐구 내용 및 교과 개념을 정밀 분석 중
+        with st.spinner("사정관 AI가 학생부 탐구 내용 및 교과 개념을 정밀 분석 중입니다..."):
+            sanitized = sanitize_text(input_text, student_name)
+            prompt = f"지원 전공: {target_major or '미지정'}\n\n[학생부 원문]\n{sanitized}"
+            try:
+                res = call_gemini(prompt, q_count, difficulty)
+                st.success(f"🎉 총 {q_count}문항 추출 완료 (난이도: {difficulty})")
+                st.markdown("---")
+                q_num = 1
+                for sec in res.get("sections", []):
+                    st.markdown(f"#### 📁 {sec.get('category')}")
+                    for item in sec.get("questions", []):
+                        st.markdown(f"""
+                        <div class="card">
+                            <span style="background:#e0f2fe;color:#0369a1;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;">[{item.get('type', '심층 면접')}] · 난이도 {difficulty}</span>
+                            <div class="q-title">Q{q_num}. {item.get('question')}</div>
+                            <div style="font-size:13.5px;color:#475569;margin-bottom:5px;">📌 <b>학생부 근거:</b> <i>"{item.get('source_quote')}"</i></div>
+                            <div style="font-size:13.5px;color:#475569;margin-bottom:5px;">🎯 <b>출제 의도:</b> {item.get('intent')}</div>
+                            <div class="guide">💡 <b>고득점 답변 가이드:</b> {item.get('high_score_guide')}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        render_tts(item.get('question'), f"q_{q_num}")
+                        q_num += 1
+            except Exception as e:
+                st.error(f"오류가 발생했습니다: {str(e)}")
