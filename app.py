@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. 스타일링 CSS (디자인 및 워터마크 핀셋 숨기기)
+# 2. 스타일링 CSS (디자인, 워터마크 숨기기, 타이틀 한 줄 고정)
 st.markdown("""
 <style>
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -21,14 +21,19 @@ st.markdown("""
 .block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; }
 [data-testid="stSidebar"] > div:first-child { padding-top: 2rem !important; }
 
-/* 🚫 1. 하단 광고 완벽 차단 (모바일 스트림릿 꼼수 방어용 초강력 태그) */
-footer {visibility: hidden !important; display: none !important;}
-footer * {visibility: hidden !important; display: none !important;}
-[data-testid="stFooter"] {display: none !important;}
-[data-testid="stBottom"] {display: none !important;}
-.viewerBadge_container, .viewerBadge_link {display: none !important;}
-.st-emotion-cache-16txtl3, .st-emotion-cache-1wbqy5l {display: none !important;} /* 모바일 전용 동적 클래스 강제 차단 */
-div[class^="viewerBadge"] {display: none !important;}
+/* 🚫 1. 하단 광고 및 우측 하단 플로팅 버튼(Manage app 등) 완벽 차단 */
+footer, 
+[data-testid="stFooter"], 
+[data-testid="stBottom"],
+[data-testid="stAppDeployButton"],
+[data-testid="manage-app-button"],
+.viewerBadge_container, 
+.viewerBadge_link, 
+a[href^="https://streamlit.io"],
+div[class^="viewerBadge"] {
+    visibility: hidden !important; 
+    display: none !important;
+}
 
 /* 💡 2. 상단 헤더 배경은 투명하게 (사이드바 화살표 '>' 와 점 3개 메뉴 정상 작동) */
 [data-testid="stHeader"] {
@@ -36,15 +41,28 @@ div[class^="viewerBadge"] {display: none !important;}
     box-shadow: none !important;
 }
 
-/* 🚫 3. 점 3개 메뉴 속 'Deploy' 버튼 등 개발자용 아이콘 숨기기 */
+/* 🚫 3. 점 3개 메뉴 속 'Deploy' 버튼 등 불필요한 아이콘 숨기기 */
 .stDeployButton, [data-testid="stDeployButton"] {
     display: none !important;
 }
 
 /* 🎨 4. 파로스 랩 커스텀 디자인 요소 */
-.header-box { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 28px 20px; border-radius: 14px; color: white; margin-bottom: 16px; text-align: center; box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.25); }
-.b-title { font-size: clamp(22px, 3.2vw, 34px); font-weight: 800; letter-spacing: -0.03em; color: #f8fafc; margin: 0; line-height: 1.2; }
-.b-sub { font-size: clamp(13px, 1.3vw, 15px); color: #94a3b8; margin-top: 8px; margin-bottom: 0px; }
+.header-box { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 24px 15px; border-radius: 14px; color: white; margin-bottom: 16px; text-align: center; box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.25); }
+
+/* 👇 핵심 수정: white-space: nowrap; 으로 절대 밑으로 떨어지지 않고 무조건 한 줄에 나오도록 강제 고정 */
+.b-title { 
+    font-size: clamp(16px, 4vw, 32px); /* 모바일 화면에 한 줄로 들어가도록 최소 크기(16px) 최적화 */
+    font-weight: 800; 
+    letter-spacing: -0.04em; 
+    color: #f8fafc; 
+    margin: 0; 
+    line-height: 1.3; 
+    white-space: nowrap; /* 글씨가 절대 두 줄로 나뉘지 않음 */
+    overflow: hidden; 
+    text-overflow: ellipsis; /* 혹시라도 기기가 너무 작으면 말줄임표(...) 처리 */
+}
+.b-sub { font-size: clamp(11.5px, 2.5vw, 15px); color: #94a3b8; margin-top: 8px; margin-bottom: 0px; word-break: keep-all; }
+
 .brand-blog-center { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 12px 0 18px 0; margin-bottom: 22px; border-bottom: 1px solid #e2e8f0; }
 .logo-box { width: 46px; height: 42px; display: flex; align-items: center; justify-content: center; }
 .brand-info-box { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
@@ -57,8 +75,8 @@ div[class^="viewerBadge"] {display: none !important;}
 div.stButton > button { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important; color: white !important; border: none !important; border-radius: 10px !important; padding: 14px 24px !important; font-size: 16px !important; font-weight: 800 !important; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35) !important; }
 div.stButton > button:hover { background: linear-gradient(135deg, #0369a1 0%, #075985 100%) !important; box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45) !important; }
 .card { background: white; border: 1px solid #e2e8f0; border-left: 5px solid #0284c7; border-radius: 12px; padding: 20px 22px; margin-bottom: 14px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04); }
-.q-title { font-size: 17px; font-weight: 700; color: #0f172a; margin: 10px 0; line-height: 1.5; }
-.guide { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 10px 14px; border-radius: 8px; font-size: 13.5px; font-weight: 600; margin-top: 10px; }
+.q-title { font-size: 17px; font-weight: 700; color: #0f172a; margin: 10px 0; line-height: 1.5; word-break: keep-all; }
+.guide { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 10px 14px; border-radius: 8px; font-size: 13.5px; font-weight: 600; margin-top: 10px; word-break: keep-all; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -209,7 +227,7 @@ with st.sidebar:
     st.markdown('<div class="priv-box"><b>🔒 개인정보 안심 처리</b><br>인적사항, 고교명, 가족관계 등 대입 블라인드 항목은 자동 마스킹 처리되니 안심하셔도 됩니다.</div>', unsafe_allow_html=True)
 
 # 6. 메인 탭
-tab1, tab2 = st.tabs(["✍ [방법 1] 학생부 텍스트 직접 입력", "📂 [방법 2] 학생부 PDF 업로드"])
+tab1, tab2 = st.tabs(["✍️ [방법 1] 학생부 텍스트 직접 입력", "📂 [방법 2] 학생부 PDF 업로드"])
 input_text = ""
 
 with tab1:
@@ -229,27 +247,4 @@ if st.button("🚀 면접 질문 추출하기", use_container_width=True):
     if not input_text.strip():
         st.warning("⚠️ 학생부 내용을 입력하거나 PDF를 올려주세요.")
     else:
-        with st.spinner("사정관 AI가 학생부 탐구 내용 및 교과 개념을 정밀 분석 중입니다..."):
-            sanitized = sanitize_text(input_text, student_name)
-            prompt = f"지원 전공: {target_major or '미지정'}\n\n[학생부 원문]\n{sanitized}"
-            try:
-                res = call_gemini(prompt, q_count, difficulty)
-                st.success(f"🎉 총 {q_count}문항 추출 완료 (난이도: {difficulty})")
-                st.markdown("---")
-                q_num = 1
-                for sec in res.get("sections", []):
-                    st.markdown(f"#### 📁 {sec.get('category')}")
-                    for item in sec.get("questions", []):
-                        st.markdown(f"""
-                        <div class="card">
-                            <span style="background:#e0f2fe;color:#0369a1;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;">[{item.get('type', '심층 면접')}] · 난이도 {difficulty}</span>
-                            <div class="q-title">Q{q_num}. {item.get('question')}</div>
-                            <div style="font-size:13.5px;color:#475569;margin-bottom:5px;">📌 <b>학생부 근거:</b> <i>"{item.get('source_quote')}"</i></div>
-                            <div style="font-size:13.5px;color:#475569;margin-bottom:5px;">🎯 <b>출제 의도:</b> {item.get('intent')}</div>
-                            <div class="guide">💡 <b>고득점 답변 가이드:</b> {item.get('high_score_guide')}</div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        render_tts(item.get('question'), f"q_{q_num}")
-                        q_num += 1
-            except Exception as e:
-                st.error(f"오류가 발생했습니다: {str(e)}")
+        with st.spinner("사정관 AI가 학생부 탐구 내용 및 교과 개념을 정밀 분석 중
