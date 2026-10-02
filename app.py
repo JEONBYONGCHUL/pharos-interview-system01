@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. 스타일링 CSS (디자인 및 워터마크/메뉴/헤더 숨기기)
+# 2. 스타일링 CSS (디자인 및 워터마크/메뉴 숨기기, 모바일 설정창 살리기)
 st.markdown("""
 <style>
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -19,16 +19,19 @@ st.markdown("""
 .block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; }
 [data-testid="stSidebar"] > div:first-child { padding-top: 2rem !important; }
 
-/* 🚫 하단 Streamlit 워터마크(광고) 완벽하게 숨기기 */
-footer {visibility: hidden;}
+/* 🚫 1. 하단 Streamlit 광고(워터마크) 완벽 제거 (PC/모바일 공통) */
+footer {visibility: hidden !important; display: none !important;}
+[data-testid="stFooter"] {display: none !important;}
 
-/* 🚫 우측 상단 햄버거 메뉴(점 3개) 숨기기 */
-#MainMenu {visibility: hidden;}
+/* 🚫 2. 우측 상단 메뉴(점 3개) 및 깃허브/Deploy 아이콘 숨기기 */
+#MainMenu {visibility: hidden !important; display: none !important;}
+[data-testid="stToolbar"] {visibility: hidden !important; display: none !important;}
 
-/* 🚫 상단 헤더 빈 여백 숨기기 */
-header {visibility: hidden;}
+/* 💡 3. 상단 헤더 복구 (모바일 조건 설정창 열기 버튼을 살리기 위함) 
+   단, 배경을 투명하게 하고 그림자를 없애 PC에서는 빈 여백 없이 깔끔하게 보이도록 마술을 부립니다. */
+header { background-color: transparent !important; box-shadow: none !important; }
 
-/* 🎨 파로스 랩 커스텀 디자인 요소 */
+/* 🎨 4. 파로스 랩 커스텀 디자인 요소 */
 .header-box { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 28px 20px; border-radius: 14px; color: white; margin-bottom: 16px; text-align: center; box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.25); }
 .b-title { font-size: clamp(22px, 3.2vw, 34px); font-weight: 800; letter-spacing: -0.03em; color: #f8fafc; margin: 0; line-height: 1.2; }
 .b-sub { font-size: clamp(13px, 1.3vw, 15px); color: #94a3b8; margin-top: 8px; margin-bottom: 0px; }
@@ -146,7 +149,6 @@ def call_gemini(prompt, count, diff):
     }
     encoded_body = json.dumps(body).encode("utf-8")
     
-    # 💡 [핵심 수정 부분] 구글의 최신 정책에 맞춰 gemini-3.8-flash 모델 적용!
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={API_KEY}"
     
     req = urllib.request.Request(
@@ -203,7 +205,7 @@ with st.sidebar:
     st.markdown('<div class="priv-box"><b>🔒 개인정보 안심 처리</b><br>인적사항, 고교명, 가족관계 등 대입 블라인드 항목은 자동 마스킹 처리되니 안심하셔도 됩니다.</div>', unsafe_allow_html=True)
 
 # 6. 메인 탭
-tab1, tab2 = st.tabs(["✍️️ [방법 1] 학생부 텍스트 직접 입력", "📂 [방법 2] 학생부 PDF 업로드"])
+tab1, tab2 = st.tabs(["✍ [방법 1] 학생부 텍스트 직접 입력", "📂 [방법 2] 학생부 PDF 업로드"])
 input_text = ""
 
 with tab1:
