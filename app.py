@@ -11,25 +11,32 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. 스타일링 CSS (디자인 및 워터마크/메뉴 숨기기, 모바일 설정창 살리기)
+# 2. 스타일링 CSS (디자인 및 워터마크 핀셋 숨기기)
 st.markdown("""
 <style>
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 * { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; }
+
+/* 상하단 여백 최소화 */
 .block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; }
 [data-testid="stSidebar"] > div:first-child { padding-top: 2rem !important; }
 
-/* 🚫 1. 하단 Streamlit 광고(워터마크) 완벽 제거 (PC/모바일 공통) */
-footer {visibility: hidden !important; display: none !important;}
-[data-testid="stFooter"] {display: none !important;}
+/* 🚫 1. 하단 Streamlit 광고(워터마크) 완벽 제거 (모바일 초강력 대응) */
+footer, [data-testid="stFooter"], .viewerBadge_container, .viewerBadge_link {
+    visibility: hidden !important; 
+    display: none !important;
+}
 
-/* 🚫 2. 우측 상단 메뉴(점 3개) 및 깃허브/Deploy 아이콘 숨기기 */
-#MainMenu {visibility: hidden !important; display: none !important;}
-[data-testid="stToolbar"] {visibility: hidden !important; display: none !important;}
+/* 💡 2. 상단 헤더 배경은 투명하게 (사이드바 화살표 '>' 와 점 3개 메뉴는 정상 작동하도록 유지) */
+[data-testid="stHeader"] {
+    background: transparent !important;
+    box-shadow: none !important;
+}
 
-/* 💡 3. 상단 헤더 복구 (모바일 조건 설정창 열기 버튼을 살리기 위함) 
-   단, 배경을 투명하게 하고 그림자를 없애 PC에서는 빈 여백 없이 깔끔하게 보이도록 마술을 부립니다. */
-header { background-color: transparent !important; box-shadow: none !important; }
+/* 🚫 3. 상단 메뉴 중 대중에게 보여주기 싫은 'Deploy(배포)' 버튼 등만 콕 집어서 숨기기 */
+.stDeployButton, [data-testid="stDeployButton"] {
+    display: none !important;
+}
 
 /* 🎨 4. 파로스 랩 커스텀 디자인 요소 */
 .header-box { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 28px 20px; border-radius: 14px; color: white; margin-bottom: 16px; text-align: center; box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.25); }
