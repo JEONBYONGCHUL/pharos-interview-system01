@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. 스타일링 CSS
+# 2. 스타일링 CSS (디자인 및 워터마크 핀셋 숨기기)
 st.markdown("""
 <style>
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -21,11 +21,14 @@ st.markdown("""
 .block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; }
 [data-testid="stSidebar"] > div:first-child { padding-top: 2rem !important; }
 
-/* 🚫 1. 하단 광고 완벽 차단 (모바일 캐시 대응용 초강력 태그 추가) */
-footer, [data-testid="stFooter"], .viewerBadge_container, .viewerBadge_link, a[href^="https://streamlit.io"] {
-    visibility: hidden !important; 
-    display: none !important;
-}
+/* 🚫 1. 하단 광고 완벽 차단 (모바일 스트림릿 꼼수 방어용 초강력 태그) */
+footer {visibility: hidden !important; display: none !important;}
+footer * {visibility: hidden !important; display: none !important;}
+[data-testid="stFooter"] {display: none !important;}
+[data-testid="stBottom"] {display: none !important;}
+.viewerBadge_container, .viewerBadge_link {display: none !important;}
+.st-emotion-cache-16txtl3, .st-emotion-cache-1wbqy5l {display: none !important;} /* 모바일 전용 동적 클래스 강제 차단 */
+div[class^="viewerBadge"] {display: none !important;}
 
 /* 💡 2. 상단 헤더 배경은 투명하게 (사이드바 화살표 '>' 와 점 3개 메뉴 정상 작동) */
 [data-testid="stHeader"] {
@@ -171,7 +174,7 @@ def call_gemini(prompt, count, diff):
     except Exception as e:
         raise Exception(f"API 요청 실패: {str(e)}")
 
-# 💡 [핵심 수정 부분] 모바일 인앱 브라우저(카톡, 네이버) 접속 시 친절한 에러 안내문 적용
+# 모바일 인앱 브라우저(카톡, 네이버) 접속 시 친절한 에러 안내문 적용
 def render_tts(text, q_id):
     clean = json.dumps(text, ensure_ascii=False)
     html = f"""<button id="b_{q_id}" style="background:linear-gradient(180deg,#0284c7,#0369a1);color:white;border:none;border-radius:6px;padding:7px 15px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 5px rgba(2,132,199,0.25);">🔊 음성으로 질문 듣기</button>
