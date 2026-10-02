@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. 스타일링 CSS (디자인 및 워터마크 핀셋 숨기기)
+# 2. 스타일링 CSS
 st.markdown("""
 <style>
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -21,19 +21,19 @@ st.markdown("""
 .block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; }
 [data-testid="stSidebar"] > div:first-child { padding-top: 2rem !important; }
 
-/* 🚫 1. 하단 Streamlit 광고(워터마크) 완벽 제거 (모바일 초강력 대응) */
-footer, [data-testid="stFooter"], .viewerBadge_container, .viewerBadge_link {
+/* 🚫 1. 하단 광고 완벽 차단 (모바일 캐시 대응용 초강력 태그 추가) */
+footer, [data-testid="stFooter"], .viewerBadge_container, .viewerBadge_link, a[href^="https://streamlit.io"] {
     visibility: hidden !important; 
     display: none !important;
 }
 
-/* 💡 2. 상단 헤더 배경은 투명하게 (사이드바 화살표 '>' 와 점 3개 메뉴는 정상 작동하도록 유지) */
+/* 💡 2. 상단 헤더 배경은 투명하게 (사이드바 화살표 '>' 와 점 3개 메뉴 정상 작동) */
 [data-testid="stHeader"] {
     background: transparent !important;
     box-shadow: none !important;
 }
 
-/* 🚫 3. 상단 메뉴 중 대중에게 보여주기 싫은 'Deploy(배포)' 버튼 등만 콕 집어서 숨기기 */
+/* 🚫 3. 점 3개 메뉴 속 'Deploy' 버튼 등 개발자용 아이콘 숨기기 */
 .stDeployButton, [data-testid="stDeployButton"] {
     display: none !important;
 }
@@ -95,9 +95,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# =====================================================================
 # API 키 직접 연동 방식
-# =====================================================================
 try:
     API_KEY = st.secrets["GEMINI_API_KEY"]
 except Exception:
@@ -126,7 +124,6 @@ def sanitize_text(text, name=""):
 
 def call_gemini(prompt, count, diff):
     diff_desc = {"하": "기초 사실 확인", "중": "탐구 과정 및 문제해결", "상": "심화 이론 및 메커니즘"}.get(diff, "")
-    
     sys_prompt = f"""당신은 대한민국 명문 대학 대입 학생부종합전형 수석 입학사정관입니다.
 제공된 학생부 텍스트를 분석하여 [{diff} 난이도: {diff_desc}]에 부합하는 면접 질문 총 {count}문항을 생성하세요.
 
@@ -155,15 +152,8 @@ def call_gemini(prompt, count, diff):
         "generationConfig": {"temperature": 0.7}
     }
     encoded_body = json.dumps(body).encode("utf-8")
-    
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={API_KEY}"
-    
-    req = urllib.request.Request(
-        url,
-        data=encoded_body,
-        headers={"Content-Type": "application/json"},
-        method="POST"
-    )
+    req = urllib.request.Request(url, data=encoded_body, headers={"Content-Type": "application/json"}, method="POST")
     
     try:
         with urllib.request.urlopen(req) as resp:
@@ -181,13 +171,17 @@ def call_gemini(prompt, count, diff):
     except Exception as e:
         raise Exception(f"API 요청 실패: {str(e)}")
 
+# 💡 [핵심 수정 부분] 모바일 인앱 브라우저(카톡, 네이버) 접속 시 친절한 에러 안내문 적용
 def render_tts(text, q_id):
     clean = json.dumps(text, ensure_ascii=False)
     html = f"""<button id="b_{q_id}" style="background:linear-gradient(180deg,#0284c7,#0369a1);color:white;border:none;border-radius:6px;padding:7px 15px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 5px rgba(2,132,199,0.25);">🔊 음성으로 질문 듣기</button>
 <span id="s_{q_id}" style="font-size:12px;color:#64748b;margin-left:10px;"></span>
 <script>
 document.getElementById('b_{q_id}').onclick = function() {{
-    if (!('speechSynthesis' in window)) {{ alert('음성 재생을 지원하지 않는 브라우저입니다.'); return; }}
+    if (!('speechSynthesis' in window)) {{ 
+        alert('🚫 현재 열려있는 창(카카오톡, 네이버 앱 등)에서는 보안상 음성 재생을 지원하지 않습니다.\\n\\n💡 화면 우측 하단이나 우측 상단의 [메뉴(점 3개)]를 눌러서 [다른 브라우저로 열기(크롬, 사파리)]를 선택하시면 음성 지원을 완벽하게 이용하실 수 있습니다!'); 
+        return; 
+    }}
     window.speechSynthesis.cancel();
     let u = new SpeechSynthesisUtterance({clean});
     u.lang = 'ko-KR'; u.rate = 0.93;
