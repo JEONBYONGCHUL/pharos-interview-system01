@@ -4,8 +4,8 @@ import streamlit.components.v1 as components
 
 # 1. 페이지 설정
 st.set_page_config(
-    page_title="전공역량·탐구활동 AI 심층 구술면접",
-    page_icon="logo.png",  # 브라우저 탭 아이콘 (파로스 로고)
+    page_title="교과 탐구 및 프로젝트 활동 모의 면접",
+    page_icon="logo.png",  # 파로스 로고
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -20,7 +20,7 @@ st.markdown("""
 .block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; }
 [data-testid="stSidebar"] > div:first-child { padding-top: 2rem !important; }
 
-/* 🚫 하단 광고 및 우측 하단 플로팅 버튼 차단 */
+/* 🚫 하단 광고 및 플로팅 버튼 차단 */
 footer, 
 [data-testid="stFooter"], 
 [data-testid="stBottom"],
@@ -34,18 +34,16 @@ div[class^="viewerBadge"] {
     display: none !important;
 }
 
-/* 상단 헤더 배경 투명화 */
+/* 상단 헤더 투명화 및 불필요 버튼 숨김 */
 [data-testid="stHeader"] {
     background: transparent !important;
     box-shadow: none !important;
 }
-
-/* 불필요한 배포 버튼 숨기기 */
 .stDeployButton, [data-testid="stDeployButton"] {
     display: none !important;
 }
 
-/* 헤더 박스 및 텍스트 스타일 */
+/* 헤더 배너 스타일 */
 .header-box { 
     background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); 
     padding: 24px 15px; 
@@ -74,7 +72,7 @@ div[class^="viewerBadge"] {
     word-break: keep-all; 
 }
 
-/* 브랜드 링크 스타일 */
+/* 네프콘 채널 링크 박스 스타일 */
 .brand-blog-center { 
     display: flex; 
     align-items: center; 
@@ -103,7 +101,7 @@ div[class^="viewerBadge"] {
     margin-bottom: 16px; 
 }
 
-/* 버튼 및 카드 컴포넌트 */
+/* 실행 버튼 및 결과 카드 */
 div.stButton > button { 
     background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important; 
     color: white !important; 
@@ -142,7 +140,7 @@ div.stButton > button:hover {
 </style>
 """, unsafe_allow_html=True)
 
-# 파로스 등대 SVG 로고
+# 파로스 등대 SVG 심볼
 svg_logo = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 155" width="100%" height="100%">
 <polygon points="12,24 64,42 64,50 12,34" fill="#831843"/>
 <polygon points="12,56 64,56 64,64 12,68" fill="#52525b"/>
@@ -164,30 +162,30 @@ svg_logo = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 155" widt
 # 3. 메인 배너
 st.markdown("""
 <div class="header-box">
-    <div class="b-title">전공역량·탐구활동 AI 심층 구술면접</div>
+    <div class="b-title">교과 탐구 및 프로젝트 활동 모의 면접</div>
     <div class="b-sub">교과 탐구 및 프로젝트 기반 맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div>
 </div>
 """, unsafe_allow_html=True)
 
-# 4. 네이버 프리미엄콘텐츠 채널 연계 링크
+# 4. 네이버 프리미엄콘텐츠 채널 링크
 st.markdown(f"""
 <div class="brand-blog-center">
     <div class="logo-box">{svg_logo}</div>
     <div class="brand-info-box">
         <span class="brand-title-text">네이버 프리미엄콘텐츠 파로스대입랩</span>
-        <a class="brand-link-text" href="https://contents.premium.naver.com/pharoslab/pharosdaeiblab" target="_blank">https://contents.premium.naver.com/pharoslab/pharosdaeiblab</a>
+        <a class="brand-link-text" href="https://contents.premium.naver.com/pharoslab" target="_blank">https://contents.premium.naver.com/pharoslab</a>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# 5. 초·중등교육법 제25조의2 법령 준수 안내 배너
+# 5. 관련 법령 준수 안내 배너
 st.info(
     "🔒 **관련 법령 준수 안내**\n\n"
     "본 시스템은 **「초·중등교육법」 제25조의2**에 따라 **학교생활기록부 원문(PDF / 세특 기재문)의 수집·업로드를 전면 차단**하며, "
-    "수험생 본인의 **탐구 활동 요약 메모만을 기반으로 구술면접 질문을 지원**합니다."
+    "수험생 본인의 **탐구 활동 요약 메모만을 기반으로 모의면접 질문을 지원합니다.**"
 )
 
-# API 키 연동
+# API 키 직접 연동
 try:
     API_KEY = st.secrets["GEMINI_API_KEY"]
 except Exception:
@@ -275,7 +273,7 @@ document.getElementById('b_{q_id}').onclick = function() {{
 </script>"""
     components.html(html, height=46)
 
-# 6. 사이드바 (조건 설정: 실명/안심처리 박스 삭제 완료)
+# 6. 사이드바 (조건 설정: 실명/개인정보 박스 제거 완료)
 with st.sidebar:
     st.markdown('<div class="side-title">⚙️ 모의 면접 조건 설정</div>', unsafe_allow_html=True)
     target_major = st.text_input("지원 희망 전공/학과", placeholder="예: 컴퓨터공학과, 의예과")
@@ -284,22 +282,16 @@ with st.sidebar:
     diff_sel = st.selectbox("평가 난이도", ["하 (기초 사실 확인)", "중 (탐구/문제해결)", "상 (심화 학술이론)"], index=0)
     difficulty = diff_sel[0]
 
-# 7. 메인 입력 영역 (단일 텍스트 입력창 구성)
+# 7. 메인 입력 영역 (예시 삭제 및 단일 텍스트 입력창 구성)
 st.markdown("### 본인의 교과 탐구 및 프로젝트 활동 요약 입력")
 
 placeholder_content = """본인의 핵심 탐구 주제와 경험을 요약해 주세요.
-(※ 초·중등교육법 제25조의2에 따라 학생부 원문 복사 입력은 제한됩니다)
-
-예시:
-- 지원 학과: 컴퓨터공학과
-- 탐구 주제: 정렬 알고리즘별 시간복잡도 비교 및 최적화 탐구
-- 주도적 역할: 파이썬으로 퀵 정렬/병합 정렬 실행 속도 실측 및 빅오 표기법 분석
-- 배운 점/연계 활동: 알고리즘 효율성의 중요성을 체감하고 자료구조 도서 심화 탐독"""
+(※ 초·중등교육법 제25조의2에 따라 학생부 원문 복사 입력은 제한됩니다)"""
 
 input_text = st.text_area(
     label="활동 요약 텍스트 입력",
     label_visibility="collapsed",
-    height=240,
+    height=200,
     placeholder=placeholder_content
 )
 
