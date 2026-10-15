@@ -1,17 +1,16 @@
 import os, json, urllib.request, urllib.error
 import streamlit as st
 import streamlit.components.v1 as components
-from pypdf import PdfReader
 
-# 1. 페이지 설정 (파로스 로고로 변경 완료)
+# 1. 페이지 설정
 st.set_page_config(
-    page_title="2027 대입 학생부 기반 모의 면접",
-    page_icon="logo.png",  # 👈 브라우저 탭 아이콘을 파로스 로고로 변경
+    page_title="전공역량·탐구활동 AI 심층 구술면접",
+    page_icon="logo.png",  # 브라우저 탭 아이콘 (파로스 로고)
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# 2. 스타일링 CSS (디자인, 워터마크 숨기기, 타이틀 한 줄 고정)
+# 2. 스타일링 CSS
 st.markdown("""
 <style>
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -21,7 +20,7 @@ st.markdown("""
 .block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; }
 [data-testid="stSidebar"] > div:first-child { padding-top: 2rem !important; }
 
-/* 🚫 1. 하단 광고 및 우측 하단 플로팅 버튼(Manage app 등) 완벽 차단 */
+/* 🚫 하단 광고 및 우측 하단 플로팅 버튼 차단 */
 footer, 
 [data-testid="stFooter"], 
 [data-testid="stBottom"],
@@ -35,23 +34,29 @@ div[class^="viewerBadge"] {
     display: none !important;
 }
 
-/* 💡 2. 상단 헤더 배경은 투명하게 (사이드바 화살표 '>' 와 점 3개 메뉴 정상 작동) */
+/* 상단 헤더 배경 투명화 */
 [data-testid="stHeader"] {
     background: transparent !important;
     box-shadow: none !important;
 }
 
-/* 🚫 3. 점 3개 메뉴 속 'Deploy' 버튼 등 불필요한 아이콘 숨기기 */
+/* 불필요한 배포 버튼 숨기기 */
 .stDeployButton, [data-testid="stDeployButton"] {
     display: none !important;
 }
 
-/* 🎨 4. 파로스 랩 커스텀 디자인 요소 */
-.header-box { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 24px 15px; border-radius: 14px; color: white; margin-bottom: 16px; text-align: center; box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.25); }
-
-/* 👇 핵심 수정: white-space: nowrap; 으로 절대 밑으로 떨어지지 않고 무조건 한 줄에 나오도록 강제 고정 */
+/* 헤더 박스 및 텍스트 스타일 */
+.header-box { 
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); 
+    padding: 24px 15px; 
+    border-radius: 14px; 
+    color: white; 
+    margin-bottom: 16px; 
+    text-align: center; 
+    box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.25); 
+}
 .b-title { 
-    font-size: clamp(16px, 4vw, 32px); 
+    font-size: clamp(16px, 4vw, 30px); 
     font-weight: 800; 
     letter-spacing: -0.04em; 
     color: #f8fafc; 
@@ -61,26 +66,83 @@ div[class^="viewerBadge"] {
     overflow: hidden; 
     text-overflow: ellipsis; 
 }
-.b-sub { font-size: clamp(11.5px, 2.5vw, 15px); color: #94a3b8; margin-top: 8px; margin-bottom: 0px; word-break: keep-all; }
+.b-sub { 
+    font-size: clamp(11.5px, 2.5vw, 15px); 
+    color: #94a3b8; 
+    margin-top: 8px; 
+    margin-bottom: 0px; 
+    word-break: keep-all; 
+}
 
-.brand-blog-center { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 12px 0 18px 0; margin-bottom: 22px; border-bottom: 1px solid #e2e8f0; }
-.logo-box { width: 46px; height: 42px; display: flex; align-items: center; justify-content: center; }
+/* 브랜드 링크 스타일 */
+.brand-blog-center { 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    gap: 14px; 
+    padding: 10px 0 16px 0; 
+    margin-bottom: 16px; 
+    border-bottom: 1px solid #e2e8f0; 
+}
+.logo-box { width: 44px; height: 40px; display: flex; align-items: center; justify-content: center; }
 .brand-info-box { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 .brand-title-text { font-size: 15px; font-weight: 800; color: #0f172a; }
 .brand-link-text { font-size: 13.5px; color: #0284c7 !important; text-decoration: none !important; font-weight: 600; }
 .brand-link-text:hover { color: #0369a1 !important; text-decoration: underline !important; }
+
+/* 사이드바 스타일 */
 [data-testid="stSidebar"] { background-color: #f8fafc; border-right: 1px solid #e2e8f0; }
-.side-title { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white; padding: 14px; border-radius: 10px; text-align: center; font-weight: 800; font-size: 15.5px; margin-bottom: 16px; }
-.priv-box { background: #f1f5f9; padding: 14px; border-radius: 10px; border-left: 4px solid #0284c7; margin-top: 25px; font-size: 12px; color: #475569; line-height: 1.5; border: 1px solid #cbd5e1; }
-div.stButton > button { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important; color: white !important; border: none !important; border-radius: 10px !important; padding: 14px 24px !important; font-size: 16px !important; font-weight: 800 !important; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35) !important; }
-div.stButton > button:hover { background: linear-gradient(135deg, #0369a1 0%, #075985 100%) !important; box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45) !important; }
-.card { background: white; border: 1px solid #e2e8f0; border-left: 5px solid #0284c7; border-radius: 12px; padding: 20px 22px; margin-bottom: 14px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04); }
+.side-title { 
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%); 
+    color: white; 
+    padding: 14px; 
+    border-radius: 10px; 
+    text-align: center; 
+    font-weight: 800; 
+    font-size: 15.5px; 
+    margin-bottom: 16px; 
+}
+
+/* 버튼 및 카드 컴포넌트 */
+div.stButton > button { 
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important; 
+    color: white !important; 
+    border: none !important; 
+    border-radius: 10px !important; 
+    padding: 14px 24px !important; 
+    font-size: 16px !important; 
+    font-weight: 800 !important; 
+    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35) !important; 
+}
+div.stButton > button:hover { 
+    background: linear-gradient(135deg, #0369a1 0%, #075985 100%) !important; 
+    box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45) !important; 
+}
+.card { 
+    background: white; 
+    border: 1px solid #e2e8f0; 
+    border-left: 5px solid #0284c7; 
+    border-radius: 12px; 
+    padding: 20px 22px; 
+    margin-bottom: 14px; 
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04); 
+}
 .q-title { font-size: 17px; font-weight: 700; color: #0f172a; margin: 10px 0; line-height: 1.5; word-break: keep-all; }
-.guide { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 10px 14px; border-radius: 8px; font-size: 13.5px; font-weight: 600; margin-top: 10px; word-break: keep-all; }
+.guide { 
+    background: #f0fdf4; 
+    border: 1px solid #bbf7d0; 
+    color: #166534; 
+    padding: 10px 14px; 
+    border-radius: 8px; 
+    font-size: 13.5px; 
+    font-weight: 600; 
+    margin-top: 10px; 
+    word-break: keep-all; 
+}
 </style>
 """, unsafe_allow_html=True)
 
-# 파로스 등대 심볼 벡터 SVG
+# 파로스 등대 SVG 로고
 svg_logo = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 155" width="100%" height="100%">
 <polygon points="12,24 64,42 64,50 12,34" fill="#831843"/>
 <polygon points="12,56 64,56 64,64 12,68" fill="#52525b"/>
@@ -99,43 +161,42 @@ svg_logo = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 155" widt
 <rect x="36" y="134" width="108" height="6" rx="2" fill="#831843"/>
 </svg>"""
 
+# 3. 메인 배너
 st.markdown("""
 <div class="header-box">
-    <div class="b-title">2027 대입 학생부 기반 모의 면접</div>
-    <div class="b-sub">학생부 기반 맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div>
+    <div class="b-title">전공역량·탐구활동 AI 심층 구술면접</div>
+    <div class="b-sub">교과 탐구 및 프로젝트 기반 맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div>
 </div>
 """, unsafe_allow_html=True)
 
+# 4. 네이버 프리미엄콘텐츠 채널 연계 링크
 st.markdown(f"""
 <div class="brand-blog-center">
     <div class="logo-box">{svg_logo}</div>
     <div class="brand-info-box">
-        <span class="brand-title-text">파로스대입랩 네이버블로그</span>
-        <a class="brand-link-text" href="https://blog.naver.com/pharoslab" target="_blank">https://blog.naver.com/pharoslab</a>
+        <span class="brand-title-text">네이버 프리미엄콘텐츠 파로스대입랩</span>
+        <a class="brand-link-text" href="https://contents.premium.naver.com/pharoslab/pharosdaeiblab" target="_blank">https://contents.premium.naver.com/pharoslab/pharosdaeiblab</a>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# API 키 직접 연동 방식
+# 5. 초·중등교육법 제25조의2 법령 준수 안내 배너
+st.info(
+    "🔒 **관련 법령 준수 안내**\n\n"
+    "본 시스템은 **「초·중등교육법」 제25조의2**에 따라 **학교생활기록부 원문(PDF / 세특 기재문)의 수집·업로드를 전면 차단**하며, "
+    "수험생 본인의 **탐구 활동 요약 메모만을 기반으로 구술면접 질문을 지원**합니다."
+)
+
+# API 키 연동
 try:
     API_KEY = st.secrets["GEMINI_API_KEY"]
 except Exception:
     st.error("⚠️ Streamlit Secrets에 GEMINI_API_KEY가 등록되지 않았습니다.")
     st.stop()
 
-def extract_pdf(f):
-    reader = PdfReader(f)
-    pages = []
-    for p in reader.pages:
-        txt = p.extract_text()
-        if txt: pages.append(txt)
-    return "\n".join(pages)
-
-def sanitize_text(text, name=""):
-    t = text
-    if name and len(name.strip()) >= 2:
-        t = t.replace(name.strip(), "[OO학생]")
+def sanitize_text(text):
     import re
+    t = text
     t = re.sub(r'[가-힣]{2,10}(고등학교|여고|남고|외고|과고|예고|체고|마이스터고|공고|상고|고)', "[OO고등학교]", t)
     t = re.sub(r'\b\d{6}[-\s]?[1-4]\d{6}\b', '[주민번호 마스킹]', t)
     t = re.sub(r'\b(19\d{2}|20\d{2})[.-년\s]+(0?[1-9]|1[0-2])[.-월\s]+(0?[1-9]|[12]\d|3[01])일?\b', '[생년월일 마스킹]', t)
@@ -146,7 +207,7 @@ def sanitize_text(text, name=""):
 def call_gemini(prompt, count, diff):
     diff_desc = {"하": "기초 사실 확인", "중": "탐구 과정 및 문제해결", "상": "심화 이론 및 메커니즘"}.get(diff, "")
     sys_prompt = f"""당신은 대한민국 명문 대학 대입 학생부종합전형 수석 입학사정관입니다.
-제공된 학생부 텍스트를 분석하여 [{diff} 난이도: {diff_desc}]에 부합하는 면접 질문 총 {count}문항을 생성하세요.
+제공된 학생 본인의 교과 탐구 및 프로젝트 활동 요약 텍스트를 분석하여 [{diff} 난이도: {diff_desc}]에 부합하는 면접 질문 총 {count}문항을 생성하세요.
 
 반드시 마크다운 백틱 없이 순수 JSON 포맷으로만 응답하세요:
 {{
@@ -154,11 +215,11 @@ def call_gemini(prompt, count, diff):
   "difficulty": "{diff}",
   "sections": [
     {{
-      "category": "영역 구분명 (예: 창의적 체험활동 진로·자율활동, 교과 세부능력및특기사항 등)",
+      "category": "활동 영역 구분 (예: 교과 연계 심화 탐구, 전공 프로젝트, 융합 활동 등)",
       "questions": [
         {{
           "type": "문항 유형",
-          "source_quote": "학생부 근거 문맥 인용",
+          "source_quote": "요약문 기반 핵심 활동 근거",
           "question": "면접 질문 본문",
           "intent": "면접관 출제 의도",
           "high_score_guide": "고득점 답변 가이드 및 필수 포함 키워드"
@@ -173,7 +234,7 @@ def call_gemini(prompt, count, diff):
         "generationConfig": {"temperature": 0.7}
     }
     encoded_body = json.dumps(body).encode("utf-8")
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
     req = urllib.request.Request(url, data=encoded_body, headers={"Content-Type": "application/json"}, method="POST")
     
     try:
@@ -192,7 +253,6 @@ def call_gemini(prompt, count, diff):
     except Exception as e:
         raise Exception(f"API 요청 실패: {str(e)}")
 
-# 모바일 인앱 브라우저(카톡, 네이버) 접속 시 친절한 에러 안내문 적용
 def render_tts(text, q_id):
     clean = json.dumps(text, ensure_ascii=False)
     html = f"""<button id="b_{q_id}" style="background:linear-gradient(180deg,#0284c7,#0369a1);color:white;border:none;border-radius:6px;padding:7px 15px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 5px rgba(2,132,199,0.25);">🔊 음성으로 질문 듣기</button>
@@ -215,42 +275,42 @@ document.getElementById('b_{q_id}').onclick = function() {{
 </script>"""
     components.html(html, height=46)
 
-# 5. 사이드바
+# 6. 사이드바 (조건 설정: 실명/안심처리 박스 삭제 완료)
 with st.sidebar:
     st.markdown('<div class="side-title">⚙️ 모의 면접 조건 설정</div>', unsafe_allow_html=True)
-    student_name = st.text_input("학생 실명 (마스킹용)", placeholder="홍길동 (선택)")
     target_major = st.text_input("지원 희망 전공/학과", placeholder="예: 컴퓨터공학과, 의예과")
     q_sel = st.selectbox("추출 면접 문항 수", ["10문항", "5문항", "3문항"], index=2)
     q_count = int(q_sel.replace("문항", ""))
     diff_sel = st.selectbox("평가 난이도", ["하 (기초 사실 확인)", "중 (탐구/문제해결)", "상 (심화 학술이론)"], index=0)
     difficulty = diff_sel[0]
-    st.markdown('<div class="priv-box"><b>🔒 개인정보 안심 처리</b><br>인적사항, 고교명, 가족관계 등 대입 블라인드 항목은 자동 마스킹 처리되니 안심하셔도 됩니다.</div>', unsafe_allow_html=True)
 
-# 6. 메인 탭
-tab1, tab2 = st.tabs(["✍️️ [방법 1] 학생부 텍스트 직접 입력", "📂 [방법 2] 학생부 PDF 업로드"])
-input_text = ""
+# 7. 메인 입력 영역 (단일 텍스트 입력창 구성)
+st.markdown("### 본인의 교과 탐구 및 프로젝트 활동 요약 입력")
 
-with tab1:
-    txt_input = st.text_area("학생부 내용을 복사해 붙여넣으세요", height=220, placeholder="과세특, 창체, 행특 내용을 이곳에 붙여넣으세요...")
-    if txt_input:
-        input_text = txt_input
+placeholder_content = """본인의 핵심 탐구 주제와 경험을 요약해 주세요.
+(※ 초·중등교육법 제25조의2에 따라 학생부 원문 복사 입력은 제한됩니다)
 
-with tab2:
-    pdf_file = st.file_uploader("학생부 PDF 파일을 올려주세요", type=["pdf"])
-    if pdf_file:
-        with st.spinner("PDF 텍스트를 추출하는 중입니다..."):
-            input_text = extract_pdf(pdf_file)
-            st.success("✅ 학생부 PDF 텍스트 추출 완료")
+예시:
+- 지원 학과: 컴퓨터공학과
+- 탐구 주제: 정렬 알고리즘별 시간복잡도 비교 및 최적화 탐구
+- 주도적 역할: 파이썬으로 퀵 정렬/병합 정렬 실행 속도 실측 및 빅오 표기법 분석
+- 배운 점/연계 활동: 알고리즘 효율성의 중요성을 체감하고 자료구조 도서 심화 탐독"""
 
-# 7. 질문 추출 실행 버튼
+input_text = st.text_area(
+    label="활동 요약 텍스트 입력",
+    label_visibility="collapsed",
+    height=240,
+    placeholder=placeholder_content
+)
+
+# 8. 질문 추출 실행 버튼
 if st.button("🚀 면접 질문 추출하기", use_container_width=True):
     if not input_text.strip():
-        st.warning("⚠️ 학생부 내용을 입력하거나 PDF를 올려주세요.")
+        st.warning("⚠️ 면접 대비를 원하는 탐구 활동 요약 내용을 입력해 주세요.")
     else:
-        # 👇 로딩 안내 문구 수정 (모의 면접관께서...)
-        with st.spinner("모의 면접관께서 학생부 탐구 내용 및 교과 개념을 정밀 분석 중입니다..."):
-            sanitized = sanitize_text(input_text, student_name)
-            prompt = f"지원 전공: {target_major or '미지정'}\n\n[학생부 원문]\n{sanitized}"
+        with st.spinner("모의 면접관께서 탐구 활동 내용 및 전공 심화 개념을 정밀 분석 중입니다..."):
+            sanitized = sanitize_text(input_text)
+            prompt = f"지원 전공: {target_major or '미지정'}\n\n[탐구 활동 요약]\n{sanitized}"
             try:
                 res = call_gemini(prompt, q_count, difficulty)
                 st.success(f"🎉 총 {q_count}문항 추출 완료 (난이도: {difficulty})")
@@ -263,7 +323,7 @@ if st.button("🚀 면접 질문 추출하기", use_container_width=True):
                         <div class="card">
                             <span style="background:#e0f2fe;color:#0369a1;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;">[{item.get('type', '심층 면접')}] · 난이도 {difficulty}</span>
                             <div class="q-title">Q{q_num}. {item.get('question')}</div>
-                            <div style="font-size:13.5px;color:#475569;margin-bottom:5px;">📌 <b>학생부 근거:</b> <i>"{item.get('source_quote')}"</i></div>
+                            <div style="font-size:13.5px;color:#475569;margin-bottom:5px;">📌 <b>활동 근거:</b> <i>"{item.get('source_quote')}"</i></div>
                             <div style="font-size:13.5px;color:#475569;margin-bottom:5px;">🎯 <b>출제 의도:</b> {item.get('intent')}</div>
                             <div class="guide">💡 <b>고득점 답변 가이드:</b> {item.get('high_score_guide')}</div>
                         </div>
