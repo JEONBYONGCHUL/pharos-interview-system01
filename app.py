@@ -34,7 +34,7 @@ div[class^="viewerBadge"] {
     display: none !important;
 }
 
-/* 💡 [핵심 수정] 상단 헤더는 투명하게 유지하되, Share/GitHub 로고 등 툴바 액션만 핀셋 제거 (점 3개는 생존) */
+/* 💡 상단 헤더는 투명하게 유지하되, Share/GitHub 로고 등 툴바 액션만 핀셋 제거 (점 3개는 생존) */
 [data-testid="stHeader"] {
     background: transparent !important;
     box-shadow: none !important;
@@ -182,13 +182,13 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 4. 네이버 프리미엄콘텐츠 채널 링크
+# 4. 네이버 프리미엄콘텐츠 채널 링크 (주소 수정)
 st.markdown(f"""
 <div class="brand-blog-center">
     <div class="logo-box">{svg_logo}</div>
     <div class="brand-info-box">
         <span class="brand-title-text">네이버 프리미엄콘텐츠 파로스대입랩</span>
-        <a class="brand-link-text" href="https://contents.premium.naver.com/pharoslab" target="_blank">https://contents.premium.naver.com/pharoslab</a>
+        <a class="brand-link-text" href="https://contents.premium.naver.com/pharoslab/jinhak" target="_blank">https://contents.premium.naver.com/pharoslab/jinhak</a>
     </div>
 </div>
 """, unsafe_allow_html=True)
