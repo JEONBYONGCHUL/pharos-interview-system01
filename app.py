@@ -14,13 +14,13 @@ st.set_page_config(
 st.markdown("""
 <style>
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-* { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; } /* 💡 오타 교정 완료 */
+* { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; }
 
 /* 상하단 여백 최소화 */
 .block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; }
 [data-testid="stSidebar"] > div:first-child { padding-top: 2rem !important; }
 
-/* 🚫 하단 광고 및 플로팅 버튼 차단 */
+/* 🚫 하단 광고 및 플로팅 버튼 완벽 차단 */
 footer, 
 [data-testid="stFooter"], 
 [data-testid="stBottom"],
@@ -34,13 +34,14 @@ div[class^="viewerBadge"] {
     display: none !important;
 }
 
-/* 상단 헤더 투명화 및 불필요 버튼 숨김 */
+/* 💡 [핵심 수정] 상단 헤더 및 내부 버튼(Share, GitHub 로고 등) 완벽 차단 */
 [data-testid="stHeader"] {
-    background: transparent !important;
-    box-shadow: none !important;
-}
-.stDeployButton, [data-testid="stDeployButton"] {
+    visibility: hidden !important;
     display: none !important;
+}
+/* 헤더를 통째로 숨겼으므로, 모바일 등에서 내용이 위로 너무 붙지 않도록 여백 조정 */
+.block-container {
+    margin-top: -3rem; 
 }
 
 /* 헤더 배너 스타일 */
@@ -319,7 +320,7 @@ document.getElementById('b_{q_id}').onclick = function() {{
 </script>"""
     components.html(html, height=46)
 
-# 6. 사이드바 (조건 설정: 실명/개인정보 박스 제거 완료)
+# 6. 사이드바 
 with st.sidebar:
     st.markdown('<div class="side-title">⚙️ 모의 면접 조건 설정</div>', unsafe_allow_html=True)
     target_major = st.text_input("지원 희망 전공/학과", placeholder="예: 컴퓨터공학과, 의예과")
@@ -331,7 +332,6 @@ with st.sidebar:
 # 7. 메인 입력 영역
 st.markdown("### 본인의 교과 탐구 및 프로젝트 활동 요약 입력")
 
-# 💡 [추가 기능] 데이터 보호 및 휘발성 구조 안심 문구 (입력창 바로 위에 세련되게 배치)
 st.caption("✅ **안심하고 사용하세요!** 본 모의 면접 시스템은 완전 휘발성 구조로 설계되어, 입력하신 모든 데이터는 서버에 일절 저장되지 않고 즉시 파기됩니다.")
 
 placeholder_content = """본인의 핵심 탐구 주제와 경험을 요약해 주세요.
