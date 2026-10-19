@@ -14,7 +14,7 @@ st.set_page_config(
 st.markdown("""
 <style>
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-* { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; } /* 💡 미세한 오타(-)를 (*)로 수정 완료 */
+* { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; } /* 💡 오타 교정 완료 */
 
 /* 상하단 여백 최소화 */
 .block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; }
@@ -137,6 +137,21 @@ div.stButton > button:hover {
     margin-top: 10px; 
     word-break: keep-all; 
 }
+
+/* 비밀번호 인증 박스 스타일 */
+.auth-box {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-top: 5px solid #0f172a;
+    border-radius: 12px;
+    padding: 30px;
+    margin: 40px auto;
+    max-width: 400px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+.auth-title { font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 10px; }
+.auth-desc { font-size: 14px; color: #64748b; margin-bottom: 20px; word-break: keep-all; line-height: 1.5; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -177,6 +192,35 @@ st.markdown(f"""
     </div>
 </div>
 """, unsafe_allow_html=True)
+
+# ==========================================================
+# 💡 [보안] 프리미엄 콘텐츠 구독자용 입장 코드 인증 로직
+# ==========================================================
+if "authenticated" not in st.session_state:
+    st.session_state["authenticated"] = False
+
+if not st.session_state["authenticated"]:
+    # 인증되지 않은 사용자에게 보여줄 로그인 창
+    st.markdown("""
+    <div class="auth-box">
+        <div class="auth-title">🔒 프리미엄 시스템 입장</div>
+        <div class="auth-desc">네이버 프리미엄콘텐츠 파로스대입랩 구독자 전용 서비스입니다.<br>안내받으신 <b>입장 코드</b>를 입력해 주세요.</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 1.5, 1])
+    with col2:
+        access_code = st.text_input("입장 코드 입력", type="password", label_visibility="collapsed", placeholder="입장 코드를 입력하세요")
+        if st.button("시스템 접속하기", use_container_width=True):
+            if access_code == "pharos2027":
+                st.session_state["authenticated"] = True
+                st.rerun()  # 인증 성공 시 페이지 새로고침하여 본 화면 진입
+            else:
+                st.error("❌ 올바르지 않은 코드입니다. 다시 확인해 주세요.")
+    
+    # 인증 실패 시 아래쪽 본문 코드가 실행되지 않도록 완전히 차단
+    st.stop()
+# ==========================================================
 
 # 5. 관련 법령 준수 안내 배너
 st.info(
@@ -233,7 +277,6 @@ def call_gemini(prompt, count, diff):
     }
     encoded_body = json.dumps(body).encode("utf-8")
     
-    # 💡 [핵심 해결] 오류를 뱉어내던 2.5 버전을 3.8 최신 버전으로 교체 완료
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={API_KEY}"
     
     req = urllib.request.Request(url, data=encoded_body, headers={"Content-Type": "application/json"}, method="POST")
@@ -285,8 +328,11 @@ with st.sidebar:
     diff_sel = st.selectbox("평가 난이도", ["하 (기초 사실 확인)", "중 (탐구/문제해결)", "상 (심화 학술이론)"], index=0)
     difficulty = diff_sel[0]
 
-# 7. 메인 입력 영역 (예시 삭제 및 단일 텍스트 입력창 구성)
+# 7. 메인 입력 영역
 st.markdown("### 본인의 교과 탐구 및 프로젝트 활동 요약 입력")
+
+# 💡 [추가 기능] 데이터 보호 및 휘발성 구조 안심 문구 (입력창 바로 위에 세련되게 배치)
+st.caption("✅ **안심하고 사용하세요!** 본 모의 면접 시스템은 완전 휘발성 구조로 설계되어, 입력하신 모든 데이터는 서버에 일절 저장되지 않고 즉시 파기됩니다.")
 
 placeholder_content = """본인의 핵심 탐구 주제와 경험을 요약해 주세요.
 (※ 초·중등교육법 제25조의2에 따라 학생부 원문 복사 입력은 제한됩니다)"""
