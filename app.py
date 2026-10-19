@@ -34,14 +34,13 @@ div[class^="viewerBadge"] {
     display: none !important;
 }
 
-/* 💡 [핵심 수정] 상단 헤더 및 내부 버튼(Share, GitHub 로고 등) 완벽 차단 */
+/* 💡 [핵심 수정] 상단 헤더는 투명하게 유지하되, Share/GitHub 로고 등 툴바 액션만 핀셋 제거 (점 3개는 생존) */
 [data-testid="stHeader"] {
-    visibility: hidden !important;
-    display: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
 }
-/* 헤더를 통째로 숨겼으므로, 모바일 등에서 내용이 위로 너무 붙지 않도록 여백 조정 */
-.block-container {
-    margin-top: -3rem; 
+[data-testid="stToolbarActions"], .stDeployButton, [data-testid="stDeployButton"] {
+    display: none !important;
 }
 
 /* 헤더 배너 스타일 */
