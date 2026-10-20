@@ -339,8 +339,8 @@ document.getElementById('b_{q_id}').onclick = function() {{
 with st.sidebar:
     st.markdown('<div class="side-title">⚙️ 모의 면접 조건 설정</div>', unsafe_allow_html=True)
     
-    # 💡 [핵심 수정] 항목명과 Placeholder 텍스트 변경
-    target_major = st.text_input("지원 모집단위 및 희망 전공", placeholder="예: 한국대 컴퓨터공학부, 의예과")
+    # 💡 [핵심 수정] 예시 문구를 "경영학부, 컴퓨터공학과"로 변경 완료
+    target_major = st.text_input("지원 모집단위 및 희망 전공", placeholder="예: 경영학부, 컴퓨터공학과")
     
     q_sel = st.selectbox("추출 면접 문항 수", ["5문항", "10문항", "15문항"], index=0)
     q_count = int(q_sel.replace("문항", ""))
