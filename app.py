@@ -209,7 +209,8 @@ if not st.session_state["authenticated"]:
     
     col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
-        access_code = st.text_input("입장 코드 입력", type="password", label_visibility="collapsed", placeholder="입장 코드를 입력하세요")
+        # 💡 [수정] autocomplete="new-password" 속성을 추가하여 브라우저의 암호 제안 기능을 끕니다.
+        access_code = st.text_input("입장 코드 입력", type="password", label_visibility="collapsed", placeholder="입장 코드를 입력하세요", autocomplete="new-password")
         if st.button("시스템 접속하기", use_container_width=True):
             if access_code == "pharos2027":
                 st.session_state["authenticated"] = True
@@ -327,7 +328,6 @@ with st.sidebar:
     difficulty = diff_sel[0]
     
     st.markdown("---")
-    # 💡 [추가] 시작과 마무리 공통 질문 체크박스 분리 제공
     include_intro = st.checkbox("💡 지원 동기 (시작 공통 문항) 포함", value=True, help="체크 시 '왜 우리 대학/전공에 지원했는가?' 문항이 첫 번째로 자동 추가됩니다.")
     include_closing = st.checkbox("💡 마지막 할 말 (마무리 공통 문항) 포함", value=True, help="체크 시 면접을 마무리하는 '마지막으로 하고 싶은 말' 문항이 맨 끝에 자동 추가됩니다.")
 
