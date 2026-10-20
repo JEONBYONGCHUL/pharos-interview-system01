@@ -20,36 +20,31 @@ st.markdown("""
 .block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; }
 [data-testid="stSidebar"] > div:first-child { padding-top: 2rem !important; }
 
-/* 🚫 [궁극의 차단] 모바일 강제 주입 워터마크, 빨간 배너, 플로팅 버튼 완벽 소멸 */
+/* 🔥🔥🔥 [핵폭탄급 차단] 모바일 빨간 배너 및 스트림릿 모든 흔적 영구 삭제 🔥🔥🔥 */
+#MainMenu, 
 footer, 
-[data-testid="stFooter"], 
-[data-testid="stBottom"],
+header,
+[data-testid="stHeader"],
+[data-testid="stToolbar"],
+[data-testid="stDecoration"],
+[data-testid="stStatusWidget"],
 [data-testid="stAppDeployButton"],
 [data-testid="manage-app-button"],
-[data-testid="stToolbar"],
 .viewerBadge_container, 
 .viewerBadge_link, 
-.stDeployButton,
 div[class^="viewerBadge"],
 div[class*="viewerBadge"],
-a[href*="streamlit.io"],
-a[href*="streamlit.com"],
-iframe[src*="badge"],
-#MainMenu {
-    visibility: hidden !important; 
+iframe[title*="Streamlit"],
+iframe[src*="badge"] {
     display: none !important;
+    visibility: hidden !important;
     opacity: 0 !important;
     pointer-events: none !important;
-    width: 0 !important;
-    height: 0 !important;
-    position: absolute !important;
     z-index: -9999 !important;
-}
-
-/* 💡 상단 헤더는 투명하게 유지 */
-[data-testid="stHeader"] {
-    background: transparent !important;
-    box-shadow: none !important;
+    height: 0 !important;
+    width: 0 !important;
+    position: absolute !important;
+    overflow: hidden !important;
 }
 
 /* 헤더 배너 스타일 */
