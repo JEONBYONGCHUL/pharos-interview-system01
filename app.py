@@ -152,6 +152,11 @@ div.stButton > button:hover {
 }
 .auth-title { font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 10px; }
 .auth-desc { font-size: 14px; color: #64748b; margin-bottom: 20px; word-break: keep-all; line-height: 1.5; }
+
+/* 💡 [핵심 수정] 일반 텍스트 입력창의 글자를 강제로 별표(*)로 가리는 CSS 추가 */
+.stTextInput input[type="text"] {
+    -webkit-text-security: disc;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -209,7 +214,9 @@ if not st.session_state["authenticated"]:
     
     col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
-        access_code = st.text_input("입장 코드 입력", type="password", label_visibility="collapsed", placeholder="입장 코드를 입력하세요", autocomplete="new-password")
+        # 💡 [핵심 수정] type="password"를 없애고 일반 텍스트 입력창으로 변경하여 브라우저의 암호 관리자 개입을 완벽 차단합니다.
+        # 화면상에 보이는 글자는 위에서 추가한 CSS(`-webkit-text-security: disc;`)를 통해 자동으로 별표(*)로 가려집니다.
+        access_code = st.text_input("입장 코드 입력", label_visibility="collapsed", placeholder="입장 코드를 입력하세요", key="access_input")
         if st.button("시스템 접속하기", use_container_width=True):
             if access_code == "pharos2027":
                 st.session_state["authenticated"] = True
@@ -253,7 +260,6 @@ def call_gemini(prompt, count, diff):
     diff_desc = diff_prompts.get(diff, "")
     current_time_seed = time.time()
     
-    # 💡 [핵심 추가] 쉬운 어휘 사용 및 단일/복합 질문 혼합 지시
     sys_prompt = f"""당신은 대한민국 명문 대학 대입 학생부종합전형 수석 입학사정관입니다.
 제공된 학생 본인의 교과 탐구 및 프로젝트 활동 요약 텍스트를 분석하여 [{diff} 난이도]에 부합하는 면접 질문 총 {count}문항을 생성하세요.
 
