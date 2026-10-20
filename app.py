@@ -5,91 +5,32 @@ import streamlit.components.v1 as components
 # 1. 페이지 설정
 st.set_page_config(
     page_title="교과 탐구 및 프로젝트 활동 모의 면접",
-    page_icon="logo.png",  # 파로스 로고
+    page_icon="logo.png",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# 2. 스타일링 CSS
+# 2. 스타일링 CSS (안전한 차단만 유지)
 st.markdown("""
 <style>
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 * { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; }
 
-/* 상하단 여백 최소화 */
 .block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; }
 [data-testid="stSidebar"] > div:first-child { padding-top: 2rem !important; }
 
-/* 🔥🔥🔥 [핵폭탄급 차단] 스트림릿 모든 흔적 및 임베드 모드 하단 바(Fullscreen) 영구 삭제 🔥🔥🔥 */
-#MainMenu, 
-footer, 
-header,
-[data-testid="stHeader"],
-[data-testid="stToolbar"],
-[data-testid="stDecoration"],
-[data-testid="stStatusWidget"],
-[data-testid="stAppDeployButton"],
-[data-testid="manage-app-button"],
-[data-testid="stAppEmbedButton"],
-[data-testid="stEmbeddedAppMetaInfoBar"],
-.viewerBadge_container, 
-.viewerBadge_link, 
-div[class^="viewerBadge"],
-div[class*="viewerBadge"],
-div[class*="stAppEmbed"],
-div[class*="embeddedAppMetaInfoBar"],
-iframe[title*="Streamlit"],
-iframe[src*="badge"] {
-    display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-    z-index: -9999 !important;
-    height: 0 !important;
-    width: 0 !important;
-    position: absolute !important;
-    overflow: hidden !important;
-}
+/* 🚫 상단 툴바 및 하단 기본 푸터 안전하게 제거 */
+[data-testid="stHeader"] { background: transparent !important; box-shadow: none !important; }
+[data-testid="stToolbarActions"], .stDeployButton, [data-testid="stDeployButton"], [data-testid="manage-app-button"] { display: none !important; }
+footer { visibility: hidden !important; }
 
 /* 헤더 배너 스타일 */
-.header-box { 
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); 
-    padding: 24px 15px; 
-    border-radius: 14px; 
-    color: white; 
-    margin-bottom: 16px; 
-    text-align: center; 
-    box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.25); 
-}
-.b-title { 
-    font-size: clamp(16px, 4vw, 30px); 
-    font-weight: 800; 
-    letter-spacing: -0.04em; 
-    color: #f8fafc; 
-    margin: 0; 
-    line-height: 1.3; 
-    white-space: nowrap; 
-    overflow: hidden; 
-    text-overflow: ellipsis; 
-}
-.b-sub { 
-    font-size: clamp(11.5px, 2.5vw, 15px); 
-    color: #94a3b8; 
-    margin-top: 8px; 
-    margin-bottom: 0px; 
-    word-break: keep-all; 
-}
+.header-box { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 24px 15px; border-radius: 14px; color: white; margin-bottom: 16px; text-align: center; box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.25); }
+.b-title { font-size: clamp(16px, 4vw, 30px); font-weight: 800; letter-spacing: -0.04em; color: #f8fafc; margin: 0; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.b-sub { font-size: clamp(11.5px, 2.5vw, 15px); color: #94a3b8; margin-top: 8px; margin-bottom: 0px; word-break: keep-all; }
 
 /* 네프콘 채널 링크 박스 스타일 */
-.brand-blog-center { 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    gap: 14px; 
-    padding: 10px 0 16px 0; 
-    margin-bottom: 16px; 
-    border-bottom: 1px solid #e2e8f0; 
-}
+.brand-blog-center { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 10px 0 16px 0; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0; }
 .logo-box { width: 44px; height: 40px; display: flex; align-items: center; justify-content: center; }
 .brand-info-box { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 .brand-title-text { font-size: 15px; font-weight: 800; color: #0f172a; }
@@ -98,73 +39,22 @@ iframe[src*="badge"] {
 
 /* 사이드바 스타일 */
 [data-testid="stSidebar"] { background-color: #f8fafc; border-right: 1px solid #e2e8f0; }
-.side-title { 
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%); 
-    color: white; 
-    padding: 14px; 
-    border-radius: 10px; 
-    text-align: center; 
-    font-weight: 800; 
-    font-size: 15.5px; 
-    margin-bottom: 16px; 
-}
+.side-title { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white; padding: 14px; border-radius: 10px; text-align: center; font-weight: 800; font-size: 15.5px; margin-bottom: 16px; }
 
 /* 실행 버튼 및 결과 카드 */
-div.stButton > button { 
-    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important; 
-    color: white !important; 
-    border: none !important; 
-    border-radius: 10px !important; 
-    padding: 14px 24px !important; 
-    font-size: 16px !important; 
-    font-weight: 800 !important; 
-    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35) !important; 
-}
-div.stButton > button:hover { 
-    background: linear-gradient(135deg, #0369a1 0%, #075985 100%) !important; 
-    box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45) !important; 
-}
-.card { 
-    background: white; 
-    border: 1px solid #e2e8f0; 
-    border-left: 5px solid #0284c7; 
-    border-radius: 12px; 
-    padding: 20px 22px; 
-    margin-bottom: 14px; 
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04); 
-}
+div.stButton > button { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important; color: white !important; border: none !important; border-radius: 10px !important; padding: 14px 24px !important; font-size: 16px !important; font-weight: 800 !important; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35) !important; }
+div.stButton > button:hover { background: linear-gradient(135deg, #0369a1 0%, #075985 100%) !important; box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45) !important; }
+.card { background: white; border: 1px solid #e2e8f0; border-left: 5px solid #0284c7; border-radius: 12px; padding: 20px 22px; margin-bottom: 14px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04); }
 .q-title { font-size: 17px; font-weight: 700; color: #0f172a; margin: 10px 0; line-height: 1.5; word-break: keep-all; }
-.guide { 
-    background: #f0fdf4; 
-    border: 1px solid #bbf7d0; 
-    color: #166534; 
-    padding: 10px 14px; 
-    border-radius: 8px; 
-    font-size: 13.5px; 
-    font-weight: 600; 
-    margin-top: 10px; 
-    word-break: keep-all; 
-}
+.guide { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 10px 14px; border-radius: 8px; font-size: 13.5px; font-weight: 600; margin-top: 10px; word-break: keep-all; }
 
 /* 비밀번호 인증 박스 스타일 */
-.auth-box {
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-top: 5px solid #0f172a;
-    border-radius: 12px;
-    padding: 30px;
-    margin: 40px auto;
-    max-width: 400px;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-    text-align: center;
-}
+.auth-box { background: white; border: 1px solid #e2e8f0; border-top: 5px solid #0f172a; border-radius: 12px; padding: 30px; margin: 40px auto; max-width: 400px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); text-align: center; }
 .auth-title { font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 10px; }
 .auth-desc { font-size: 14px; color: #64748b; margin-bottom: 20px; word-break: keep-all; line-height: 1.5; }
 
 /* 💡 입장 코드 핀셋 마스킹 */
-input[placeholder="입장 코드를 입력하세요"] {
-    -webkit-text-security: disc !important;
-}
+input[placeholder="입장 코드를 입력하세요"] { -webkit-text-security: disc !important; }
 </style>
 """, unsafe_allow_html=True)
 
