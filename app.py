@@ -1,4 +1,4 @@
-import os, json, urllib.request, urllib.error
+import os, json, urllib.request, urllib.error, time
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -209,6 +209,7 @@ if not st.session_state["authenticated"]:
     
     col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
+        # 브라우저 암호 제안 차단
         access_code = st.text_input("입장 코드 입력", type="password", label_visibility="collapsed", placeholder="입장 코드를 입력하세요", autocomplete="new-password")
         if st.button("시스템 접속하기", use_container_width=True):
             if access_code == "pharos2027":
@@ -245,19 +246,23 @@ def sanitize_text(text):
     return t
 
 def call_gemini(prompt, count, diff):
-    # 💡 [핵심 고도화] 난이도별로 개방형/인성 질문의 핵심 초점을 AI에게 구체적으로 지시합니다.
+    # 💡 [핵심 고도화] 난이도별 3대 역량(학업/진로/공동체) 비중 및 심층 압박 지시어 세팅
     diff_prompts = {
-        "하": "기초 사실 확인 (주요 초점: 진로 희망 변경 이유, 가장 의미 있었던 과목, 서류 내 기억에 남는 활동 등 팩트와 기본 경험 위주의 개방형 질문 포함)",
-        "중": "탐구 과정 및 문제해결 (주요 초점: 프로젝트 내 구체적 역할과 수행 내용, 단체 활동 중 기여 부분, 갈등 극복 경험, 리더십/배려심 증명 일화 등 상황 대처 위주의 질문 포함)",
-        "상": "심화 한계 극복 및 포부 (주요 초점: 탐구 중 발생한 기술적/학술적 한계와 극복 과정, 입학 후 학업 계획 및 졸업 후 진로 포부 등 심층 사고력과 장기적 비전 위주의 질문 포함)"
+        "하": "기초 사실 확인 및 역량 균형 평가 (주요 초점: 진로 희망 변경 이유, 가장 의미 있었던 과목, 서류 내 기억에 남는 활동 등 팩트와 경험 위주의 개방형 질문 포함. ★ '학업역량', '진로역량', '공동체역량' 세 가지 측면의 질문을 고르게 균형 있게 혼합하여 출제할 것)",
+        "중": "탐구 과정/문제해결 및 학업·진로 중심 평가 (주요 초점: 프로젝트 내 구체적 역할과 수행 내용, 갈등 극복 경험 등 상황 대처 위주의 질문 포함. ★ '공동체역량'보다 '학업역량'과 '진로역량'에 관련된 질문의 비중을 높여서 출제할 것)",
+        "상": "심화 한계 극복, 포부 및 압박 심층 평가 (주요 초점: 탐구 중 발생한 학술적/기술적 한계와 극복 과정, 전공 심화 지식, 대학 입학 후 학업 계획 및 미래 포부 등. ★ '학업역량'과 '진로역량' 비중을 압도적으로 높게 두고, 학생의 활동 요약 내용을 꼬리질문 하듯 매우 심층적이고 예리하게 파고드는 압박형 질문으로 출제할 것)"
     }
     diff_desc = diff_prompts.get(diff, "")
+    
+    # 💡 매번 새로운 질문을 생성하기 위해 난수(타임스탬프)를 프롬프트에 주입
+    current_time_seed = time.time()
     
     sys_prompt = f"""당신은 대한민국 명문 대학 대입 학생부종합전형 수석 입학사정관입니다.
 제공된 학생 본인의 교과 탐구 및 프로젝트 활동 요약 텍스트를 분석하여 [{diff} 난이도]에 부합하는 면접 질문 총 {count}문항을 생성하세요.
 
 [난이도별 핵심 평가 요소: {diff_desc}]
-* 중요 지침: 생성되는 질문 중 최소 1~2문항 이상은 위의 [난이도별 핵심 평가 요소]를 묻는 개방형/인성 면접 질문으로 구성하고, 학생의 요약 내용과 자연스럽게 연계하여 출제하세요.
+* 중요 지침 1: 생성되는 질문 중 최소 1~2문항 이상은 위의 [난이도별 핵심 평가 요소]를 묻는 개방형/인성 면접 질문으로 구성하고, 서류 기반 질문과 자연스럽게 믹스하세요.
+* 중요 지침 2: 학생이 여러 번 연습할 수 있도록, 기존에 흔히 나오는 패턴에서 벗어나 매 요청마다 전혀 다른 새로운 시각과 앵글의 변형된 질문을 생성하세요. (System Random Seed 적용됨)
 
 반드시 마크다운 백틱 없이 순수 JSON 포맷으로만 응답하세요:
 {{
@@ -265,7 +270,7 @@ def call_gemini(prompt, count, diff):
   "difficulty": "{diff}",
   "sections": [
     {{
-      "category": "활동 영역 구분 (예: 교과 연계 심화 탐구, 전공 프로젝트, 융합 활동 등)",
+      "category": "활동 영역 구분 (예: 교과 연계 심화 탐구, 전공 프로젝트, 인성 및 공동체 활동 등)",
       "questions": [
         {{
           "type": "문항 유형 (심층 면접, 인성 면접, 꼬리 질문 등)",
@@ -280,8 +285,8 @@ def call_gemini(prompt, count, diff):
 }}"""
     
     body = {
-        "contents": [{"role": "user", "parts": [{"text": f"{sys_prompt}\n\n{prompt}"}]}],
-        "generationConfig": {"temperature": 0.75} # 창의적이고 유연한 개방형 질문을 위해 온도를 살짝 높임
+        "contents": [{"role": "user", "parts": [{"text": f"{sys_prompt}\n\n{prompt}\n\n[System 난수: {current_time_seed} - 매번 변형되고 다채로운 질문 생성 목적]"}]}],
+        "generationConfig": {"temperature": 0.85} # 💡 질문 변형성(Randomness)을 위해 온도 0.85로 상향
     }
     encoded_body = json.dumps(body).encode("utf-8")
     
@@ -327,12 +332,15 @@ document.getElementById('b_{q_id}').onclick = function() {{
 </script>"""
     components.html(html, height=46)
 
-# 6. 사이드바 (시작 및 마무리 공통 질문 옵션 유지)
+# 6. 사이드바 (문항 수 옵션 5, 10, 15로 수정)
 with st.sidebar:
     st.markdown('<div class="side-title">⚙️ 모의 면접 조건 설정</div>', unsafe_allow_html=True)
     target_major = st.text_input("지원 희망 대학/전공", placeholder="예: 한국대 컴퓨터공학과, 의예과")
-    q_sel = st.selectbox("추출 면접 문항 수", ["10문항", "5문항", "3문항"], index=2)
+    
+    # 💡 [핵심 수정] 추출 면접 문항 수를 5, 10, 15로 변경
+    q_sel = st.selectbox("추출 면접 문항 수", ["5문항", "10문항", "15문항"], index=0)
     q_count = int(q_sel.replace("문항", ""))
+    
     diff_sel = st.selectbox("평가 난이도", ["하 (기초 사실 확인)", "중 (탐구/문제해결)", "상 (심화 학술이론)"], index=0)
     difficulty = diff_sel[0]
     
