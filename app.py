@@ -20,7 +20,7 @@ st.markdown("""
 .block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; }
 [data-testid="stSidebar"] > div:first-child { padding-top: 2rem !important; }
 
-/* 🔥🔥🔥 [핵폭탄급 차단] 모바일 빨간 배너 및 스트림릿 모든 흔적 영구 삭제 🔥🔥🔥 */
+/* 🔥🔥🔥 [핵폭탄급 차단] 스트림릿 모든 흔적 및 임베드 모드 하단 바(Fullscreen) 영구 삭제 🔥🔥🔥 */
 #MainMenu, 
 footer, 
 header,
@@ -30,10 +30,14 @@ header,
 [data-testid="stStatusWidget"],
 [data-testid="stAppDeployButton"],
 [data-testid="manage-app-button"],
+[data-testid="stAppEmbedButton"],
+[data-testid="stEmbeddedAppMetaInfoBar"],
 .viewerBadge_container, 
 .viewerBadge_link, 
 div[class^="viewerBadge"],
 div[class*="viewerBadge"],
+div[class*="stAppEmbed"],
+div[class*="embeddedAppMetaInfoBar"],
 iframe[title*="Streamlit"],
 iframe[src*="badge"] {
     display: none !important;
