@@ -182,7 +182,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 4. 네이버 프리미엄콘텐츠 채널 링크 (주소 수정)
+# 4. 네이버 프리미엄콘텐츠 채널 링크
 st.markdown(f"""
 <div class="brand-blog-center">
     <div class="logo-box">{svg_logo}</div>
@@ -200,7 +200,6 @@ if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 
 if not st.session_state["authenticated"]:
-    # 인증되지 않은 사용자에게 보여줄 로그인 창
     st.markdown("""
     <div class="auth-box">
         <div class="auth-title">🔒 프리미엄 시스템 입장</div>
@@ -214,11 +213,10 @@ if not st.session_state["authenticated"]:
         if st.button("시스템 접속하기", use_container_width=True):
             if access_code == "pharos2027":
                 st.session_state["authenticated"] = True
-                st.rerun()  # 인증 성공 시 페이지 새로고침하여 본 화면 진입
+                st.rerun()
             else:
                 st.error("❌ 올바르지 않은 코드입니다. 다시 확인해 주세요.")
     
-    # 인증 실패 시 아래쪽 본문 코드가 실행되지 않도록 완전히 차단
     st.stop()
 # ==========================================================
 
@@ -229,7 +227,7 @@ st.info(
     "수험생 본인의 **탐구 활동 요약 메모만을 기반으로 모의면접 질문을 지원합니다.**"
 )
 
-# API 키 직접 연동
+# API 키 연동
 try:
     API_KEY = st.secrets["GEMINI_API_KEY"]
 except Exception:
@@ -319,14 +317,19 @@ document.getElementById('b_{q_id}').onclick = function() {{
 </script>"""
     components.html(html, height=46)
 
-# 6. 사이드바 
+# 6. 사이드바 (시작 및 마무리 공통 질문 옵션 추가)
 with st.sidebar:
     st.markdown('<div class="side-title">⚙️ 모의 면접 조건 설정</div>', unsafe_allow_html=True)
-    target_major = st.text_input("지원 희망 전공/학과", placeholder="예: 컴퓨터공학과, 의예과")
+    target_major = st.text_input("지원 희망 대학/전공", placeholder="예: 한국대 컴퓨터공학과, 의예과")
     q_sel = st.selectbox("추출 면접 문항 수", ["10문항", "5문항", "3문항"], index=2)
     q_count = int(q_sel.replace("문항", ""))
     diff_sel = st.selectbox("평가 난이도", ["하 (기초 사실 확인)", "중 (탐구/문제해결)", "상 (심화 학술이론)"], index=0)
     difficulty = diff_sel[0]
+    
+    st.markdown("---")
+    # 💡 [추가] 시작과 마무리 공통 질문 체크박스 분리 제공
+    include_intro = st.checkbox("💡 지원 동기 (시작 공통 문항) 포함", value=True, help="체크 시 '왜 우리 대학/전공에 지원했는가?' 문항이 첫 번째로 자동 추가됩니다.")
+    include_closing = st.checkbox("💡 마지막 할 말 (마무리 공통 문항) 포함", value=True, help="체크 시 면접을 마무리하는 '마지막으로 하고 싶은 말' 문항이 맨 끝에 자동 추가됩니다.")
 
 # 7. 메인 입력 영역
 st.markdown("### 본인의 교과 탐구 및 프로젝트 활동 요약 입력")
@@ -353,7 +356,48 @@ if st.button("🚀 면접 질문 추출하기", use_container_width=True):
             prompt = f"지원 전공: {target_major or '미지정'}\n\n[탐구 활동 요약]\n{sanitized}"
             try:
                 res = call_gemini(prompt, q_count, difficulty)
-                st.success(f"🎉 총 {q_count}문항 추출 완료 (난이도: {difficulty})")
+                
+                # =======================================================
+                # 💡 [핵심 로직] 시작 및 마무리 공통 문항 주입
+                # =======================================================
+                if "sections" not in res:
+                    res["sections"] = []
+                
+                # 1. 시작 공통 문항 (맨 앞에 삽입)
+                if include_intro:
+                    major_text = target_major.strip() if target_major.strip() else "해당 모집 단위"
+                    intro_section = {
+                        "category": "기본 소양 및 지원 동기 (공통 필수)",
+                        "questions": [
+                            {
+                                "type": "공통/인성 면접",
+                                "source_quote": "대입 면접 공통 필수 평가 항목",
+                                "question": f"우리 대학의 {major_text}에 지원하게 된 구체적인 동기는 무엇이며, 입학 후 어떤 학업 계획을 가지고 있는지 말씀해 주세요.",
+                                "intent": "지원 대학 및 전공에 대한 관심도, 학업에 대한 열정 및 진로 계획의 구체성 확인",
+                                "high_score_guide": "단순한 흥미나 학교의 명성을 언급하기보다는, 본인의 기존 탐구 활동이나 관심 분야를 해당 전공의 커리큘럼(또는 대학의 인재상)과 연결지어 논리적이고 구체적으로 답변하는 것이 중요합니다."
+                            }
+                        ]
+                    }
+                    res["sections"].insert(0, intro_section)
+
+                # 2. 마무리 공통 문항 (맨 끝에 삽입)
+                if include_closing:
+                    closing_section = {
+                        "category": "최종 어필 및 마무리 (공통 필수)",
+                        "questions": [
+                            {
+                                "type": "공통/인성 면접",
+                                "source_quote": "대입 면접 마무리 공통 평가 항목",
+                                "question": "마지막으로 면접관에게 꼭 하고 싶은 말이나, 미처 다 보여주지 못한 본인의 장점이 있다면 편하게 말씀해 주세요.",
+                                "intent": "지원자의 최종적인 입학 의지, 자기 어필 능력, 그리고 면접에 임하는 태도와 진정성 확인",
+                                "high_score_guide": "준비해온 답변을 단순히 암기해서 말하기보다는, 오늘 면접에서의 아쉬웠던 점을 보완하거나 이 대학/학과에 진학하고자 하는 간절함과 진정성을 진솔하게 표현하는 것이 좋습니다."
+                            }
+                        ]
+                    }
+                    res["sections"].append(closing_section)
+                # =======================================================
+
+                st.success(f"🎉 면접 문항 추출이 완료되었습니다. (난이도: {difficulty})")
                 st.markdown("---")
                 q_num = 1
                 for sec in res.get("sections", []):
