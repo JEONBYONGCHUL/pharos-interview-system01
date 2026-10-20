@@ -153,7 +153,7 @@ div.stButton > button:hover {
 .auth-title { font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 10px; }
 .auth-desc { font-size: 14px; color: #64748b; margin-bottom: 20px; word-break: keep-all; line-height: 1.5; }
 
-/* 💡 [핵심 수정] 일반 텍스트 입력창의 글자를 강제로 별표(*)로 가리는 CSS 추가 */
+/* 브라우저 암호 제안 차단 우회 CSS */
 .stTextInput input[type="text"] {
     -webkit-text-security: disc;
 }
@@ -214,8 +214,6 @@ if not st.session_state["authenticated"]:
     
     col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
-        # 💡 [핵심 수정] type="password"를 없애고 일반 텍스트 입력창으로 변경하여 브라우저의 암호 관리자 개입을 완벽 차단합니다.
-        # 화면상에 보이는 글자는 위에서 추가한 CSS(`-webkit-text-security: disc;`)를 통해 자동으로 별표(*)로 가려집니다.
         access_code = st.text_input("입장 코드 입력", label_visibility="collapsed", placeholder="입장 코드를 입력하세요", key="access_input")
         if st.button("시스템 접속하기", use_container_width=True):
             if access_code == "pharos2027":
@@ -340,14 +338,17 @@ document.getElementById('b_{q_id}').onclick = function() {{
 # 6. 사이드바
 with st.sidebar:
     st.markdown('<div class="side-title">⚙️ 모의 면접 조건 설정</div>', unsafe_allow_html=True)
-    target_major = st.text_input("지원 희망 대학/전공", placeholder="예: 한국대 컴퓨터공학과, 의예과")
+    
+    # 💡 [핵심 수정] 항목명과 Placeholder 텍스트 변경
+    target_major = st.text_input("지원 모집단위 및 희망 전공", placeholder="예: 한국대 컴퓨터공학부, 의예과")
+    
     q_sel = st.selectbox("추출 면접 문항 수", ["5문항", "10문항", "15문항"], index=0)
     q_count = int(q_sel.replace("문항", ""))
     diff_sel = st.selectbox("평가 난이도", ["하 (기초 사실 확인)", "중 (탐구/문제해결)", "상 (심화 학술이론)"], index=0)
     difficulty = diff_sel[0]
     
     st.markdown("---")
-    include_intro = st.checkbox("💡 지원 동기 (시작 공통 문항) 포함", value=True, help="체크 시 '왜 우리 대학/전공에 지원했는가?' 문항이 첫 번째로 자동 추가됩니다.")
+    include_intro = st.checkbox("💡 지원 동기 (시작 공통 문항) 포함", value=True, help="체크 시 '왜 해당 모집단위/전공에 지원했는가?' 문항이 첫 번째로 자동 추가됩니다.")
     include_closing = st.checkbox("💡 마지막 할 말 (마무리 공통 문항) 포함", value=True, help="체크 시 면접을 마무리하는 '마지막으로 하고 싶은 말' 문항이 맨 끝에 자동 추가됩니다.")
 
 # 7. 메인 입력 영역
@@ -372,7 +373,7 @@ if st.button("🚀 면접 질문 추출하기", use_container_width=True):
     else:
         with st.spinner("모의 면접관께서 탐구 활동 내용 및 전공 심화 개념을 정밀 분석 중입니다..."):
             sanitized = sanitize_text(input_text)
-            prompt = f"지원 전공: {target_major or '미지정'}\n\n[탐구 활동 요약]\n{sanitized}"
+            prompt = f"지원 모집단위 및 희망 전공: {target_major or '미지정'}\n\n[탐구 활동 요약]\n{sanitized}"
             try:
                 res = call_gemini(prompt, q_count, difficulty)
                 
@@ -381,15 +382,15 @@ if st.button("🚀 면접 질문 추출하기", use_container_width=True):
                 
                 # 1. 시작 공통 문항 (맨 앞에 삽입)
                 if include_intro:
-                    major_text = target_major.strip() if target_major.strip() else "해당 모집 단위"
+                    major_text = target_major.strip() if target_major.strip() else "해당 모집단위"
                     intro_section = {
                         "category": "기본 소양 및 지원 동기 (공통 필수)",
                         "questions": [
                             {
                                 "type": "공통/인성 면접",
                                 "source_quote": "대입 면접 공통 필수 평가 항목",
-                                "question": f"우리 대학의 {major_text}에 지원하게 된 동기가 무엇인지 편하게 말씀해 주시고, 입학하게 된다면 어떤 학업 계획을 가지고 있는지도 함께 설명해 주세요.",
-                                "intent": "지원 대학 및 전공에 대한 관심도, 학업에 대한 열정 및 진로 계획의 구체성 확인",
+                                "question": f"{major_text}에 지원하게 된 동기가 무엇인지 편하게 말씀해 주시고, 입학하게 된다면 어떤 학업 계획을 가지고 있는지도 함께 설명해 주세요.",
+                                "intent": "지원 모집단위 및 전공에 대한 관심도, 학업에 대한 열정 및 진로 계획의 구체성 확인",
                                 "high_score_guide": "단순한 흥미나 학교의 명성을 언급하기보다는, 본인의 기존 탐구 활동이나 관심 분야를 해당 전공의 커리큘럼(또는 대학의 인재상)과 연결지어 논리적이고 구체적으로 답변하는 것이 중요합니다."
                             }
                         ]
