@@ -20,31 +20,36 @@ st.markdown("""
 .block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; }
 [data-testid="stSidebar"] > div:first-child { padding-top: 2rem !important; }
 
-/* 🚫 [강력 업데이트] 하단 광고, 워터마크, 모바일 플로팅 버튼 완벽 차단 */
+/* 🚫 [궁극의 차단] 모바일 강제 주입 워터마크, 빨간 배너, 플로팅 버튼 완벽 소멸 */
 footer, 
 [data-testid="stFooter"], 
 [data-testid="stBottom"],
 [data-testid="stAppDeployButton"],
 [data-testid="manage-app-button"],
+[data-testid="stToolbar"],
 .viewerBadge_container, 
 .viewerBadge_link, 
-a[href^="https://streamlit.io"],
+.stDeployButton,
 div[class^="viewerBadge"],
-#MainMenu, 
-header[data-testid="stHeader"]::after {
+div[class*="viewerBadge"],
+a[href*="streamlit.io"],
+a[href*="streamlit.com"],
+iframe[src*="badge"],
+#MainMenu {
     visibility: hidden !important; 
     display: none !important;
     opacity: 0 !important;
     pointer-events: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    position: absolute !important;
+    z-index: -9999 !important;
 }
 
-/* 💡 상단 헤더는 투명하게 유지하되, 툴바 액션만 핀셋 제거 */
+/* 💡 상단 헤더는 투명하게 유지 */
 [data-testid="stHeader"] {
     background: transparent !important;
     box-shadow: none !important;
-}
-[data-testid="stToolbarActions"], .stDeployButton, [data-testid="stDeployButton"] {
-    display: none !important;
 }
 
 /* 헤더 배너 스타일 */
@@ -157,7 +162,7 @@ div.stButton > button:hover {
 .auth-title { font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 10px; }
 .auth-desc { font-size: 14px; color: #64748b; margin-bottom: 20px; word-break: keep-all; line-height: 1.5; }
 
-/* 브라우저 암호 제안 차단 우회 CSS */
+/* 💡 입장 코드 핀셋 마스킹 */
 input[placeholder="입장 코드를 입력하세요"] {
     -webkit-text-security: disc !important;
 }
