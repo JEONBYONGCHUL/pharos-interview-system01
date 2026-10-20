@@ -20,7 +20,7 @@ st.markdown("""
 .block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; }
 [data-testid="stSidebar"] > div:first-child { padding-top: 2rem !important; }
 
-/* 🚫 하단 광고 및 플로팅 버튼 완벽 차단 */
+/* 🚫 [강력 업데이트] 하단 광고, 워터마크, 모바일 플로팅 버튼 완벽 차단 */
 footer, 
 [data-testid="stFooter"], 
 [data-testid="stBottom"],
@@ -29,12 +29,16 @@ footer,
 .viewerBadge_container, 
 .viewerBadge_link, 
 a[href^="https://streamlit.io"],
-div[class^="viewerBadge"] {
+div[class^="viewerBadge"],
+#MainMenu, 
+header[data-testid="stHeader"]::after {
     visibility: hidden !important; 
     display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
 }
 
-/* 💡 상단 헤더는 투명하게 유지하되, Share/GitHub 로고 등 툴바 액션만 핀셋 제거 (점 3개는 생존) */
+/* 💡 상단 헤더는 투명하게 유지하되, 툴바 액션만 핀셋 제거 */
 [data-testid="stHeader"] {
     background: transparent !important;
     box-shadow: none !important;
@@ -153,7 +157,7 @@ div.stButton > button:hover {
 .auth-title { font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 10px; }
 .auth-desc { font-size: 14px; color: #64748b; margin-bottom: 20px; word-break: keep-all; line-height: 1.5; }
 
-/* 💡 [핵심 수정] 브라우저 암호 제안 차단 우회 CSS (오직 입장 코드 창에만 한정 적용) */
+/* 브라우저 암호 제안 차단 우회 CSS */
 input[placeholder="입장 코드를 입력하세요"] {
     -webkit-text-security: disc !important;
 }
