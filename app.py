@@ -85,12 +85,12 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 4. 네이버 프리미엄콘텐츠 채널 링크
+# 4. 네이버프리미엄콘텐츠 채널 링크
 st.markdown(f"""
 <div class="brand-blog-center">
     <div class="logo-box">{svg_logo}</div>
     <div class="brand-info-box">
-        <span class="brand-title-text">네이버 프리미엄콘텐츠 파로스대입랩</span>
+        <span class="brand-title-text">네이버프리미엄콘텐츠 파로스대입랩</span>
         <a class="brand-link-text" href="https://contents.premium.naver.com/pharoslab/jinhak" target="_blank">https://contents.premium.naver.com/pharoslab/jinhak</a>
     </div>
 </div>
@@ -106,7 +106,7 @@ if not st.session_state["authenticated"]:
     st.markdown("""
     <div class="auth-box">
         <div class="auth-title">🔒 프리미엄 시스템 입장</div>
-        <div class="auth-desc">네이버 프리미엄콘텐츠 파로스대입랩 구독자 전용 서비스입니다.<br>안내받으신 <b>입장 코드</b>를 입력해 주세요.</div>
+        <div class="auth-desc">네이버프리미엄콘텐츠 파로스대입랩 구독자 전용 서비스입니다.<br>안내받으신 <b>입장 코드</b>를 입력해 주세요.</div>
     </div>
     """, unsafe_allow_html=True)
     
