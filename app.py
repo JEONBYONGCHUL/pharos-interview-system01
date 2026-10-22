@@ -29,13 +29,12 @@ footer { visibility: hidden !important; }
 .b-title { font-size: clamp(16px, 4vw, 30px); font-weight: 800; letter-spacing: -0.04em; color: #f8fafc; margin: 0; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .b-sub { font-size: clamp(11.5px, 2.5vw, 15px); color: #94a3b8; margin-top: 8px; margin-bottom: 0px; word-break: keep-all; }
 
-/* 네프콘 채널 링크 박스 스타일 (가로 형태 유지, 전체 가운데 정렬) */
-.brand-blog-center { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 10px 0 16px 0; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0; }
-.logo-box { width: 44px; height: 40px; display: flex; align-items: center; justify-content: center; }
-.brand-info-box { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
-.brand-title-text { font-size: 15px; font-weight: 800; color: #0f172a; }
-.brand-link-text { font-size: 13.5px; color: #0284c7 !important; text-decoration: none !important; font-weight: 600; }
-.brand-link-text:hover { color: #0369a1 !important; text-decoration: underline !important; }
+/* 네프콘 채널 링크 박스 스타일 (위아래 중앙 정렬) */
+.brand-blog-center { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 10px 0 20px 0; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0; text-align: center; }
+.logo-box { width: 50px; height: 46px; display: flex; align-items: center; justify-content: center; }
+.brand-info-box { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.brand-title-text { font-size: 15px; font-weight: 800; color: #0f172a; word-break: keep-all; line-height: 1.2; }
+.brand-link-text { font-size: 13.5px; color: #0284c7 !important; text-decoration: none !important; font-weight: 600; word-break: break-all; line-height: 1.2; }
 
 /* 사이드바 스타일 */
 [data-testid="stSidebar"] { background-color: #f8fafc; border-right: 1px solid #e2e8f0; }
