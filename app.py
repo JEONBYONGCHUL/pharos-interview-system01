@@ -4,7 +4,7 @@ import streamlit.components.v1 as components
 
 # 1. 페이지 설정
 st.set_page_config(
-    page_title="교과 탐구 및 프로젝트 활동 모의 면접",
+    page_title="파로스 서류 기반 모의면접 트레이너",
     page_icon="logo.png",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -29,10 +29,10 @@ footer { visibility: hidden !important; }
 .b-title { font-size: clamp(16px, 4vw, 30px); font-weight: 800; letter-spacing: -0.04em; color: #f8fafc; margin: 0; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .b-sub { font-size: clamp(11.5px, 2.5vw, 15px); color: #94a3b8; margin-top: 8px; margin-bottom: 0px; word-break: keep-all; }
 
-/* 네프콘 채널 링크 박스 스타일 */
-.brand-blog-center { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 10px 0 16px 0; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0; }
-.logo-box { width: 44px; height: 40px; display: flex; align-items: center; justify-content: center; }
-.brand-info-box { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+/* 네프콘 채널 링크 박스 스타일 (전체 가운데 정렬) */
+.brand-blog-center { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 10px 0 20px 0; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0; text-align: center; }
+.logo-box { width: 50px; height: 46px; display: flex; align-items: center; justify-content: center; }
+.brand-info-box { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .brand-title-text { font-size: 15px; font-weight: 800; color: #0f172a; }
 .brand-link-text { font-size: 13.5px; color: #0284c7 !important; text-decoration: none !important; font-weight: 600; }
 .brand-link-text:hover { color: #0369a1 !important; text-decoration: underline !important; }
@@ -80,8 +80,8 @@ svg_logo = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 155" widt
 # 3. 메인 배너
 st.markdown("""
 <div class="header-box">
-    <div class="b-title">교과 탐구 및 프로젝트 활동 모의 면접</div>
-    <div class="b-sub">교과 탐구 및 프로젝트 기반 맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div>
+    <div class="b-title">파로스 서류 기반 모의면접 트레이너</div>
+    <div class="b-sub">맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div>
 </div>
 """, unsafe_allow_html=True)
 
