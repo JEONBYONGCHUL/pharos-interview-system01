@@ -122,13 +122,13 @@ if not st.session_state["authenticated"]:
     st.stop()
 # ==========================================================
 
-# 5. 관련 법령 준수 안내 배너
-st.info(
-    "🔒 **관련 법령 준수 안내**\n\n"
-    "본 시스템은 「초·중등교육법」 제25조의2에 따라 학교생활기록부를 취득하지 않습니다. "
-    "학교생활기록부 원문(PDF / 세특 기재문)의 수집·업로드를 전면 차단하며, "
-    "학생 본인의 탐구 활동 등을 기반으로 모의 면접 질문을 지원합니다."
-)
+# 5. 관련 법령 준수 안내 배너 (가운데 정렬 커스텀 박스)
+st.markdown("""
+<div style="background-color: #eff6ff; border-radius: 8px; padding: 20px; margin-bottom: 24px; text-align: center; color: #1e3a8a; font-size: 15px; line-height: 1.6; border: 1px solid #bfdbfe;">
+    <div style="font-weight: 800; margin-bottom: 8px; font-size: 16px;">🔒 관련 법령 준수 안내</div>
+    본 시스템은 「초·중등교육법」 제25조의2에 따라 학교생활기록부를 취득하지 않습니다. 학교생활기록부의 수집·업로드를 전면 차단하며, 수험생 본인의 탐구 활동 등 내용 입력 사항을 기반으로 모의 면접 질문을 지원합니다.
+</div>
+""", unsafe_allow_html=True)
 
 # API 키 연동 (Render 환경 변수 방식 적용)
 try:
@@ -248,13 +248,12 @@ with st.sidebar:
     include_intro = st.checkbox("💡 지원 동기 (시작 공통 문항) 포함", value=True, help="체크 시 '왜 해당 모집단위/전공에 지원했는가?' 문항이 첫 번째로 자동 추가됩니다.")
     include_closing = st.checkbox("💡 마지막 할 말 (마무리 공통 문항) 포함", value=True, help="체크 시 면접을 마무리하는 '마지막으로 하고 싶은 말' 문항이 맨 끝에 자동 추가됩니다.")
 
-# 7. 메인 입력 영역
-st.markdown("### 본인 탐구 활동 등 내용 입력")
+# 7. 메인 입력 영역 (제목 가운데 정렬)
+st.markdown("<h3 style='text-align: center; color: #0f172a; margin-top: 10px; margin-bottom: 10px;'>본인 탐구 활동 등 내용 입력</h3>", unsafe_allow_html=True)
 
 st.caption("✅ **안심하고 사용하세요!** 본 모의 면접 시스템은 완전 휘발성 구조로 설계되어, 입력하신 모든 데이터는 서버에 일절 저장되지 않고 즉시 파기됩니다.")
 
-placeholder_content = """본인의 핵심 탐구 주제와 경험을 요약해 주세요.
-(※ 초·중등교육법 제25조의2에 따라 학생부 원문 복사 입력은 제한됩니다)"""
+placeholder_content = "본인의 탐구 활동 등 내용을 입력해 주세요(*「초·중등교육법」제25조의2에 따라 학교생활기록부 업로드 지원하지 않음)"
 
 input_text = st.text_area(
     label="활동 요약 텍스트 입력",
