@@ -10,13 +10,13 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. 스타일링 CSS (안전한 차단만 유지)
+# 2. 스타일링 CSS (상단 여백 및 간격 최적화)
 st.markdown("""
 <style>
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 * { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; }
 
-.block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; }
+.block-container { padding-top: 1.5rem !important; padding-bottom: 2rem !important; }
 [data-testid="stSidebar"] > div:first-child { padding-top: 2rem !important; }
 
 /* 🚫 상단 툴바 및 하단 기본 푸터 안전하게 제거 */
@@ -24,17 +24,17 @@ st.markdown("""
 [data-testid="stToolbarActions"], .stDeployButton, [data-testid="stDeployButton"], [data-testid="manage-app-button"] { display: none !important; }
 footer { visibility: hidden !important; }
 
-/* 헤더 배너 스타일 */
-.header-box { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 24px 15px; border-radius: 14px; color: white; margin-bottom: 16px; text-align: center; box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.25); }
+/* 헤더 배너 스타일 (상단 여백 밀착 조정) */
+.header-box { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 20px 15px; border-radius: 14px; color: white; margin-bottom: 10px; text-align: center; box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.25); }
 .b-title { font-size: clamp(16px, 4vw, 30px); font-weight: 800; letter-spacing: -0.04em; color: #f8fafc; margin: 0; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.b-sub { font-size: clamp(11.5px, 2.5vw, 15px); color: #94a3b8; margin-top: 8px; margin-bottom: 0px; word-break: keep-all; }
+.b-sub { font-size: clamp(11.5px, 2.5vw, 15px); color: #94a3b8; margin-top: 6px; margin-bottom: 0px; word-break: keep-all; }
 
-/* 네프콘 채널 링크 박스 스타일 (위아래 중앙 정렬) */
-.brand-blog-center { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 10px 0 20px 0; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0; text-align: center; }
-.logo-box { width: 50px; height: 46px; display: flex; align-items: center; justify-content: center; }
-.brand-info-box { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.brand-title-text { font-size: 15px; font-weight: 800; color: #0f172a; word-break: keep-all; line-height: 1.2; }
-.brand-link-text { font-size: 13.5px; color: #0284c7 !important; text-decoration: none !important; font-weight: 600; word-break: break-all; line-height: 1.2; }
+/* 네프콘 채널 링크 박스 스타일 (하단 여백 대폭 슬림화) */
+.brand-blog-center { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 5px 0 10px 0; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; text-align: center; }
+.logo-box { width: 45px; height: 40px; display: flex; align-items: center; justify-content: center; }
+.brand-info-box { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 100%; padding: 0 10px; box-sizing: border-box; }
+.brand-title-text { font-size: 14.5px; font-weight: 800; color: #0f172a; word-break: keep-all; line-height: 1.2; }
+.brand-link-text { font-size: clamp(11.5px, 3.2vw, 13.5px); color: #0284c7 !important; text-decoration: none !important; font-weight: 600; word-break: break-all; overflow-wrap: break-word; line-height: 1.3; max-width: 100%; }
 
 /* 사이드바 스타일 */
 [data-testid="stSidebar"] { background-color: #f8fafc; border-right: 1px solid #e2e8f0; }
@@ -47,10 +47,10 @@ div.stButton > button:hover { background: linear-gradient(135deg, #0369a1 0%, #0
 .q-title { font-size: 17px; font-weight: 700; color: #0f172a; margin: 10px 0; line-height: 1.5; word-break: keep-all; }
 .guide { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 10px 14px; border-radius: 8px; font-size: 13.5px; font-weight: 600; margin-top: 10px; word-break: keep-all; }
 
-/* 비밀번호 인증 박스 스타일 */
-.auth-box { background: white; border: 1px solid #e2e8f0; border-top: 5px solid #0f172a; border-radius: 12px; padding: 30px; margin: 40px auto; max-width: 400px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); text-align: center; }
-.auth-title { font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 10px; }
-.auth-desc { font-size: 14px; color: #64748b; margin-bottom: 20px; word-break: keep-all; line-height: 1.5; }
+/* 비밀번호 인증 박스 스타일 (상단 마진 축소로 위로 끌어올림) */
+.auth-box { background: white; border: 1px solid #e2e8f0; border-top: 5px solid #0f172a; border-radius: 12px; padding: 25px 20px; margin: 15px auto 20px auto; max-width: 400px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); text-align: center; }
+.auth-title { font-size: 19px; font-weight: 800; color: #0f172a; margin-bottom: 8px; }
+.auth-desc { font-size: 13.5px; color: #64748b; margin-bottom: 15px; word-break: keep-all; line-height: 1.5; }
 
 /* 💡 입장 코드 핀셋 마스킹 */
 input[placeholder="입장 코드를 입력하세요"] { -webkit-text-security: disc !important; }
@@ -122,11 +122,13 @@ if not st.session_state["authenticated"]:
     st.stop()
 # ==========================================================
 
-# 5. 관련 법령 준수 안내 배너 (가운데 정렬 커스텀 박스)
+# 5. 관련 법령 준수 안내 배너 (제목은 가운데, 본문은 좌측 정렬)
 st.markdown("""
-<div style="background-color: #eff6ff; border-radius: 8px; padding: 20px; margin-bottom: 24px; text-align: center; color: #1e3a8a; font-size: 15px; line-height: 1.6; border: 1px solid #bfdbfe;">
-    <div style="font-weight: 800; margin-bottom: 8px; font-size: 16px;">관련 법령 준수 안내</div>
-    본 시스템은 「초·중등교육법」 제25조의2에 유의하여 학교생활기록부를 취득하지 않습니다. 학교생활기록부의 수집·업로드를 전면 차단하며, 수험생 본인의 탐구 활동 등 내용 입력 사항을 기반으로 모의 면접 질문을 지원합니다.
+<div style="background-color: #eff6ff; border-radius: 8px; padding: 20px; margin-bottom: 24px; border: 1px solid #bfdbfe;">
+    <div style="font-weight: 800; margin-bottom: 10px; font-size: 16px; color: #1e3a8a; text-align: center;">관련 법령 준수 안내</div>
+    <div style="color: #1e3a8a; font-size: 14.5px; line-height: 1.6; text-align: left; word-break: keep-all;">
+        본 시스템은 「초·중등교육법」 제25조의2에 유의하여 학교생활기록부를 취득하지 않습니다. 학교생활기록부의 수집·업로드를 전면 차단하며, 수험생 본인의 탐구 활동 등 내용 입력 사항을 기반으로 모의 면접 질문을 지원합니다.
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -248,8 +250,12 @@ with st.sidebar:
     include_intro = st.checkbox("💡 지원 동기 (시작 공통 문항) 포함", value=True, help="체크 시 '왜 해당 모집단위/전공에 지원했는가?' 문항이 첫 번째로 자동 추가됩니다.")
     include_closing = st.checkbox("💡 마지막 할 말 (마무리 공통 문항) 포함", value=True, help="체크 시 면접을 마무리하는 '마지막으로 하고 싶은 말' 문항이 맨 끝에 자동 추가됩니다.")
 
-# 7. 메인 입력 영역 (제목 가운데 정렬)
-st.markdown("<h3 style='text-align: center; color: #0f172a; margin-top: 10px; margin-bottom: 10px;'>본인 탐구 활동 등 내용 입력</h3>", unsafe_allow_html=True)
+# 7. 메인 입력 영역
+st.markdown("""
+<div style="text-align: center; margin-top: 5px; margin-bottom: 5px;">
+    <h3 style='font-size: clamp(20px, 5vw, 26px); font-weight: 800; color: #0f172a; margin: 0; white-space: nowrap;'>본인 탐구 활동 등 내용 입력</h3>
+</div>
+""", unsafe_allow_html=True)
 
 st.caption("✅ **안심하고 사용하세요!** 본 모의 면접 시스템은 완전 휘발성 구조로 설계되어, 입력하신 모든 내용은 서버에 일절 저장되지 않고 즉시 파기됩니다.")
 
