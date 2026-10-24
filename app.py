@@ -10,7 +10,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. 스타일링 CSS (상단 여백 및 간격 최적화)
+# 2. 스타일링 CSS (모바일 URL 줄바꿈 및 반응형 최적화)
 st.markdown("""
 <style>
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -24,17 +24,17 @@ st.markdown("""
 [data-testid="stToolbarActions"], .stDeployButton, [data-testid="stDeployButton"], [data-testid="manage-app-button"] { display: none !important; }
 footer { visibility: hidden !important; }
 
-/* 헤더 배너 스타일 (상단 여백 밀착 조정) */
+/* 헤더 배너 스타일 */
 .header-box { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 20px 15px; border-radius: 14px; color: white; margin-bottom: 10px; text-align: center; box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.25); }
 .b-title { font-size: clamp(16px, 4vw, 30px); font-weight: 800; letter-spacing: -0.04em; color: #f8fafc; margin: 0; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .b-sub { font-size: clamp(11.5px, 2.5vw, 15px); color: #94a3b8; margin-top: 6px; margin-bottom: 0px; word-break: keep-all; }
 
-/* 네프콘 채널 링크 박스 스타일 (하단 여백 대폭 슬림화) */
+/* 네프콘 채널 링크 박스 스타일 (URL 모바일 가로폭 맞춤 최적화) */
 .brand-blog-center { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 5px 0 10px 0; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; text-align: center; }
 .logo-box { width: 45px; height: 40px; display: flex; align-items: center; justify-content: center; }
-.brand-info-box { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 100%; padding: 0 10px; box-sizing: border-box; }
+.brand-info-box { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 100%; padding: 0 5px; box-sizing: border-box; }
 .brand-title-text { font-size: 14.5px; font-weight: 800; color: #0f172a; word-break: keep-all; line-height: 1.2; }
-.brand-link-text { font-size: clamp(11.5px, 3.2vw, 13.5px); color: #0284c7 !important; text-decoration: none !important; font-weight: 600; word-break: break-all; overflow-wrap: break-word; line-height: 1.3; max-width: 100%; }
+.brand-link-text { font-size: clamp(10px, 3vw, 13px); color: #0284c7 !important; text-decoration: none !important; font-weight: 600; word-break: break-all; overflow-wrap: break-word; line-height: 1.3; max-width: 100%; letter-spacing: -0.5px; }
 
 /* 사이드바 스타일 */
 [data-testid="stSidebar"] { background-color: #f8fafc; border-right: 1px solid #e2e8f0; }
@@ -47,7 +47,7 @@ div.stButton > button:hover { background: linear-gradient(135deg, #0369a1 0%, #0
 .q-title { font-size: 17px; font-weight: 700; color: #0f172a; margin: 10px 0; line-height: 1.5; word-break: keep-all; }
 .guide { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 10px 14px; border-radius: 8px; font-size: 13.5px; font-weight: 600; margin-top: 10px; word-break: keep-all; }
 
-/* 비밀번호 인증 박스 스타일 (상단 마진 축소로 위로 끌어올림) */
+/* 비밀번호 인증 박스 스타일 */
 .auth-box { background: white; border: 1px solid #e2e8f0; border-top: 5px solid #0f172a; border-radius: 12px; padding: 25px 20px; margin: 15px auto 20px auto; max-width: 400px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); text-align: center; }
 .auth-title { font-size: 19px; font-weight: 800; color: #0f172a; margin-bottom: 8px; }
 .auth-desc { font-size: 13.5px; color: #64748b; margin-bottom: 15px; word-break: keep-all; line-height: 1.5; }
@@ -122,7 +122,7 @@ if not st.session_state["authenticated"]:
     st.stop()
 # ==========================================================
 
-# 5. 관련 법령 준수 안내 배너 (제목은 가운데, 본문은 좌측 정렬)
+# 5. 관련 법령 준수 안내 배너
 st.markdown("""
 <div style="background-color: #eff6ff; border-radius: 8px; padding: 20px; margin-bottom: 24px; border: 1px solid #bfdbfe;">
     <div style="font-weight: 800; margin-bottom: 10px; font-size: 16px; color: #1e3a8a; text-align: center;">관련 법령 준수 안내</div>
