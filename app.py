@@ -51,9 +51,6 @@ div.stButton > button:hover { background: linear-gradient(135deg, #0369a1 0%, #0
 .auth-box { background: white; border: 1px solid #e2e8f0; border-top: 5px solid #0f172a; border-radius: 12px; padding: 18px 20px; margin: 15px auto 20px auto; max-width: 360px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); text-align: center; }
 .auth-title { font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 6px; }
 .auth-desc { font-size: 13.5px; color: #64748b; margin-bottom: 10px; word-break: keep-all; line-height: 1.5; }
-
-/* 💡 입장 코드 핀셋 마스킹 */
-input[placeholder="입장 코드를 입력하세요"] { -webkit-text-security: disc !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -111,7 +108,14 @@ if not st.session_state["authenticated"]:
     
     col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
-        access_code = st.text_input("입장 코드 입력", label_visibility="collapsed", placeholder="입장 코드를 입력하세요", key="access_input")
+        # 💡 type="password" 추가: 자동으로 우측에 '눈알(보기/숨기기)' 아이콘이 생성됩니다.
+        access_code = st.text_input(
+            "입장 코드 입력", 
+            label_visibility="collapsed", 
+            placeholder="입장 코드를 입력하세요", 
+            type="password", 
+            key="access_input"
+        )
         if st.button("시스템 접속하기", use_container_width=True):
             # 네프콘 전용 코드 및 스마트스토어 단건 구매 전용 코드 허용
             valid_codes = ["pharosjinhak2027", "storepharos2027"]
