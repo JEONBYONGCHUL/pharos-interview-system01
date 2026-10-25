@@ -47,10 +47,10 @@ div.stButton > button:hover { background: linear-gradient(135deg, #0369a1 0%, #0
 .q-title { font-size: 17px; font-weight: 700; color: #0f172a; margin: 10px 0; line-height: 1.5; word-break: keep-all; }
 .guide { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 10px 14px; border-radius: 8px; font-size: 13.5px; font-weight: 600; margin-top: 10px; word-break: keep-all; }
 
-/* 비밀번호 인증 박스 스타일 */
-.auth-box { background: white; border: 1px solid #e2e8f0; border-top: 5px solid #0f172a; border-radius: 12px; padding: 25px 20px; margin: 15px auto 20px auto; max-width: 400px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); text-align: center; }
-.auth-title { font-size: 19px; font-weight: 800; color: #0f172a; margin-bottom: 8px; }
-.auth-desc { font-size: 13.5px; color: #64748b; margin-bottom: 15px; word-break: keep-all; line-height: 1.5; }
+/* 비밀번호 인증 박스 스타일 (컴팩트하게 수정) */
+.auth-box { background: white; border: 1px solid #e2e8f0; border-top: 5px solid #0f172a; border-radius: 12px; padding: 18px 20px; margin: 15px auto 20px auto; max-width: 360px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); text-align: center; }
+.auth-title { font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 6px; }
+.auth-desc { font-size: 13.5px; color: #64748b; margin-bottom: 10px; word-break: keep-all; line-height: 1.5; }
 
 /* 💡 입장 코드 핀셋 마스킹 */
 input[placeholder="입장 코드를 입력하세요"] { -webkit-text-security: disc !important; }
@@ -105,7 +105,7 @@ if not st.session_state["authenticated"]:
     st.markdown("""
     <div class="auth-box">
         <div class="auth-title">🔒 프리미엄 시스템 입장</div>
-        <div class="auth-desc">네이버프리미엄콘텐츠 구독자 또는 스마트스토어 단건 구매자 전용 서비스입니다.<br>안내받으신 <b>입장 코드</b>를 입력해 주세요.</div>
+        <div class="auth-desc">안내받으신 <b>입장 코드</b>를 입력해 주세요.</div>
     </div>
     """, unsafe_allow_html=True)
     
