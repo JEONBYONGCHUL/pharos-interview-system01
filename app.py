@@ -108,13 +108,14 @@ if not st.session_state["authenticated"]:
     
     col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
-        # 💡 type="password" 추가: 자동으로 우측에 '눈알(보기/숨기기)' 아이콘이 생성됩니다.
+        # 💡 autocomplete="new-password" 추가: 구글 자동완성 팝업 차단
         access_code = st.text_input(
             "입장 코드 입력", 
             label_visibility="collapsed", 
             placeholder="입장 코드를 입력하세요", 
             type="password", 
-            key="access_input"
+            key="access_input",
+            autocomplete="new-password"
         )
         if st.button("시스템 접속하기", use_container_width=True):
             # 네프콘 전용 코드 및 스마트스토어 단건 구매 전용 코드 허용
@@ -172,7 +173,7 @@ def call_gemini(prompt, count, diff):
 - 중요 지침 1: 생성되는 질문 중 최소 1~2문항 이상은 위의 [난이도별 핵심 평가 요소]를 묻는 개방형/인성 면접 질문으로 구성하고, 서류 기반 질문과 자연스럽게 믹스하세요.
 - 중요 지침 2: 학생이 여러 번 연습할 수 있도록 매 요청마다 전혀 다른 앵글의 변형된 질문을 생성하세요. (System Random Seed 적용됨)
 - 중요 지침 3: 아무리 난이도가 높은 질문이라도, 고등학생이 즉각적으로 이해할 수 있도록 어려운 학술 용어나 한자어 사용을 피하고, 부드럽고 쉬운 일상적인 구어체로 질문을 구성하세요.
-- 중요 지침 4: 질문의 형태를 다채롭게 구성하세요. 핵심을 하나만 묻는 '단일 질문'과, "A를 설명해보고, 그것을 바탕으로 B를 어떻게 해결했는지 말씀해주세요."처럼 두 가지를 동시에 묻는 '복합 질문(2-part question)'을 적절한 비율로 자연스럽게 섞어서 출제하세요.
+- 중요 지침 4: 질문의 형태를 다채롭게 구성하세요. 핵심을 하나만 묻는 '단일 질문'과, "A를 설명해보고, 그것을 바탕으로 B를 단어떻게 해결했는지 말씀해주세요."처럼 두 가지를 동시에 묻는 '복합 질문(2-part question)'을 적절한 비율로 자연스럽게 섞어서 출제하세요.
 
 반드시 마크다운 백틱 없이 순수 JSON 포맷으로만 응답하세요:
 {{
