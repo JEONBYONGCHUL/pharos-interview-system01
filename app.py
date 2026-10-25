@@ -29,7 +29,7 @@ footer { visibility: hidden !important; }
 .b-title { font-size: clamp(16px, 4vw, 30px); font-weight: 800; letter-spacing: -0.04em; color: #f8fafc; margin: 0; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .b-sub { font-size: clamp(11.5px, 2.5vw, 15px); color: #94a3b8; margin-top: 6px; margin-bottom: 0px; word-break: keep-all; }
 
-/* 네프콘 채널 링크 박스 스타일 (URL 모바일 가로폭 맞춤 최적화) */
+/* 네프콘 채널 링크 박스 스타일 */
 .brand-blog-center { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 5px 0 10px 0; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; text-align: center; }
 .logo-box { width: 45px; height: 40px; display: flex; align-items: center; justify-content: center; }
 .brand-info-box { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 100%; padding: 0 5px; box-sizing: border-box; }
@@ -47,7 +47,7 @@ div.stButton > button:hover { background: linear-gradient(135deg, #0369a1 0%, #0
 .q-title { font-size: 17px; font-weight: 700; color: #0f172a; margin: 10px 0; line-height: 1.5; word-break: keep-all; }
 .guide { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 10px 14px; border-radius: 8px; font-size: 13.5px; font-weight: 600; margin-top: 10px; word-break: keep-all; }
 
-/* 비밀번호 인증 박스 스타일 (컴팩트하게 수정) */
+/* 비밀번호 인증 박스 스타일 */
 .auth-box { background: white; border: 1px solid #e2e8f0; border-top: 5px solid #0f172a; border-radius: 12px; padding: 18px 20px; margin: 15px auto 20px auto; max-width: 360px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); text-align: center; }
 .auth-title { font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 6px; }
 .auth-desc { font-size: 13.5px; color: #64748b; margin-bottom: 10px; word-break: keep-all; line-height: 1.5; }
@@ -108,7 +108,6 @@ if not st.session_state["authenticated"]:
     
     col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
-        # 일반 텍스트 모드로 입력받아 크롬 팝업 원천 차단 (type="password" 절대 없음)
         access_code = st.text_input(
             "입장 코드 입력", 
             label_visibility="collapsed", 
@@ -116,10 +115,8 @@ if not st.session_state["authenticated"]:
             key="access_input"
         )
         
-        # 입력칸 아래에 배치되는 체크박스
         show_code = st.checkbox("👁️ 입력한 코드 보기")
         
-        # 체크박스가 해제되어 있으면 강제로 CSS 마스킹(까만 점) 적용
         if not show_code:
             st.markdown("""
             <style>
@@ -149,7 +146,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# API 키 연동 (Render 환경 변수 방식 적용)
+# API 키 연동 
 try:
     API_KEY = os.environ["GEMINI_API_KEY"]
 except KeyError:
@@ -230,6 +227,7 @@ def call_gemini(prompt, count, diff):
     except Exception as e:
         raise Exception(f"API 요청 실패: {str(e)}")
 
+# 💡 남성 목소리 탐색 및 피치(음조) 조절 로직 추가
 def render_tts(text, q_id):
     clean = json.dumps(text, ensure_ascii=False)
     html = f"""<button id="b_{q_id}" style="background:linear-gradient(180deg,#0284c7,#0369a1);color:white;border:none;border-radius:6px;padding:7px 15px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 5px rgba(2,132,199,0.25);">🔊 음성으로 질문 듣기</button>
@@ -237,14 +235,28 @@ def render_tts(text, q_id):
 <script>
 document.getElementById('b_{q_id}').onclick = function() {{
     if (!('speechSynthesis' in window)) {{ 
-        alert('🚫 현재 열려있는 창(카카오톡, 네이버 앱 등)에서는 보안상 음성 재생을 지원하지 않습니다.\\n\\n💡 화면 우측 하단이나 우측 상단의 [메뉴(점 3개)]를 눌러서 [다른 브라우저로 열기(크롬, 사파리)]를 선택하시면 음성 지원을 완벽하게 이용하실 수 있습니다!'); 
+        alert('🚫 현재 열려있는 창에서는 보안상 음성 재생을 지원하지 않습니다.\\n다른 브라우저(크롬, 사파리 등)를 이용해 주세요.'); 
         return; 
     }}
     window.speechSynthesis.cancel();
     let u = new SpeechSynthesisUtterance({clean});
-    u.lang = 'ko-KR'; u.rate = 0.93;
-    let v = window.speechSynthesis.getVoices().find(x => x.lang && x.lang.includes('ko'));
-    if (v) u.voice = v;
+    u.lang = 'ko-KR'; 
+    u.rate = 0.93; // 말하는 속도를 살짝 낮춰 진중하게
+    u.pitch = 0.75; // 💡 기본 피치(1.0)를 0.75로 낮춰 남성/중저음 톤으로 강제 변환
+    
+    let voices = window.speechSynthesis.getVoices();
+    let koVoices = voices.filter(x => x.lang && x.lang.includes('ko'));
+    
+    // 1순위: 기기에 진짜 남성(Male/InJoon/남성) 목소리가 설치되어 있으면 최우선 선택
+    let maleVoice = koVoices.find(x => x.name.toLowerCase().includes('male') || x.name.includes('남성') || x.name.toLowerCase().includes('injoon'));
+    
+    if (maleVoice) {{
+        u.voice = maleVoice;
+        u.pitch = 0.9; // 원래 남성 목소리라면 피치를 너무 많이 낮추지 않음
+    }} else if (koVoices.length > 0) {{
+        u.voice = koVoices[0]; // 남성 목소리가 없으면 기본 목소리를 쓰되, 위에서 설정한 pitch(0.75)가 적용되어 굵은 목소리가 됨
+    }}
+
     u.onstart = () => {{ document.getElementById('b_{q_id}').style.background = '#475569'; document.getElementById('s_{q_id}').innerText = '낭독 중...'; }};
     u.onend = () => {{ document.getElementById('b_{q_id}').style.background = 'linear-gradient(180deg,#0284c7,#0369a1)'; document.getElementById('s_{q_id}').innerText = ''; }};
     window.speechSynthesis.speak(u);
@@ -290,7 +302,7 @@ if st.button("🚀 면접 질문 추출하기", use_container_width=True):
     if not input_text.strip():
         st.warning("⚠️ 면접 대비를 원하는 탐구 활동 요약 내용을 입력해 주세요.")
     else:
-        with st.spinner("모의 면접관께서 탐구 활동 내용 및 전공 심화 개념을 정밀 분석 중입니다..."):
+        with st.spinner("모의 면접관께서 기록 사항을 정밀 분석 중입니다..."):
             sanitized = sanitize_text(input_text)
             prompt = f"지원 모집단위 및 희망 전공: {target_major or '미지정'}\n\n[탐구 활동 요약]\n{sanitized}"
             try:
