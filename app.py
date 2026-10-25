@@ -108,7 +108,7 @@ if not st.session_state["authenticated"]:
     
     col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
-        # 일반 텍스트 모드로 입력받아 크롬 팝업 원천 차단
+        # 일반 텍스트 모드로 입력받아 크롬 팝업 원천 차단 (type="password" 절대 없음)
         access_code = st.text_input(
             "입장 코드 입력", 
             label_visibility="collapsed", 
@@ -116,7 +116,7 @@ if not st.session_state["authenticated"]:
             key="access_input"
         )
         
-        # 체크박스로 보기/숨기기 구현
+        # 입력칸 아래에 배치되는 체크박스
         show_code = st.checkbox("👁️ 입력한 코드 보기")
         
         # 체크박스가 해제되어 있으면 강제로 CSS 마스킹(까만 점) 적용
