@@ -96,7 +96,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ==========================================================
-# 💡 [보안] 프리미엄 콘텐츠 구독자용 입장 코드 인증 로직
+# 💡 [보안] 프리미엄 콘텐츠 및 단건 구매자용 입장 코드 인증 로직
 # ==========================================================
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
@@ -105,7 +105,7 @@ if not st.session_state["authenticated"]:
     st.markdown("""
     <div class="auth-box">
         <div class="auth-title">🔒 프리미엄 시스템 입장</div>
-        <div class="auth-desc">네이버프리미엄콘텐츠 파로스대입랩 구독자 전용 서비스입니다.<br>안내받으신 <b>입장 코드</b>를 입력해 주세요.</div>
+        <div class="auth-desc">네이버프리미엄콘텐츠 구독자 또는 스마트스토어 단건 구매자 전용 서비스입니다.<br>안내받으신 <b>입장 코드</b>를 입력해 주세요.</div>
     </div>
     """, unsafe_allow_html=True)
     
@@ -113,7 +113,10 @@ if not st.session_state["authenticated"]:
     with col2:
         access_code = st.text_input("입장 코드 입력", label_visibility="collapsed", placeholder="입장 코드를 입력하세요", key="access_input")
         if st.button("시스템 접속하기", use_container_width=True):
-            if access_code == "pharos2027":
+            # 네프콘 전용 코드 및 스마트스토어 단건 구매 전용 코드 허용
+            valid_codes = ["pharosjinhak2027", "storepharos2027"]
+            
+            if access_code in valid_codes:
                 st.session_state["authenticated"] = True
                 st.rerun()
             else:
