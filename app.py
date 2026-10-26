@@ -17,25 +17,22 @@ st.set_page_config(
 # --- [디자인 스타일 CSS] ---
 st.markdown("""
 <style>
-    /* 전체 한국어 단어 끊김 방지 (모바일 글자 떨어짐 해결) */
     * {
         word-break: keep-all; 
     }
-
-    /* 전체 상단 여백 축소 */
     .block-container {
         padding-top: 2rem !important;
         padding-bottom: 2rem !important;
     }
     
-    /* 고급스러운 진한 곤색 버튼 공통 적용 */
+    /* 메인 및 서브 버튼 곤색 통일 */
     div.stButton > button[kind="primary"], div.stButton > button[kind="secondary"] {
         background-color: #1e293b !important;
         color: white !important;
         border: none !important;
         border-radius: 6px !important;
         font-weight: bold !important;
-        margin-top: 5px; 
+        padding: 0.5rem 1rem !important;
     }
     div.stButton > button:hover {
         background-color: #0f172a !important;
@@ -56,7 +53,6 @@ st.markdown("""
         margin-bottom: 10px;
     }
     
-    /* 로고 확대(Fullscreen) 아이콘 차단 및 정중앙 정렬 */
     button[title="View fullscreen"], [data-testid="StyledFullScreenButton"] {
         display: none !important;
     }
@@ -66,28 +62,27 @@ st.markdown("""
         align-items: center !important;
     }
     
-    /* 사용자 선택 영역 박스 100% 꽉 채우기 (PC 기준 가로 배열) */
+    /* 라디오 버튼 박스 너비 100% 꽉 채우기 및 정렬 */
     div[data-testid="stRadio"] {
         width: 100% !important;
     }
-    div[role="radiogroup"] {
+    div[data-testid="stRadio"] > div[role="radiogroup"] {
         width: 100% !important;
         display: flex !important;
         flex-direction: row !important;
+        justify-content: space-between !important;
         background-color: #f8fafc !important;
-        padding: 12px 10px !important;
+        padding: 15px 20px !important;
         border-radius: 8px !important;
         border: 1px solid #e2e8f0 !important;
         box-sizing: border-box !important;
     }
     div[role="radiogroup"] > label {
         flex: 1 !important;
-        display: flex !important;
         justify-content: center !important;
         margin: 0 !important;
     }
     
-    /* 라디오 버튼 곤색 강제 덮어쓰기 */
     div[role="radiogroup"] label[data-baseweb="radio"] div:first-child {
         border-color: #1e293b !important;
     }
@@ -95,9 +90,8 @@ st.markdown("""
         background-color: #1e293b !important;
     }
     
-    /* 모바일 반응형 처리 (화면이 좁아지면 자동으로 세로 배열하여 글자 겹침 방지) */
     @media (max-width: 600px) {
-        div[role="radiogroup"] {
+        div[data-testid="stRadio"] > div[role="radiogroup"] {
             flex-direction: column !important;
             padding: 15px !important;
         }
@@ -106,12 +100,8 @@ st.markdown("""
             margin-bottom: 10px !important;
             width: 100% !important;
         }
-        /* 모바일 폰트 사이즈 미세 조정 */
-        .main-header h2 { font-size: 1.3rem !important; }
-        .main-header p { font-size: 0.8rem !important; }
     }
-
-    /* 간격 축소를 위한 커스텀 구분선 */
+    
     .custom-divider {
         margin: 15px 0;
         border: none;
@@ -138,7 +128,6 @@ def init_connection():
 
 # --- [3] 메인 화면 및 로그인/첫 접속 라우팅 ---
 def auth_screen():
-    # 구글 팝업 자동완성 우회 스크립트
     components.html(
         """
         <script>
@@ -159,11 +148,11 @@ def auth_screen():
         </div>
     """, unsafe_allow_html=True)
 
-    # 로고 크기를 70px로 더 줄이고 1:1:1 컬럼 중앙 배치
-    col_logo1, col_logo2, col_logo3 = st.columns([1, 1, 1])
+    # 비율 조정을 통한 로고 완벽 중앙 배치
+    col_logo1, col_logo2, col_logo3 = st.columns([4, 1, 4])
     with col_logo2:
         if os.path.exists("logo.png"):
-            st.image("logo.png", width=70)
+            st.image("logo.png", use_container_width=True)
     
     st.markdown("""
         <div class="brand-section">
@@ -184,6 +173,9 @@ def auth_screen():
             
             login_id = st.text_input("아이디", key="login_id")
             login_pw = st.text_input("비밀번호", type="password", key="login_pw")
+            
+            # 구글 비밀번호 팝업 가림을 원천 차단하기 위한 물리적 빈 공간
+            st.markdown("<div style='height: 110px;'></div>", unsafe_allow_html=True)
 
             if st.button("로그인", type="primary", use_container_width=True):
                 if not login_id or not login_pw:
@@ -247,14 +239,11 @@ def auth_screen():
                     except Exception as e:
                         st.error(f"로그인 처리 중 오류 발생: {e}")
 
-            st.markdown("<hr class='custom-divider'>", unsafe_allow_html=True)
+            st.markdown("<hr style='margin: 15px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
             st.markdown("<p style='text-align: center; color: #64748b; font-size: 0.9rem; margin-bottom: 10px;'>아직 사용자 등록을 하지 않으셨나요?</p>", unsafe_allow_html=True)
-            if st.button("시스템 첫 접속하기 (사용자 등록)", type="primary", use_container_width=True):
+            if st.button("시스템 첫 접속하기 (사용자 등록)", type="secondary", use_container_width=True):
                 st.session_state['view_mode'] = 'register'
                 st.rerun()
-
-            # 팝업 가림 방지용 스크롤 여유 공간
-            st.markdown("<div style='height: 150px;'></div>", unsafe_allow_html=True)
 
     # ---------------- [B] 시스템 첫 접속 (사용자 등록) 화면 ----------------
     elif st.session_state['view_mode'] == 'register':
@@ -262,7 +251,6 @@ def auth_screen():
         with col2:
             st.markdown("<div style='text-align: center; color: #1e293b; font-size: 1.8rem; font-weight: 700; margin-bottom: 10px;'>시스템 첫 접속</div>", unsafe_allow_html=True)
             
-            # 사용자 선택 (PC는 가로 채우기, 모바일은 세로 배열)
             path_choice = st.radio(
                 "사용자 선택",
                 ["네이버프리미엄콘텐츠 구독자", "네이버스토어 구매자"],
@@ -272,6 +260,9 @@ def auth_screen():
             new_id = st.text_input("사용할 아이디", key=f"reg_id_{uuid.uuid4().hex[:8]}")
             new_pw = st.text_input("사용할 비밀번호", type="password", key=f"reg_pw_{uuid.uuid4().hex[:8]}")
 
+            # 팝업 가림 원천 차단용 공간
+            st.markdown("<div style='height: 110px;'></div>", unsafe_allow_html=True)
+
             master_key = ""
             proof_info = ""
 
@@ -279,9 +270,6 @@ def auth_screen():
                 master_key = st.text_input("파로스대입랩 공지 마스터 키", key="np_key_v2")
             else:
                 proof_info = st.text_input("네이버스토어 주문번호", key="store_order_v2")
-
-            # 팝업 가림 방지용 스크롤 여유 공간
-            st.markdown("<div style='height: 130px;'></div>", unsafe_allow_html=True)
 
             st.markdown("<p style='color: #64748b; font-size: 0.9rem; text-align: center; margin-top: 15px;'>첫 등록을 완료한 이후부터 바로 아이디와 비밀번호로 로그인하여 시스템을 사용하실 수 있습니다.</p>", unsafe_allow_html=True)
 
@@ -328,7 +316,7 @@ def auth_screen():
                     except Exception as e:
                         st.error(f"처리 중 오류 발생: {e}")
 
-            if st.button("돌아가기 (로그인 화면)", type="primary", use_container_width=True):
+            if st.button("돌아가기 (로그인 화면)", type="secondary", use_container_width=True):
                 st.session_state['view_mode'] = 'login'
                 st.rerun()
 
@@ -345,8 +333,7 @@ def main_app():
     
     st.title("🎓 파로스 서류 기반 모의면접 트레이너 v1.5")
     st.write("선생님께서 기존에 다듬어두신 모의면접 및 제미나이 AI 질문 추출, TTS 음성 출력 코드가 이 아래로 매끄럽게 이어집니다.")
-    
-    st.info("여기에 기존의 생기부/자소서 업로드 및 면접 질문 생성 기능(기존 코드)을 붙여넣어 사용하시면 됩니다.")
+    st.info("여기에 기존의 생기부/자소서 업로드 및 면접 질문 생성 기능 코드를 붙여넣어 사용하시면 됩니다.")
 
 # --- [5] 세션 상태 관리 및 앱 구동 흐름 ---
 if 'logged_in' not in st.session_state:
