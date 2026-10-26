@@ -29,19 +29,15 @@ st.markdown("""
         padding-bottom: 2rem !important;
     }
     
-    /* 배너 스타일 (상하 여백 완벽 균형 유지) */
+    /* 💡 [핵심 복구] 배너 스타일 (1.0 오리지널 코드 완벽 복구 - 상하 균형 유지) */
     .header-box { 
         background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); 
-        padding: 24px 15px 22px 15px; 
+        padding: 20px 15px; 
         border-radius: 12px; 
         color: white; 
         margin-bottom: 15px; 
         text-align: center; 
         box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
     }
     .b-title { 
         font-size: clamp(18px, 4.5vw, 26px); 
@@ -118,8 +114,13 @@ def init_connection():
 
 # --- [4] 메인 화면 및 로그인/첫 접속 라우팅 ---
 def auth_screen():
-    # 배너 적용 (상하 균형을 위한 한 줄 코드 유지)
-    st.markdown('<div class="header-box"><div class="b-title">파로스 서류 기반 모의면접 트레이너</div><div class="b-sub">맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div></div>', unsafe_allow_html=True)
+    # 💡 배너 적용 (1.0 오리지널 방식 원상복구)
+    st.markdown("""
+    <div class="header-box">
+        <div class="b-title">파로스 서류 기반 모의면접 트레이너</div>
+        <div class="b-sub">맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div>
+    </div>
+    """, unsafe_allow_html=True)
 
     # 로고 70px 중앙 고정 유지
     if os.path.exists("logo.png"):
@@ -152,7 +153,7 @@ def auth_screen():
         with col2:
             login_id = st.text_input("아이디", key="login_id")
             
-            # 💡 [핵심 복구] 1.0버전 방식: type="password"를 없애 구글 팝업을 원천 차단하고, 체크박스로 눈알 기능 대체
+            # 비밀번호 마스킹 및 체크박스 유지 (건드리지 않음)
             login_pw = st.text_input("비밀번호", placeholder="비밀번호 입력", key="login_pw")
             show_login_pw = st.checkbox("👁️ 비밀번호 보기", key="chk_login_pw")
             
@@ -245,7 +246,7 @@ def auth_screen():
 
             new_id = st.text_input("사용할 아이디", key="reg_id")
             
-            # 💡 [핵심 복구] 1.0버전 방식 (팝업 차단용 체크박스)
+            # 비밀번호 마스킹 및 체크박스 유지 (건드리지 않음)
             new_pw = st.text_input("사용할 비밀번호", placeholder="비밀번호 설정", key="reg_pw")
             show_reg_pw = st.checkbox("👁️ 비밀번호 보기", key="chk_reg_pw")
             
