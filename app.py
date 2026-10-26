@@ -83,16 +83,18 @@ st.markdown("""
         word-break: break-all; 
     }
 
-    /* 2.0 라디오 버튼 (가로 100% 및 모바일 호환) */
+    /* 💡 2.0 라디오 버튼 (아래 텍스트 박스와 너비 100% 완벽 일치) */
     div[data-testid="stRadio"] { 
         width: 100% !important; 
+        max-width: 100% !important;
         margin-bottom: 10px !important; 
     }
     div[data-testid="stRadio"] > div[role="radiogroup"] { 
         width: 100% !important; 
+        max-width: 100% !important;
         display: flex !important; 
         flex-direction: row !important; 
-        justify-content: space-around !important; 
+        justify-content: space-evenly !important; 
         background-color: #f8fafc !important; 
         padding: 12px 15px !important; 
         border-radius: 8px !important; 
