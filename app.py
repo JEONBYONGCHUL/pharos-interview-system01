@@ -34,7 +34,7 @@ st.markdown("""
         -webkit-text-security: disc !important; 
     }
     
-    /* 배너 스타일 (상하 여백 완벽 균형) */
+    /* 배너 스타일 */
     .header-box { 
         background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); 
         padding: 24px 15px 22px 15px; 
@@ -170,8 +170,6 @@ def auth_screen():
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             login_id = st.text_input("아이디", key="login_id")
-            
-            # 💡 [핵심] type="password" 속성을 없애고 placeholder로 타겟팅하여 CSS 마스킹 처리
             login_pw = st.text_input("비밀번호", placeholder="비밀번호 입력", key="login_pw")
             
             if st.button("로그인", type="primary", use_container_width=True):
@@ -248,16 +246,14 @@ def auth_screen():
         with col2:
             st.markdown("<div style='text-align: center; color: #1e293b; font-size: 1.8rem; font-weight: 700; margin-bottom: 10px;'>시스템 첫 접속</div>", unsafe_allow_html=True)
             
-            # 💡 라디오 버튼 삭제 및 드롭다운(selectbox) 복구 완료
             path_choice = st.selectbox(
                 "사용자 선택",
                 ["네이버프리미엄콘텐츠 구독자", "네이버스토어 구매자"]
             )
 
-            new_id = st.text_input("사용할 아이디", key=f"reg_id_{uuid.uuid4().hex[:8]}")
-            
-            # 💡 [핵심] type="password" 속성을 없애고 placeholder로 타겟팅하여 CSS 마스킹 처리
-            new_pw = st.text_input("사용할 비밀번호", placeholder="비밀번호 설정", key=f"reg_pw_{uuid.uuid4().hex[:8]}")
+            # 💡 [해결] 고정된 key를 할당하여 화면이 새로고침되어도 입력값이 초기화되지 않도록 수정
+            new_id = st.text_input("사용할 아이디", key="reg_id")
+            new_pw = st.text_input("사용할 비밀번호", placeholder="비밀번호 설정", key="reg_pw")
 
             master_key = ""
             proof_info = ""
