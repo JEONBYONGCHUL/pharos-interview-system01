@@ -11,7 +11,7 @@ import streamlit.components.v1 as components
 # --- [1] 페이지 기본 설정 ---
 st.set_page_config(
     page_title="파로스 서류 기반 모의면접 트레이너 1.5",
-    page_icon="logo.png" if os.path.exists("logo.png") else "🎓",
+    page_icon="logo.png", # 💡 [수정] 조건문을 삭제하고 명시적으로 로고 고정
     layout="wide"
 )
 
@@ -29,10 +29,7 @@ st.markdown("""
         padding-bottom: 2rem !important;
     }
     
-    /* 💡 [보조] 1.0 비밀번호 마스킹 기법 CSS */
-    input[placeholder="비밀번호 입력"], input[placeholder="비밀번호 설정"] { 
-        -webkit-text-security: disc !important; 
-    }
+    /* 💡 [수정] 비밀번호 마스킹 CSS는 눈알 체크박스 연동을 위해 여기서 삭제하고 아래 로그인/가입 영역으로 이동했습니다. */
     
     /* 배너 스타일 (상하 여백 완벽 균형 유지) */
     .header-box { 
@@ -177,8 +174,16 @@ def auth_screen():
         with col2:
             login_id = st.text_input("아이디", key="login_id")
             
-            # 💡 [핵심] type="password" 유지 (눈알 아이콘 표시용) + placeholder 적용
-            login_pw = st.text_input("비밀번호", type="password", placeholder="비밀번호 입력", key="login_pw")
+            # 💡 [수정] 체크박스를 별도로 두어 비밀번호 팝업 방지 및 보기 기능 구현
+            login_pw = st.text_input("비밀번호", placeholder="비밀번호 입력", key="login_pw")
+            show_login_pw = st.checkbox("👁️ 비밀번호 보기", key="chk_login_pw")
+            
+            if not show_login_pw:
+                st.markdown("""
+                <style>
+                input[placeholder="비밀번호 입력"] { -webkit-text-security: disc !important; }
+                </style>
+                """, unsafe_allow_html=True)
             
             if st.button("로그인", type="primary", use_container_width=True):
                 if not login_id or not login_pw:
@@ -263,8 +268,16 @@ def auth_screen():
             # 💡 [핵심] 고정된 key 할당 (커서 이동 시 입력값 날아감 방지)
             new_id = st.text_input("사용할 아이디", key="reg_id")
             
-            # 💡 [핵심] type="password" 유지 + placeholder 적용
-            new_pw = st.text_input("사용할 비밀번호", type="password", placeholder="비밀번호 설정", key="reg_pw")
+            # 💡 [수정] 체크박스를 별도로 두어 비밀번호 팝업 방지 및 보기 기능 구현
+            new_pw = st.text_input("사용할 비밀번호", placeholder="비밀번호 설정", key="reg_pw")
+            show_reg_pw = st.checkbox("👁️ 비밀번호 보기", key="chk_reg_pw")
+            
+            if not show_reg_pw:
+                st.markdown("""
+                <style>
+                input[placeholder="비밀번호 설정"] { -webkit-text-security: disc !important; }
+                </style>
+                """, unsafe_allow_html=True)
 
             master_key = ""
             proof_info = ""
