@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import json
 import os
 import uuid
+import streamlit.components.v1 as components
 
 # --- [1] 페이지 기본 설정 ---
 st.set_page_config(
@@ -29,6 +30,7 @@ st.markdown("""
         border: none !important;
         border-radius: 6px !important;
         font-weight: bold !important;
+        margin-top: 10px; /* 팝업 대비 버튼 상단 여백 추가 */
     }
     div.stButton > button:hover {
         background-color: #0f172a !important;
@@ -49,20 +51,31 @@ st.markdown("""
         margin-bottom: 10px;
     }
     
-    /* 사용자 선택 영역 박스 처리 및 곤색 라디오 버튼 적용 */
+    /* 로고 확대(Fullscreen) 아이콘 원천 차단 */
+    button[title="View fullscreen"] {
+        display: none !important;
+    }
+    
+    /* 사용자 선택 영역 박스 처리 및 가로로 꽉 차게 */
     div[data-testid="stRadio"] > div {
         background-color: #f8fafc;
         padding: 15px 20px;
         border-radius: 8px;
         border: 1px solid #e2e8f0;
+        width: 100%;
     }
     
-    /* Streamlit 라디오 버튼 기본 빨간색 -> 곤색 강제 덮어쓰기 */
+    /* 라디오 버튼 곤색 강제 덮어쓰기 */
     div[role="radiogroup"] label[data-baseweb="radio"] div:first-child {
         border-color: #1e293b !important;
     }
     div[role="radiogroup"] label[data-baseweb="radio"] div:first-child > div {
         background-color: #1e293b !important;
+    }
+    
+    /* 입력창 아래 여유 공간 확보 (팝업 차단 보조) */
+    div[data-testid="stTextInput"] {
+        margin-bottom: 10px;
     }
     
     /* 간격 축소를 위한 커스텀 구분선 */
@@ -92,6 +105,20 @@ def init_connection():
 
 # --- [3] 메인 화면 및 로그인/첫 접속 라우팅 ---
 def auth_screen():
+    # 구글 비밀번호 관리자 팝업 강제 차단용 자바스크립트 삽입
+    components.html(
+        """
+        <script>
+        const inputs = window.parent.document.querySelectorAll('input');
+        for (let i = 0; i < inputs.length; i++) {
+            inputs[i].setAttribute('autocomplete', 'new-password');
+            inputs[i].setAttribute('data-lpignore', 'true');
+        }
+        </script>
+        """,
+        height=0, width=0
+    )
+
     st.markdown("""
         <div class="main-header">
             <h2 style='margin: 0; font-size: 1.6rem;'>파로스 서류 기반 모의면접 트레이너</h2>
@@ -99,8 +126,8 @@ def auth_screen():
         </div>
     """, unsafe_allow_html=True)
 
-    # 로고 크기 축소하여 중앙 배치
-    col_logo1, col_logo2, col_logo3 = st.columns([5, 1.2, 5])
+    # 로고 크기를 더 작게 조정 (비율 6:1:6)
+    col_logo1, col_logo2, col_logo3 = st.columns([6, 1, 6])
     with col_logo2:
         if os.path.exists("logo.png"):
             st.image("logo.png", use_container_width=True)
@@ -120,7 +147,6 @@ def auth_screen():
     if st.session_state['view_mode'] == 'login':
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            # 앵커 링크 방지를 위해 일반 div 태그 사용
             st.markdown("<div style='text-align: center; color: #1e293b; font-size: 1.8rem; font-weight: 700; margin-bottom: 10px;'>로그인</div>", unsafe_allow_html=True)
             
             login_id = st.text_input("아이디", key="login_id")
@@ -200,20 +226,19 @@ def auth_screen():
         with col2:
             st.markdown("<div style='text-align: center; color: #1e293b; font-size: 1.8rem; font-weight: 700; margin-bottom: 10px;'>시스템 첫 접속</div>", unsafe_allow_html=True)
             
-            # 사용자 선택 (CSS로 박스 처리됨)
+            # 사용자 선택 (가로 배열 적용 및 CSS 박스 처리)
             path_choice = st.radio(
                 "사용자 선택",
-                ["네이버프리미엄콘텐츠 구독자", "네이버스토어 구매자"]
+                ["네이버프리미엄콘텐츠 구독자", "네이버스토어 구매자"],
+                horizontal=True
             )
 
-            # 구글 비밀번호 관리자 자동완성 방지를 위해 라벨에 보이지 않는 공백(\u200b) 삽입 및 고유 키 부여
             new_id = st.text_input("사용할 아이디\u200b", key=f"reg_id_{uuid.uuid4().hex[:8]}")
             new_pw = st.text_input("사용할 비밀번호\u200b", type="password", key=f"reg_pw_{uuid.uuid4().hex[:8]}")
 
             master_key = ""
             proof_info = ""
 
-            # 경로에 따라 3번째 항목만 동적으로 변경 (총 3개 입력)
             if path_choice == "네이버프리미엄콘텐츠 구독자":
                 master_key = st.text_input("파로스대입랩 공지 마스터 키", key="np_key_v2")
             else:
@@ -251,7 +276,6 @@ def auth_screen():
                             st.session_state['device_token'] = str(uuid.uuid4())
                         current_device = st.session_state['device_token']
 
-                        # 사용하지 않는 입력값은 빈 문자열로 처리하여 DB에 저장
                         save_master_key = master_key if path_choice == "네이버프리미엄콘텐츠 구독자" else ""
                         save_proof_info = proof_info if path_choice == "네이버스토어 구매자" else ""
 
