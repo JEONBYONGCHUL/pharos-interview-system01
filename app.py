@@ -42,6 +42,10 @@ st.markdown("""
         margin-bottom: 15px; 
         text-align: center; 
         box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
     }
     .b-title { 
         font-size: clamp(18px, 4.5vw, 26px); 
@@ -160,35 +164,17 @@ def init_connection():
 
 # --- [4] 메인 화면 및 로그인/첫 접속 라우팅 ---
 def auth_screen():
-    # 배너 적용
-    st.markdown("""
-    <div class="header-box">
-        <div class="b-title">파로스 서류 기반 모의면접 트레이너</div>
-        <div class="b-sub">맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div>
-    </div>
-    """, unsafe_allow_html=True)
+    # 💡 스트림릿의 불필요한 줄바꿈 여백(margin)을 막기 위해 HTML 코드를 한 줄로 작성 (상하 균형 완벽 복구)
+    st.markdown('<div class="header-box"><div class="b-title">파로스 서류 기반 모의면접 트레이너</div><div class="b-sub">맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div></div>', unsafe_allow_html=True)
 
     # 로고 70px 중앙 고정
     if os.path.exists("logo.png"):
         with open("logo.png", "rb") as f:
             img_b64 = base64.b64encode(f.read()).decode()
-        st.markdown(
-            f'''
-            <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin: 5px 0 10px 0;">
-                <img src="data:image/png;base64,{img_b64}" style="width: 70px; height: auto;" />
-            </div>
-            ''',
-            unsafe_allow_html=True
-        )
+        st.markdown(f'<div style="display: flex; justify-content: center; align-items: center; width: 100%; margin: 5px 0 10px 0;"><img src="data:image/png;base64,{img_b64}" style="width: 70px; height: auto;" /></div>', unsafe_allow_html=True)
     
     # 브랜드 텍스트 적용
-    st.markdown("""
-    <div class="brand-blog-center">
-        <span class="brand-title-text">네이버프리미엄콘텐츠 파로스대입랩</span>
-        <a class="brand-link-text" href="https://contents.premium.naver.com/pharoslab/jinhak" target="_blank">https://contents.premium.naver.com/pharoslab/jinhak</a>
-    </div>
-    <hr style="margin: 5px 0 15px 0; border: none; border-top: 1px solid #e2e8f0;">
-    """, unsafe_allow_html=True)
+    st.markdown('<div class="brand-blog-center"><span class="brand-title-text">네이버프리미엄콘텐츠 파로스대입랩</span><a class="brand-link-text" href="https://contents.premium.naver.com/pharoslab/jinhak" target="_blank">https://contents.premium.naver.com/pharoslab/jinhak</a></div><hr style="margin: 5px 0 15px 0; border: none; border-top: 1px solid #e2e8f0;">', unsafe_allow_html=True)
 
     if 'view_mode' not in st.session_state:
         st.session_state['view_mode'] = 'login'
