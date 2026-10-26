@@ -6,7 +6,6 @@ import json
 import os
 import uuid
 import base64
-import streamlit.components.v1 as components
 
 # --- [1] 페이지 기본 설정 ---
 st.set_page_config(
@@ -15,10 +14,9 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- [2] 1.0버전 UI + 2.0버전 기능 완벽 통합 CSS ---
+# --- [2] UI 디자인 및 1.0 비밀번호 마스킹 CSS ---
 st.markdown("""
 <style>
-    /* 1.0 폰트 및 공통 설정 (단어 끊김 방지) */
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
     * { 
         font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; 
@@ -30,7 +28,12 @@ st.markdown("""
         padding-bottom: 2rem !important;
     }
     
-    /* 1.0 배너 스타일 (반응형 clamp 적용으로 글자 안 떨어짐) */
+    /* 💡 [핵심] 1.0 비밀번호 마스킹 기법 (구글 팝업 완벽 차단) */
+    input[placeholder="비밀번호 입력"], input[placeholder="비밀번호 설정"] { 
+        -webkit-text-security: disc !important; 
+    }
+    
+    /* 배너 스타일 */
     .header-box { 
         background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); 
         padding: 20px 15px; 
@@ -56,7 +59,7 @@ st.markdown("""
         margin-bottom: 0px; 
     }
     
-    /* 1.0 브랜드 및 링크 스타일 (반응형 clamp 적용) */
+    /* 브랜드 및 링크 스타일 */
     .brand-blog-center { 
         display: flex; 
         flex-direction: column; 
@@ -83,7 +86,38 @@ st.markdown("""
         word-break: break-all; 
     }
 
-    /* 2.0 버튼 고급 곤색 적용 */
+    /* 라디오 버튼 너비 100% 및 좌측 정렬 유지 */
+    .stRadio { 
+        width: 100% !important; 
+    }
+    div[data-testid="stRadio"] { 
+        width: 100% !important; 
+        margin-bottom: 10px !important; 
+    }
+    div[role="radiogroup"] { 
+        width: 100% !important; 
+        display: flex !important; 
+        flex-direction: row !important; 
+        justify-content: flex-start !important; 
+        gap: 30px !important; 
+        background-color: #f8fafc !important; 
+        padding: 15px 20px !important; 
+        border-radius: 8px !important; 
+        border: 1px solid #e2e8f0 !important; 
+        box-sizing: border-box !important; 
+    }
+    div[role="radiogroup"] > label { 
+        flex: 0 0 auto !important; 
+        margin: 0 !important; 
+    }
+    div[role="radiogroup"] label p { 
+        font-size: clamp(12px, 3vw, 14px) !important; 
+        white-space: nowrap !important; 
+    }
+    div[role="radiogroup"] label[data-baseweb="radio"] div:first-child { border-color: #1e293b !important; }
+    div[role="radiogroup"] label[data-baseweb="radio"] div:first-child > div { background-color: #1e293b !important; }
+
+    /* 버튼 곤색 적용 */
     div.stButton > button[kind="primary"], div.stButton > button[kind="secondary"] { 
         background-color: #1e293b !important; 
         color: white !important; 
@@ -94,6 +128,17 @@ st.markdown("""
         margin-top: 5px !important; 
     }
     div.stButton > button:hover { background-color: #0f172a !important; }
+
+    /* 모바일 반응형 */
+    @media (max-width: 600px) {
+        div[role="radiogroup"] { 
+            flex-direction: column !important; 
+            gap: 12px !important; 
+        }
+        div[role="radiogroup"] > label { 
+            justify-content: flex-start !important; 
+        }
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -115,25 +160,6 @@ def init_connection():
 
 # --- [4] 메인 화면 및 로그인/첫 접속 라우팅 ---
 def auth_screen():
-    # 💡 비밀번호 팝업 원천 차단 스크립트 (공간 띄우기 없이 완벽 차단)
-    components.html(
-        """
-        <script>
-        const doc = window.parent.document;
-        const inputs = doc.querySelectorAll('input');
-        inputs.forEach(input => {
-            input.setAttribute('autocomplete', 'new-password');
-            input.setAttribute('data-lpignore', 'true');
-        });
-        const pwInputs = doc.querySelectorAll('input[type="password"]');
-        pwInputs.forEach(pw => {
-            pw.setAttribute('readonly', 'true');
-            pw.addEventListener('focus', function() { this.removeAttribute('readonly'); });
-        });
-        </script>
-        """, height=0, width=0
-    )
-
     # 배너 적용
     st.markdown("""
     <div class="header-box">
@@ -142,7 +168,7 @@ def auth_screen():
     </div>
     """, unsafe_allow_html=True)
 
-    # 💡 로고 완벽 중앙 정렬 및 모바일 확대 방지 (HTML + Base64 렌더링 유지)
+    # 로고 70px 중앙 고정
     if os.path.exists("logo.png"):
         with open("logo.png", "rb") as f:
             img_b64 = base64.b64encode(f.read()).decode()
@@ -172,7 +198,9 @@ def auth_screen():
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             login_id = st.text_input("아이디", key="login_id")
-            login_pw = st.text_input("비밀번호", type="password", key="login_pw")
+            
+            # 💡 [핵심] type="password" 속성을 없애고 placeholder로 타겟팅하여 CSS 마스킹 처리
+            login_pw = st.text_input("비밀번호", placeholder="비밀번호 입력", key="login_pw")
             
             if st.button("로그인", type="primary", use_container_width=True):
                 if not login_id or not login_pw:
@@ -248,19 +276,20 @@ def auth_screen():
         with col2:
             st.markdown("<div style='text-align: center; color: #1e293b; font-size: 1.8rem; font-weight: 700; margin-bottom: 10px;'>시스템 첫 접속</div>", unsafe_allow_html=True)
             
-            # 💡 골치 아픈 라디오 버튼 대신 디자인과 너비가 100% 일치하는 깔끔한 드롭다운 선택창 적용
-            path_choice = st.selectbox(
+            path_choice = st.radio(
                 "사용자 선택",
-                ["네이버프리미엄콘텐츠 구독자", "네이버스토어 구매자"]
+                ["네이버프리미엄콘텐츠 구독자", "네이버스토어 구매자"],
+                horizontal=True
             )
 
             new_id = st.text_input("사용할 아이디", key=f"reg_id_{uuid.uuid4().hex[:8]}")
-            new_pw = st.text_input("사용할 비밀번호", type="password", key=f"reg_pw_{uuid.uuid4().hex[:8]}")
+            
+            # 💡 [핵심] type="password" 속성을 없애고 placeholder로 타겟팅하여 CSS 마스킹 처리
+            new_pw = st.text_input("사용할 비밀번호", placeholder="비밀번호 설정", key=f"reg_pw_{uuid.uuid4().hex[:8]}")
 
             master_key = ""
             proof_info = ""
 
-            # 경로에 따라 맞춤형 입력창 제공
             if path_choice == "네이버프리미엄콘텐츠 구독자":
                 master_key = st.text_input("파로스대입랩 공지 마스터 키", key="np_key_v2")
             else:
