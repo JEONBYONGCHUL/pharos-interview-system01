@@ -11,11 +11,11 @@ import streamlit.components.v1 as components
 # --- [1] 페이지 기본 설정 ---
 st.set_page_config(
     page_title="파로스 서류 기반 모의면접 트레이너 1.5",
-    page_icon="logo.png", # 💡 [해결] 조건문 삭제하고 파로스 로고 명시적 고정
+    page_icon="logo.png",
     layout="wide"
 )
 
-# --- [2] UI 디자인 CSS ---
+# --- [2] UI 디자인 및 완벽한 상하 균형 CSS ---
 st.markdown("""
 <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -29,15 +29,15 @@ st.markdown("""
         padding-bottom: 2rem !important;
     }
     
-    /* 💡 [핵심 유지] 1.0 비밀번호 마스킹 기법 CSS */
+    /* 💡 [핵심 유지] 비밀번호 마스킹 기법 (구글 팝업 완벽 차단) */
     input[placeholder="비밀번호 입력"], input[placeholder="비밀번호 설정"] { 
         -webkit-text-security: disc !important; 
     }
     
-    /* 💡 [완벽 해결] 배너 스타일 (상하 패딩 균일화 및 스트림릿 p태그 여백 차단) */
+    /* 💡 [완벽 해결] 메인 타이틀 박스 상하 완벽 균형 정렬 CSS */
     .header-box { 
         background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); 
-        padding: 24px 15px; /* 상하 여백을 완벽하게 동일하게 조정 */
+        padding: 30px 15px !important; /* 상하 패딩을 넉넉하고 완벽한 대칭으로 고정 */
         border-radius: 12px; 
         color: white; 
         margin-bottom: 15px; 
@@ -48,8 +48,8 @@ st.markdown("""
         justify-content: center;
         align-items: center;
     }
-    .header-box p {
-        margin: 0 !important; /* 스트림릿 강제 여백 원천 차단 */
+    .header-box div {
+        margin: 0 !important;
         padding: 0 !important;
     }
     .b-title { 
@@ -57,16 +57,16 @@ st.markdown("""
         font-weight: 800; 
         letter-spacing: -0.04em; 
         margin: 0 !important; 
-        line-height: 1.3; 
+        line-height: 1.4 !important; 
         white-space: nowrap; 
         color: white !important; 
     }
     .b-sub { 
         font-size: clamp(11.5px, 2.8vw, 15px); 
         color: #94a3b8; 
-        margin-top: 6px !important; 
-        margin-bottom: 0px !important; 
-        line-height: 1.3; 
+        margin-top: 8px !important; /* 타이틀과 서브타이틀 사이의 간격 정밀 제어 */
+        margin-bottom: 0 !important; 
+        line-height: 1.4 !important; 
     }
     
     /* 브랜드 및 링크 스타일 */
@@ -128,10 +128,10 @@ def init_connection():
 
 # --- [4] 메인 화면 및 로그인/첫 접속 라우팅 ---
 def auth_screen():
-    # 💡 배너 적용 (HTML 한 줄 처리 유지)
+    # 💡 배너 적용 (완벽한 상하 균형 구조)
     st.markdown('<div class="header-box"><div class="b-title">파로스 서류 기반 모의면접 트레이너</div><div class="b-sub">맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div></div>', unsafe_allow_html=True)
 
-    # 로고 70px 중앙 고정 유지
+    # 로고 70px 중앙 고정
     if os.path.exists("logo.png"):
         with open("logo.png", "rb") as f:
             img_b64 = base64.b64encode(f.read()).decode()
