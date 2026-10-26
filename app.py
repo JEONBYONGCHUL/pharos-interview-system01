@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import json
 import os
 import uuid
+import streamlit.components.v1 as components
 
 # --- [1] 페이지 기본 설정 ---
 st.set_page_config(
@@ -16,6 +17,11 @@ st.set_page_config(
 # --- [디자인 스타일 CSS] ---
 st.markdown("""
 <style>
+    /* 전체 한국어 단어 끊김 방지 (모바일 글자 떨어짐 해결) */
+    * {
+        word-break: keep-all; 
+    }
+
     /* 전체 상단 여백 축소 */
     .block-container {
         padding-top: 2rem !important;
@@ -29,6 +35,7 @@ st.markdown("""
         border: none !important;
         border-radius: 6px !important;
         font-weight: bold !important;
+        margin-top: 5px; 
     }
     div.stButton > button:hover {
         background-color: #0f172a !important;
@@ -49,33 +56,35 @@ st.markdown("""
         margin-bottom: 10px;
     }
     
-    /* 로고 확대(Fullscreen) 아이콘 원천 차단 */
-    button[title="View fullscreen"] {
+    /* 로고 확대(Fullscreen) 아이콘 차단 및 정중앙 정렬 */
+    button[title="View fullscreen"], [data-testid="StyledFullScreenButton"] {
         display: none !important;
     }
-    [data-testid="StyledFullScreenButton"] {
-        display: none !important;
-    }
-    
-    /* 로고 중앙 정렬 보조 */
     [data-testid="stImage"] {
-        margin: 0 auto;
-        display: flex;
-        justify-content: center;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
     }
     
-    /* 사용자 선택 영역 박스 처리 및 가로로 꽉 차게 밸런스 조정 */
+    /* 사용자 선택 영역 박스 100% 꽉 채우기 (PC 기준 가로 배열) */
     div[data-testid="stRadio"] {
         width: 100% !important;
     }
-    div[data-testid="stRadio"] > div[role="radiogroup"] {
+    div[role="radiogroup"] {
         width: 100% !important;
+        display: flex !important;
+        flex-direction: row !important;
         background-color: #f8fafc !important;
-        padding: 15px 20px !important;
+        padding: 12px 10px !important;
         border-radius: 8px !important;
         border: 1px solid #e2e8f0 !important;
+        box-sizing: border-box !important;
+    }
+    div[role="radiogroup"] > label {
+        flex: 1 !important;
         display: flex !important;
-        justify-content: space-evenly !important; /* 좌우 균형 있게 퍼지도록 설정 */
+        justify-content: center !important;
+        margin: 0 !important;
     }
     
     /* 라디오 버튼 곤색 강제 덮어쓰기 */
@@ -86,6 +95,22 @@ st.markdown("""
         background-color: #1e293b !important;
     }
     
+    /* 모바일 반응형 처리 (화면이 좁아지면 자동으로 세로 배열하여 글자 겹침 방지) */
+    @media (max-width: 600px) {
+        div[role="radiogroup"] {
+            flex-direction: column !important;
+            padding: 15px !important;
+        }
+        div[role="radiogroup"] > label {
+            justify-content: flex-start !important;
+            margin-bottom: 10px !important;
+            width: 100% !important;
+        }
+        /* 모바일 폰트 사이즈 미세 조정 */
+        .main-header h2 { font-size: 1.3rem !important; }
+        .main-header p { font-size: 0.8rem !important; }
+    }
+
     /* 간격 축소를 위한 커스텀 구분선 */
     .custom-divider {
         margin: 15px 0;
@@ -113,6 +138,20 @@ def init_connection():
 
 # --- [3] 메인 화면 및 로그인/첫 접속 라우팅 ---
 def auth_screen():
+    # 구글 팝업 자동완성 우회 스크립트
+    components.html(
+        """
+        <script>
+        const inputs = window.parent.document.querySelectorAll('input');
+        for (let i = 0; i < inputs.length; i++) {
+            inputs[i].setAttribute('autocomplete', 'new-password');
+            inputs[i].setAttribute('data-lpignore', 'true');
+        }
+        </script>
+        """,
+        height=0, width=0
+    )
+
     st.markdown("""
         <div class="main-header">
             <h2 style='margin: 0; font-size: 1.6rem;'>파로스 서류 기반 모의면접 트레이너</h2>
@@ -120,11 +159,11 @@ def auth_screen():
         </div>
     """, unsafe_allow_html=True)
 
-    # 로고 크기를 한 번 더 축소 (비율 4:1:4 -> 너비 고정)
+    # 로고 크기를 70px로 더 줄이고 1:1:1 컬럼 중앙 배치
     col_logo1, col_logo2, col_logo3 = st.columns([1, 1, 1])
     with col_logo2:
         if os.path.exists("logo.png"):
-            st.image("logo.png", width=90) # 로고 크기를 90px로 앙증맞게 고정
+            st.image("logo.png", width=70)
     
     st.markdown("""
         <div class="brand-section">
@@ -145,9 +184,6 @@ def auth_screen():
             
             login_id = st.text_input("아이디", key="login_id")
             login_pw = st.text_input("비밀번호", type="password", key="login_pw")
-            
-            # 구글 비밀번호 팝업이 버튼을 가리지 못하도록 130px의 투명한 여유 공간 확보
-            st.markdown("<div style='height: 130px;'></div>", unsafe_allow_html=True)
 
             if st.button("로그인", type="primary", use_container_width=True):
                 if not login_id or not login_pw:
@@ -217,13 +253,16 @@ def auth_screen():
                 st.session_state['view_mode'] = 'register'
                 st.rerun()
 
+            # 팝업 가림 방지용 스크롤 여유 공간
+            st.markdown("<div style='height: 150px;'></div>", unsafe_allow_html=True)
+
     # ---------------- [B] 시스템 첫 접속 (사용자 등록) 화면 ----------------
     elif st.session_state['view_mode'] == 'register':
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             st.markdown("<div style='text-align: center; color: #1e293b; font-size: 1.8rem; font-weight: 700; margin-bottom: 10px;'>시스템 첫 접속</div>", unsafe_allow_html=True)
             
-            # 사용자 선택 (가로 배열 적용 및 CSS 100% 꽉 찬 박스 처리)
+            # 사용자 선택 (PC는 가로 채우기, 모바일은 세로 배열)
             path_choice = st.radio(
                 "사용자 선택",
                 ["네이버프리미엄콘텐츠 구독자", "네이버스토어 구매자"],
@@ -236,13 +275,12 @@ def auth_screen():
             master_key = ""
             proof_info = ""
 
-            # 경로에 따라 3번째 항목만 동적으로 변경
             if path_choice == "네이버프리미엄콘텐츠 구독자":
                 master_key = st.text_input("파로스대입랩 공지 마스터 키", key="np_key_v2")
             else:
                 proof_info = st.text_input("네이버스토어 주문번호", key="store_order_v2")
 
-            # 구글 비밀번호 팝업이 버튼을 가리지 못하도록 130px의 투명한 여유 공간 확보
+            # 팝업 가림 방지용 스크롤 여유 공간
             st.markdown("<div style='height: 130px;'></div>", unsafe_allow_html=True)
 
             st.markdown("<p style='color: #64748b; font-size: 0.9rem; text-align: center; margin-top: 15px;'>첫 등록을 완료한 이후부터 바로 아이디와 비밀번호로 로그인하여 시스템을 사용하실 수 있습니다.</p>", unsafe_allow_html=True)
