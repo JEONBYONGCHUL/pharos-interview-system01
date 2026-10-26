@@ -83,29 +83,28 @@ st.markdown("""
         word-break: break-all; 
     }
 
-    /* 💡 2.0 라디오 버튼 (PC에서 텍스트 입력창 너비 100%와 완벽하게 일치 및 균형 정렬) */
+    /* 💡 2.0 라디오 버튼 (PC에서 텍스트 입력창 너비 100%와 완벽 일치 및 좌측 정렬) */
+    .stRadio { 
+        width: 100% !important; 
+    }
     div[data-testid="stRadio"] { 
         width: 100% !important; 
-        min-width: 100% !important; 
         margin-bottom: 10px !important; 
     }
-    div[data-testid="stRadio"] > div[role="radiogroup"] { 
+    div[role="radiogroup"] { 
         width: 100% !important; 
-        min-width: 100% !important; 
         display: flex !important; 
         flex-direction: row !important; 
+        justify-content: flex-start !important; /* PC에서도 모바일처럼 단정하게 좌측 정렬 */
+        gap: 30px !important; /* 두 라디오 버튼 사이의 간격 */
         background-color: #f8fafc !important; 
-        padding: 12px 15px !important; 
+        padding: 15px 20px !important; 
         border-radius: 8px !important; 
         border: 1px solid #e2e8f0 !important; 
         box-sizing: border-box !important; 
     }
-    /* 라디오 버튼 안의 두 항목이 공간을 정확히 반반(50%)씩 차지하며 예쁘게 정렬되도록 강제 */
     div[role="radiogroup"] > label { 
-        flex: 1 1 50% !important; 
-        display: flex !important;
-        justify-content: center !important; 
-        align-items: center !important;
+        flex: 0 0 auto !important; /* 너비를 글자 크기에 맞추고 좌측부터 차례로 배치 */
         margin: 0 !important; 
     }
     div[role="radiogroup"] label p { 
@@ -129,8 +128,13 @@ st.markdown("""
 
     /* 모바일 전용 라디오 버튼 세로 배열 (글자 겹침 방지) */
     @media (max-width: 600px) {
-        div[role="radiogroup"] { flex-direction: column !important; gap: 8px !important; }
-        div[role="radiogroup"] > label { justify-content: flex-start !important; }
+        div[role="radiogroup"] { 
+            flex-direction: column !important; 
+            gap: 12px !important; 
+        }
+        div[role="radiogroup"] > label { 
+            justify-content: flex-start !important; 
+        }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -153,7 +157,7 @@ def init_connection():
 
 # --- [4] 메인 화면 및 로그인/첫 접속 라우팅 ---
 def auth_screen():
-    # 💡 비밀번호 팝업 원천 차단 스크립트
+    # 💡 비밀번호 팝업 원천 차단 스크립트 (공간 띄우기 없이 기술적 해결)
     components.html(
         """
         <script>
@@ -209,7 +213,7 @@ def auth_screen():
     if st.session_state['view_mode'] == 'login':
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            # 상단 '로그인' 텍스트 제목 중복 삭제됨
+            # 상단 '로그인' 텍스트 제목 삭제됨
             login_id = st.text_input("아이디", key="login_id")
             login_pw = st.text_input("비밀번호", type="password", key="login_pw")
             
