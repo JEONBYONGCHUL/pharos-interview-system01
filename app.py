@@ -14,18 +14,16 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- [디자인 스타일 CSS] ---
+# --- [디자인 스타일 CSS (한 줄 고정 및 모바일 반응형)] ---
 st.markdown("""
 <style>
-    * {
-        word-break: keep-all; 
-    }
+    /* 여백 축소 */
     .block-container {
         padding-top: 2rem !important;
         padding-bottom: 2rem !important;
     }
     
-    /* 메인 및 서브 버튼 곤색 통일 */
+    /* 공통 버튼 디자인 */
     div.stButton > button[kind="primary"], div.stButton > button[kind="secondary"] {
         background-color: #1e293b !important;
         color: white !important;
@@ -48,11 +46,19 @@ st.markdown("""
         margin-bottom: 15px;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
+    
+    /* 모든 메인 텍스트 한 줄 고정 (줄바꿈 원천 차단) */
+    .main-header h2, .main-header p, .brand-section b, .brand-section a {
+        white-space: nowrap !important;
+        letter-spacing: -0.5px !important;
+    }
+    
     .brand-section {
         text-align: center;
         margin-bottom: 10px;
     }
     
+    /* --- 로고 크기 절대 고정 및 정중앙 배치 --- */
     button[title="View fullscreen"], [data-testid="StyledFullScreenButton"] {
         display: none !important;
     }
@@ -60,9 +66,15 @@ st.markdown("""
         display: flex !important;
         justify-content: center !important;
         align-items: center !important;
+        width: 100% !important;
+        margin: 0 auto !important;
+    }
+    [data-testid="stImage"] img {
+        max-width: 70px !important; 
+        width: 70px !important;
     }
     
-    /* 라디오 버튼 박스 너비 100% 꽉 채우기 및 정렬 */
+    /* 라디오 버튼 박스 너비 100% 꽉 채우기 */
     div[data-testid="stRadio"] {
         width: 100% !important;
     }
@@ -81,8 +93,8 @@ st.markdown("""
         flex: 1 !important;
         justify-content: center !important;
         margin: 0 !important;
+        white-space: nowrap !important;
     }
-    
     div[role="radiogroup"] label[data-baseweb="radio"] div:first-child {
         border-color: #1e293b !important;
     }
@@ -90,15 +102,21 @@ st.markdown("""
         background-color: #1e293b !important;
     }
     
+    /* --- 모바일 기기 접속 시 폰트 크기 자동 축소 (한 줄 유지) --- */
     @media (max-width: 600px) {
+        .main-header h2 { font-size: 4.2vw !important; }
+        .main-header p { font-size: 2.5vw !important; }
+        .brand-section b { font-size: 3.8vw !important; }
+        .brand-section a { font-size: 2.8vw !important; }
+        
+        /* 라디오 버튼 가로 형태 유지하되 글자만 축소 */
         div[data-testid="stRadio"] > div[role="radiogroup"] {
-            flex-direction: column !important;
-            padding: 15px !important;
+            flex-direction: row !important; 
+            padding: 10px 5px !important;
         }
-        div[role="radiogroup"] > label {
-            justify-content: flex-start !important;
-            margin-bottom: 10px !important;
-            width: 100% !important;
+        div[role="radiogroup"] label p {
+            font-size: 2.8vw !important;
+            white-space: nowrap !important;
         }
     }
     
@@ -128,6 +146,7 @@ def init_connection():
 
 # --- [3] 메인 화면 및 로그인/첫 접속 라우팅 ---
 def auth_screen():
+    # 팝업 가림 우회용 자바스크립트
     components.html(
         """
         <script>
@@ -143,21 +162,19 @@ def auth_screen():
 
     st.markdown("""
         <div class="main-header">
-            <h2 style='margin: 0; font-size: 1.6rem;'>파로스 서류 기반 모의면접 트레이너</h2>
-            <p style='margin: 5px 0 0 0; color: #94a3b8; font-size: 0.9rem;'>맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</p>
+            <h2 style='margin: 0;'>파로스 서류 기반 모의면접 트레이너</h2>
+            <p style='margin: 5px 0 0 0; color: #94a3b8;'>맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</p>
         </div>
     """, unsafe_allow_html=True)
 
-    # 비율 조정을 통한 로고 완벽 중앙 배치
-    col_logo1, col_logo2, col_logo3 = st.columns([4, 1, 4])
-    with col_logo2:
-        if os.path.exists("logo.png"):
-            st.image("logo.png", use_container_width=True)
+    # 컬럼 제거, CSS로 완벽하게 70px 중앙 고정된 로고 이미지 출력
+    if os.path.exists("logo.png"):
+        st.image("logo.png")
     
     st.markdown("""
         <div class="brand-section">
-            <b style="color: #1e293b; font-size: 1.1rem;">네이버프리미엄콘텐츠 파로스대입랩</b><br>
-            <a href="https://contents.premium.naver.com/pharoslab/jinhak" target="_blank" style="color: #2563eb; text-decoration: none; font-size: 0.9rem;">https://contents.premium.naver.com/pharoslab/jinhak</a>
+            <b style="color: #1e293b;">네이버프리미엄콘텐츠 파로스대입랩</b><br>
+            <a href="https://contents.premium.naver.com/pharoslab/jinhak" target="_blank" style="color: #2563eb; text-decoration: none;">https://contents.premium.naver.com/pharoslab/jinhak</a>
         </div>
         <hr class="custom-divider">
     """, unsafe_allow_html=True)
@@ -174,7 +191,7 @@ def auth_screen():
             login_id = st.text_input("아이디", key="login_id")
             login_pw = st.text_input("비밀번호", type="password", key="login_pw")
             
-            # 구글 비밀번호 팝업 가림을 원천 차단하기 위한 물리적 빈 공간
+            # 구글 비밀번호 팝업 가림 방지용 빈 공간 (110px)
             st.markdown("<div style='height: 110px;'></div>", unsafe_allow_html=True)
 
             if st.button("로그인", type="primary", use_container_width=True):
@@ -260,7 +277,7 @@ def auth_screen():
             new_id = st.text_input("사용할 아이디", key=f"reg_id_{uuid.uuid4().hex[:8]}")
             new_pw = st.text_input("사용할 비밀번호", type="password", key=f"reg_pw_{uuid.uuid4().hex[:8]}")
 
-            # 팝업 가림 원천 차단용 공간
+            # 팝업 가림 방지용 빈 공간 (110px)
             st.markdown("<div style='height: 110px;'></div>", unsafe_allow_html=True)
 
             master_key = ""
