@@ -176,7 +176,7 @@ def auth_screen():
     </div>
     """, unsafe_allow_html=True)
 
-    # 💡 [해결] 로고 완벽 중앙 정렬 및 모바일 확대 방지 (HTML + Base64 렌더링)
+    # 💡 로고 완벽 중앙 정렬 및 모바일 확대 방지 (HTML + Base64 렌더링)
     if os.path.exists("logo.png"):
         with open("logo.png", "rb") as f:
             img_b64 = base64.b64encode(f.read()).decode()
@@ -205,8 +205,7 @@ def auth_screen():
     if st.session_state['view_mode'] == 'login':
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            st.markdown("<div style='text-align: center; color: #1e293b; font-size: 1.8rem; font-weight: 700; margin-bottom: 10px;'>로그인</div>", unsafe_allow_html=True)
-            
+            # 상단 '로그인' 텍스트 제목 삭제됨
             login_id = st.text_input("아이디", key="login_id")
             login_pw = st.text_input("비밀번호", type="password", key="login_pw")
             
