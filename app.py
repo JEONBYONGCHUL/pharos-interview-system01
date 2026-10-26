@@ -34,30 +34,34 @@ st.markdown("""
         -webkit-text-security: disc !important; 
     }
     
-    /* 💡 [완벽 해결] 배너 스타일 (Flexbox 삭제, 충분한 줄간격으로 글자 잘림 원천 차단) */
+    /* 💡 [완벽 해결] 배너 스타일 (스트림릿 강제 여백 제거 및 Flex 완벽 중앙 정렬) */
     .header-box { 
         background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); 
-        padding: 24px 15px 22px 15px; 
+        padding: 26px 15px; 
         border-radius: 12px; 
         color: white; 
         margin-bottom: 15px; 
         text-align: center; 
         box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
     }
     .b-title { 
         font-size: clamp(18px, 4.5vw, 26px); 
         font-weight: 800; 
         letter-spacing: -0.04em; 
-        margin: 0 0 6px 0; 
-        line-height: 1.5; /* 글자 위아래 잘림 방지를 위해 줄간격 여유 확보 */
+        margin: 0 !important; /* 하단 강제 여백 차단 */
+        line-height: 1.3; 
         white-space: nowrap; 
         color: white !important; 
     }
     .b-sub { 
         font-size: clamp(11.5px, 2.8vw, 15px); 
         color: #94a3b8; 
-        margin: 0; 
-        line-height: 1.4; 
+        margin: 8px 0 0 0 !important; /* 위쪽 간격만 주고 하단 여백 완벽 제거 */
+        line-height: 1.3; 
     }
     
     /* 브랜드 및 링크 스타일 */
@@ -153,7 +157,7 @@ def auth_screen():
         with col2:
             login_id = st.text_input("아이디", key="login_id")
             
-            # 비밀번호 마스킹 및 체크박스 유지
+            # 비밀번호 마스킹 및 체크박스 유지 (건드리지 않음)
             login_pw = st.text_input("비밀번호", placeholder="비밀번호 입력", key="login_pw")
             show_login_pw = st.checkbox("👁️ 비밀번호 보기", key="chk_login_pw")
             
@@ -238,7 +242,7 @@ def auth_screen():
         with col2:
             st.markdown("<div style='text-align: center; color: #1e293b; font-size: 1.8rem; font-weight: 700; margin-bottom: 10px;'>시스템 첫 접속</div>", unsafe_allow_html=True)
             
-            # 사용자 선택 드롭다운 유지
+            # 사용자 선택 드롭다운 유지 (건드리지 않음)
             path_choice = st.selectbox(
                 "사용자 선택",
                 ["네이버프리미엄콘텐츠 구독자", "네이버스토어 구매자"]
@@ -246,7 +250,7 @@ def auth_screen():
 
             new_id = st.text_input("사용할 아이디", key="reg_id")
             
-            # 비밀번호 마스킹 및 체크박스 유지
+            # 비밀번호 마스킹 및 체크박스 유지 (건드리지 않음)
             new_pw = st.text_input("사용할 비밀번호", placeholder="비밀번호 설정", key="reg_pw")
             show_reg_pw = st.checkbox("👁️ 비밀번호 보기", key="chk_reg_pw")
             
