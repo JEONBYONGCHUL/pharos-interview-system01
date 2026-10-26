@@ -15,7 +15,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- [2] UI 디자인 및 1.0 비밀번호 마스킹 CSS ---
+# --- [2] UI 디자인 CSS ---
 st.markdown("""
 <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -27,11 +27,6 @@ st.markdown("""
     .block-container {
         padding-top: 1.5rem !important;
         padding-bottom: 2rem !important;
-    }
-    
-    /* 💡 [보조] 1.0 비밀번호 마스킹 기법 CSS */
-    input[placeholder="비밀번호 입력"], input[placeholder="비밀번호 설정"] { 
-        -webkit-text-security: disc !important; 
     }
     
     /* 배너 스타일 (상하 여백 완벽 균형 유지) */
@@ -123,27 +118,7 @@ def init_connection():
 
 # --- [4] 메인 화면 및 로그인/첫 접속 라우팅 ---
 def auth_screen():
-    # 💡 [핵심] 눈알 아이콘 유지 + 팝업 원천 차단 자바스크립트
-    components.html(
-        """
-        <script>
-        const doc = window.parent.document;
-        const inputs = doc.querySelectorAll('input');
-        inputs.forEach(input => {
-            input.setAttribute('autocomplete', 'new-password');
-            input.setAttribute('data-lpignore', 'true');
-        });
-        const pwInputs = doc.querySelectorAll('input[type="password"]');
-        pwInputs.forEach(pw => {
-            pw.setAttribute('readonly', 'true');
-            pw.addEventListener('focus', function() { this.removeAttribute('readonly'); });
-            pw.addEventListener('blur', function() { this.setAttribute('readonly', 'true'); });
-        });
-        </script>
-        """, height=0, width=0
-    )
-
-    # 💡 배너 적용 (상하 균형을 위한 한 줄 코드 유지)
+    # 배너 적용 (상하 균형을 위한 한 줄 코드 유지)
     st.markdown('<div class="header-box"><div class="b-title">파로스 서류 기반 모의면접 트레이너</div><div class="b-sub">맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div></div>', unsafe_allow_html=True)
 
     # 로고 70px 중앙 고정 유지
@@ -177,8 +152,16 @@ def auth_screen():
         with col2:
             login_id = st.text_input("아이디", key="login_id")
             
-            # 💡 [핵심] type="password" 유지 (눈알 아이콘 표시용) + placeholder 적용
-            login_pw = st.text_input("비밀번호", type="password", placeholder="비밀번호 입력", key="login_pw")
+            # 💡 [핵심 복구] 1.0버전 방식: type="password"를 없애 구글 팝업을 원천 차단하고, 체크박스로 눈알 기능 대체
+            login_pw = st.text_input("비밀번호", placeholder="비밀번호 입력", key="login_pw")
+            show_login_pw = st.checkbox("👁️ 비밀번호 보기", key="chk_login_pw")
+            
+            if not show_login_pw:
+                st.markdown("""
+                <style>
+                input[placeholder="비밀번호 입력"] { -webkit-text-security: disc !important; }
+                </style>
+                """, unsafe_allow_html=True)
             
             if st.button("로그인", type="primary", use_container_width=True):
                 if not login_id or not login_pw:
@@ -254,17 +237,24 @@ def auth_screen():
         with col2:
             st.markdown("<div style='text-align: center; color: #1e293b; font-size: 1.8rem; font-weight: 700; margin-bottom: 10px;'>시스템 첫 접속</div>", unsafe_allow_html=True)
             
-            # 💡 [핵심] 깔끔한 드롭다운(selectbox) 유지
+            # 사용자 선택 드롭다운 유지
             path_choice = st.selectbox(
                 "사용자 선택",
                 ["네이버프리미엄콘텐츠 구독자", "네이버스토어 구매자"]
             )
 
-            # 💡 [핵심] 고정된 key 할당 (커서 이동 시 입력값 날아감 방지)
             new_id = st.text_input("사용할 아이디", key="reg_id")
             
-            # 💡 [핵심] type="password" 유지 + placeholder 적용
-            new_pw = st.text_input("사용할 비밀번호", type="password", placeholder="비밀번호 설정", key="reg_pw")
+            # 💡 [핵심 복구] 1.0버전 방식 (팝업 차단용 체크박스)
+            new_pw = st.text_input("사용할 비밀번호", placeholder="비밀번호 설정", key="reg_pw")
+            show_reg_pw = st.checkbox("👁️ 비밀번호 보기", key="chk_reg_pw")
+            
+            if not show_reg_pw:
+                st.markdown("""
+                <style>
+                input[placeholder="비밀번호 설정"] { -webkit-text-security: disc !important; }
+                </style>
+                """, unsafe_allow_html=True)
 
             master_key = ""
             proof_info = ""
