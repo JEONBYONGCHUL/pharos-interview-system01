@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import json
 import os
 import uuid
+import base64
 import streamlit.components.v1 as components
 
 # --- [1] 페이지 기본 설정 ---
@@ -14,92 +15,123 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- [디자인 스타일 CSS] ---
+# --- [2] 1.0버전 UI + 2.0버전 기능 완벽 통합 CSS ---
 st.markdown("""
 <style>
-    /* 전체 한국어 단어 끊김 방지 */
-    * { word-break: keep-all; }
+    /* 1.0 폰트 및 공통 설정 (단어 끊김 방지) */
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    * { 
+        font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; 
+        word-break: keep-all; 
+    }
     
     .block-container {
         padding-top: 1.5rem !important;
         padding-bottom: 2rem !important;
     }
     
-    /* 상단 배너 */
-    .main-header {
-        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-        padding: 20px;
-        border-radius: 12px;
-        color: white;
-        text-align: center;
-        margin-bottom: 15px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    /* 1.0 배너 스타일 (반응형 clamp 적용으로 글자 안 떨어짐) */
+    .header-box { 
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); 
+        padding: 20px 15px; 
+        border-radius: 12px; 
+        color: white; 
+        margin-bottom: 15px; 
+        text-align: center; 
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
     }
-    .main-header h2 { margin: 0; font-size: 1.6rem; color: white !important; }
-    .main-header p { margin: 5px 0 0 0; color: #94a3b8; font-size: 0.9rem; }
-    
-    /* 💡 [핵심] 로고 크기 절대 고정 및 정중앙 배치 (모바일 확대 원천 차단) */
-    [data-testid="stImage"] {
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-        width: 100% !important;
-        margin: 10px 0 !important;
+    .b-title { 
+        font-size: clamp(18px, 4.5vw, 26px); 
+        font-weight: 800; 
+        letter-spacing: -0.04em; 
+        margin: 0; 
+        line-height: 1.3; 
+        white-space: nowrap; 
+        color: white !important; 
     }
-    /* 확대 아이콘 숨김 */
-    button[title="View fullscreen"], [data-testid="StyledFullScreenButton"] {
-        display: none !important;
-    }
-    
-    .brand-section {
-        text-align: center;
-        margin-bottom: 10px;
+    .b-sub { 
+        font-size: clamp(11.5px, 2.8vw, 15px); 
+        color: #94a3b8; 
+        margin-top: 6px; 
+        margin-bottom: 0px; 
     }
     
-    /* 라디오 버튼 박스 설정 */
-    div[data-testid="stRadio"] { width: 100% !important; margin-bottom: 10px !important; }
-    div[role="radiogroup"] {
-        width: 100% !important;
-        display: flex !important;
-        flex-direction: row !important;
-        justify-content: space-around !important;
-        background-color: #f8fafc !important;
-        padding: 12px 15px !important;
-        border-radius: 8px !important;
-        border: 1px solid #e2e8f0 !important;
-        box-sizing: border-box !important;
+    /* 1.0 브랜드 및 링크 스타일 (반응형 clamp 적용) */
+    .brand-blog-center { 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        justify-content: center; 
+        gap: 8px; 
+        padding: 5px 0 10px 0; 
+        margin-bottom: 15px; 
+        text-align: center; 
     }
-    div[role="radiogroup"] > label { margin: 0 !important; flex: 1 !important; justify-content: center !important; }
-    
-    /* 라디오 버튼 곤색 강제 지정 */
+    .brand-title-text { 
+        font-size: clamp(14px, 3.5vw, 17px); 
+        font-weight: 800; 
+        color: #1e293b; 
+        line-height: 1.2; 
+    }
+    .brand-link-text { 
+        font-size: clamp(11px, 2.5vw, 14px); 
+        color: #2563eb !important; 
+        text-decoration: none !important; 
+        font-weight: 600; 
+        line-height: 1.3; 
+        letter-spacing: -0.5px; 
+        word-break: break-all; 
+    }
+
+    /* 2.0 라디오 버튼 (가로 100% 및 모바일 호환) */
+    div[data-testid="stRadio"] { 
+        width: 100% !important; 
+        margin-bottom: 10px !important; 
+    }
+    div[data-testid="stRadio"] > div[role="radiogroup"] { 
+        width: 100% !important; 
+        display: flex !important; 
+        flex-direction: row !important; 
+        justify-content: space-around !important; 
+        background-color: #f8fafc !important; 
+        padding: 12px 15px !important; 
+        border-radius: 8px !important; 
+        border: 1px solid #e2e8f0 !important; 
+        box-sizing: border-box !important; 
+    }
+    div[role="radiogroup"] > label { 
+        margin: 0 !important; 
+        flex: 1 !important; 
+        justify-content: center !important; 
+    }
+    div[role="radiogroup"] label p { 
+        font-size: clamp(12px, 3vw, 14px) !important; 
+        white-space: nowrap !important; 
+    }
     div[role="radiogroup"] label[data-baseweb="radio"] div:first-child { border-color: #1e293b !important; }
     div[role="radiogroup"] label[data-baseweb="radio"] div:first-child > div { background-color: #1e293b !important; }
-    
-    /* 버튼 곤색 지정 */
-    div.stButton > button[kind="primary"], div.stButton > button[kind="secondary"] {
-        background-color: #1e293b !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 6px !important;
-        font-weight: bold !important;
-        padding: 0.5rem 1rem !important;
-        margin-top: 5px !important;
+
+    /* 2.0 버튼 고급 곤색 적용 */
+    div.stButton > button[kind="primary"], div.stButton > button[kind="secondary"] { 
+        background-color: #1e293b !important; 
+        color: white !important; 
+        border: none !important; 
+        border-radius: 6px !important; 
+        font-weight: bold !important; 
+        padding: 0.5rem 1rem !important; 
+        margin-top: 5px !important; 
     }
     div.stButton > button:hover { background-color: #0f172a !important; }
-    
-    /* 모바일 환경 텍스트 및 라디오버튼 최적화 */
+
+    /* 모바일 전용 라디오 버튼 세로 배열 */
     @media (max-width: 600px) {
-        .main-header h2 { font-size: 1.2rem; }
-        .main-header p { font-size: 0.8rem; }
         div[role="radiogroup"] { flex-direction: column !important; gap: 8px !important; }
         div[role="radiogroup"] > label { justify-content: flex-start !important; }
     }
-    
-    .custom-divider { margin: 15px 0; border: none; border-top: 1px solid #e2e8f0; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- [2] 구글 시트 DB 연결 함수 ---
+# --- [3] 구글 시트 DB 연결 함수 ---
 def init_connection():
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
     if "GCP_JSON" in st.secrets:
@@ -115,9 +147,9 @@ def init_connection():
     sheet = client.open("파로스모의면접1.5회원DB").sheet1
     return sheet
 
-# --- [3] 메인 화면 및 로그인/첫 접속 라우팅 ---
+# --- [4] 메인 화면 및 로그인/첫 접속 라우팅 ---
 def auth_screen():
-    # 팝업 가림 우회용 자바스크립트
+    # 💡 비밀번호 팝업 원천 차단 스크립트 (공간 띄우기 없이 기술적 해결)
     components.html(
         """
         <script>
@@ -136,23 +168,34 @@ def auth_screen():
         """, height=0, width=0
     )
 
+    # 1.0 버전 배너 적용
     st.markdown("""
-        <div class="main-header">
-            <h2>파로스 서류 기반 모의면접 트레이너</h2>
-            <p>맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</p>
-        </div>
+    <div class="header-box">
+        <div class="b-title">파로스 서류 기반 모의면접 트레이너</div>
+        <div class="b-sub">맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div>
+    </div>
     """, unsafe_allow_html=True)
 
-    # 💡 [핵심] 단 나누기(columns)를 완전히 지우고 단독으로 이미지 출력 + 너비 70px 강제 지정
+    # 💡 [해결] 로고 완벽 중앙 정렬 및 모바일 확대 방지 (HTML + Base64 렌더링)
     if os.path.exists("logo.png"):
-        st.image("logo.png", width=70)
+        with open("logo.png", "rb") as f:
+            img_b64 = base64.b64encode(f.read()).decode()
+        st.markdown(
+            f'''
+            <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin: 5px 0 10px 0;">
+                <img src="data:image/png;base64,{img_b64}" style="width: 70px; height: auto;" />
+            </div>
+            ''',
+            unsafe_allow_html=True
+        )
     
+    # 1.0 버전 브랜드 텍스트 적용
     st.markdown("""
-        <div class="brand-section">
-            <b style="color: #1e293b;">네이버프리미엄콘텐츠 파로스대입랩</b><br>
-            <a href="https://contents.premium.naver.com/pharoslab/jinhak" target="_blank" style="color: #2563eb; text-decoration: none; font-size: 0.9rem;">https://contents.premium.naver.com/pharoslab/jinhak</a>
-        </div>
-        <hr class="custom-divider">
+    <div class="brand-blog-center">
+        <span class="brand-title-text">네이버프리미엄콘텐츠 파로스대입랩</span>
+        <a class="brand-link-text" href="https://contents.premium.naver.com/pharoslab/jinhak" target="_blank">https://contents.premium.naver.com/pharoslab/jinhak</a>
+    </div>
+    <hr style="margin: 5px 0 15px 0; border: none; border-top: 1px solid #e2e8f0;">
     """, unsafe_allow_html=True)
 
     if 'view_mode' not in st.session_state:
@@ -307,7 +350,7 @@ def auth_screen():
                 st.session_state['view_mode'] = 'login'
                 st.rerun()
 
-# --- [4] 메인 면접 앱 실행 영역 ---
+# --- [5] 메인 면접 앱 실행 영역 ---
 def main_app():
     st.sidebar.title("👤 회원 정보")
     st.sidebar.write(f"접속 계정: **{st.session_state.get('user_id')}**님")
@@ -322,7 +365,7 @@ def main_app():
     st.write("선생님께서 기존에 다듬어두신 모의면접 및 제미나이 AI 질문 추출, TTS 음성 출력 코드가 이 아래로 매끄럽게 이어집니다.")
     st.info("여기에 기존의 생기부/자소서 업로드 및 면접 질문 생성 기능 코드를 붙여넣어 사용하시면 됩니다.")
 
-# --- [5] 세션 상태 관리 및 앱 구동 흐름 ---
+# --- [6] 세션 상태 관리 및 앱 구동 흐름 ---
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
 
