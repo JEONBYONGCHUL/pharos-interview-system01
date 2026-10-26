@@ -7,15 +7,28 @@ import os
 import uuid
 
 # --- [1] 페이지 기본 설정 ---
+# 주소창 아이콘을 학사모 대신 파로스 로고로 변경
 st.set_page_config(
     page_title="파로스 서류 기반 모의면접 트레이너 1.5",
-    page_icon="🎓",
+    page_icon="logo.png" if os.path.exists("logo.png") else "🎓",
     layout="wide"
 )
 
 # --- [디자인 스타일 CSS] ---
 st.markdown("""
 <style>
+    /* 고급스러운 진한 곤색 버튼 공통 적용 */
+    div.stButton > button[kind="primary"] {
+        background-color: #1e293b !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 6px !important;
+        font-weight: bold !important;
+    }
+    div.stButton > button[kind="primary"]:hover {
+        background-color: #0f172a !important;
+    }
+    
     .main-header {
         background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
         padding: 25px;
@@ -29,6 +42,14 @@ st.markdown("""
         text-align: center;
         margin-bottom: 20px;
     }
+    /* 사용자 선택 영역 박스 처리 */
+    div[role="radiogroup"] {
+        background-color: #f8fafc;
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 20px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -39,7 +60,6 @@ def init_connection():
         creds_dict = json.loads(st.secrets["GCP_JSON"])
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     else:
-        # 로컬 환경에서 JSON 키 파일을 찾음
         json_files = [f for f in os.listdir('.') if f.endswith('.json') and ('gen-lang' in f or 'ais-gemini' in f)]
         if json_files:
             creds = ServiceAccountCredentials.from_json_keyfile_name(json_files[0], scope)
@@ -51,7 +71,6 @@ def init_connection():
 
 # --- [3] 메인 화면 및 로그인/첫 접속 라우팅 ---
 def auth_screen():
-    # 상단 고급 배너
     st.markdown("""
         <div class="main-header">
             <h2 style='margin: 0; font-size: 1.8rem;'>파로스 서류 기반 모의면접 트레이너</h2>
@@ -59,8 +78,8 @@ def auth_screen():
         </div>
     """, unsafe_allow_html=True)
 
-    # 로고 및 브랜드 영역 (정중앙 배치)
-    col_logo1, col_logo2, col_logo3 = st.columns([1, 1, 1])
+    # 로고 크기를 대폭 축소하여 중앙 배치 (5:1.2:5 비율)
+    col_logo1, col_logo2, col_logo3 = st.columns([5, 1.2, 5])
     with col_logo2:
         if os.path.exists("logo.png"):
             st.image("logo.png", use_container_width=True)
@@ -73,13 +92,11 @@ def auth_screen():
     """, unsafe_allow_html=True)
     st.markdown("---")
 
-    # 세션 상태로 화면 전환 관리 (기본값: 로그인 화면)
     if 'view_mode' not in st.session_state:
         st.session_state['view_mode'] = 'login'
 
     # ---------------- [A] 로그인 화면 ----------------
     if st.session_state['view_mode'] == 'login':
-        # 화면 중앙 배치를 위한 컬럼 분할
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             st.markdown("<h3 style='text-align: center; color: #1e293b;'>로그인</h3>", unsafe_allow_html=True)
@@ -111,13 +128,11 @@ def auth_screen():
                         elif str(user_row.get('비밀번호')) != login_pw:
                             st.error("비밀번호가 일치하지 않습니다.")
                         else:
-                            # 이용 기간 만료 체크
                             expire_date = datetime.strptime(str(user_row.get('만료일')), "%Y-%m-%d")
                             if datetime.now() > expire_date:
-                                st.error("⚠️ 이용 기간이 만료되었습니다. 이용권을 갱신해 주세요.")
+                                st.error("⚠️ 이용 기간이 만료되었습니다.")
                                 return
 
-                            # 기기 3대 제한 체크 로직
                             devices = [str(user_row.get('기기1')), str(user_row.get('기기2')), str(user_row.get('기기3'))]
                             if 'device_token' not in st.session_state:
                                 st.session_state['device_token'] = str(uuid.uuid4())
@@ -138,7 +153,7 @@ def auth_screen():
                                     sheet.update_cell(row_idx, 5 + empty_slot, current_device)
                                     st.success("로그인 성공! 새로운 기기가 등록되었습니다.")
                                 else:
-                                    st.error("🚫 동시 접속 기기 초과! (최대 3대까지만 접속 가능)")
+                                    st.error("🚫 동시 접속 기기 초과! (최대 3대)")
                                     return
                             else:
                                 st.success("로그인 성공!")
@@ -151,59 +166,57 @@ def auth_screen():
                         st.error(f"로그인 처리 중 오류 발생: {e}")
 
             st.markdown("---")
-            # 시스템 첫 접속 안내 및 버튼
-            st.markdown("<p style='text-align: center; color: #64748b; font-size: 0.9rem;'>아직 이용권을 등록하지 않으셨나요?</p>", unsafe_allow_html=True)
-            if st.button("🚀 시스템 첫 접속하기 (이용권 등록)", use_container_width=True):
+            st.markdown("<p style='text-align: center; color: #64748b; font-size: 0.9rem;'>아직 사용자 등록을 하지 않으셨나요?</p>", unsafe_allow_html=True)
+            if st.button("시스템 첫 접속하기(사용자 등록)", type="primary", use_container_width=True):
                 st.session_state['view_mode'] = 'register'
                 st.rerun()
 
-    # ---------------- [B] 시스템 첫 접속 (이용권 등록) 화면 ----------------
+    # ---------------- [B] 시스템 첫 접속 (사용자 등록) 화면 ----------------
     elif st.session_state['view_mode'] == 'register':
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             st.markdown("<h3 style='text-align: center; color: #1e293b;'>시스템 첫 접속</h3>", unsafe_allow_html=True)
             
-            # 네프콘 우선 순위 배치, 괄호 및 설명 제거
+            # 사용자 선택 (CSS로 박스 처리됨)
             path_choice = st.radio(
-                "이용 경로 선택",
-                [
-                    "네이버프리미엄콘텐츠 구독자",
-                    "네이버스토어 구매자"
-                ]
+                "사용자 선택",
+                ["네이버프리미엄콘텐츠 구독자", "네이버스토어 구매자"]
             )
 
-            st.markdown("---")
-            new_id = st.text_input("사용할 아이디 설정", key="new_id")
-            new_pw = st.text_input("사용할 비밀번호 설정", type="password", key="new_pw")
+            # 비밀번호 자동완성 방지를 위한 고유 Key 부여
+            new_id = st.text_input("사용할 아이디", key="reg_id_input_v1")
+            new_pw = st.text_input("사용할 비밀번호", type="password", key="reg_pw_input_v1")
 
-            # 선택한 경로에 따른 입력 필드 동적 변경
+            master_key = ""
+            proof_info = ""
+
             if path_choice == "네이버프리미엄콘텐츠 구독자":
-                master_key = st.text_input("네프콘 공용 마스터 키", key="np_key", placeholder="네프콘 게시글 내 패스워드 입력")
-                proof_info = st.text_input("본인의 네이버 아이디", key="np_id", placeholder="구독 인증용 네이버 아이디 입력")
+                master_key = st.text_input("파로스대입랩 공지 마스터 키", key="np_key_v1")
             else:
-                master_key = st.text_input("할인 코드", key="store_coupon", placeholder="할인 코드 입력")
-                proof_info = st.text_input("네이버스토어 주문번호", key="store_order", placeholder="결제하신 주문번호 입력")
+                proof_info = st.text_input("네이버스토어 주문번호", key="store_order_v1")
 
-            st.markdown("<p style='color: #64748b; font-size: 0.85em; text-align: center;'>처음 1회 등록 후에는 바로 아이디와 비밀번호로 로그인하시면 됩니다.</p>", unsafe_allow_html=True)
+            st.markdown("<p style='color: #64748b; font-size: 0.9rem; text-align: center; margin-top: 15px;'>첫 등록을 완료한 이후부터 바로 아이디와 비밀번호로 로그인하여 시스템을 사용하실 수 있습니다.</p>", unsafe_allow_html=True)
 
             if st.button("등록 완료 및 접속", type="primary", use_container_width=True):
-                if not new_id or not new_pw or not master_key or not proof_info:
-                    st.warning("모든 항목을 빠짐없이 입력해주세요.")
+                # 선택된 경로에 따라 필수값 검증
+                if not new_id or not new_pw:
+                    st.warning("아이디와 비밀번호를 모두 입력해주세요.")
+                elif path_choice == "네이버프리미엄콘텐츠 구독자" and not master_key:
+                    st.warning("파로스대입랩 공지 마스터 키를 입력해주세요.")
+                elif path_choice == "네이버스토어 구매자" and not proof_info:
+                    st.warning("네이버스토어 주문번호를 입력해주세요.")
                 else:
                     try:
                         sheet = init_connection()
                         records = sheet.get_all_records()
 
-                        # 아이디 중복 체크
                         for record in records:
                             if str(record.get('아이디')) == new_id:
                                 st.error("이미 사용 중인 아이디입니다. 다른 아이디를 입력해주세요.")
                                 return
 
-                        # 트랙별 날짜 산정
                         days_to_add = 15 if path_choice == "네이버프리미엄콘텐츠 구독자" else 30
                         
-                        # 네프콘 11월 13일 마감 로직
                         if path_choice == "네이버프리미엄콘텐츠 구독자":
                             if datetime.now() > datetime(2026, 11, 13):
                                 st.error("⚠️ 네프콘 15일 무료 체험 기간이 종료되었습니다.")
@@ -215,7 +228,6 @@ def auth_screen():
                             st.session_state['device_token'] = str(uuid.uuid4())
                         current_device = st.session_state['device_token']
 
-                        # 시트에 신규 계정 기록
                         new_row = [new_id, new_pw, master_key, proof_info, expire_date, current_device, "", ""]
                         sheet.append_row(new_row)
 
@@ -226,7 +238,7 @@ def auth_screen():
                     except Exception as e:
                         st.error(f"처리 중 오류 발생: {e}")
 
-            if st.button("돌아가기 (로그인 화면)", use_container_width=True):
+            if st.button("돌아가기 (로그인 화면)", type="primary", use_container_width=True):
                 st.session_state['view_mode'] = 'login'
                 st.rerun()
 
@@ -245,7 +257,6 @@ def main_app():
     st.write("선생님께서 기존에 다듬어두신 모의면접 및 제미나이 AI 질문 추출, TTS 음성 출력 코드가 이 아래로 매끄럽게 이어집니다.")
     
     st.info("여기에 기존의 생기부/자소서 업로드 및 면접 질문 생성 기능(기존 코드)을 붙여넣어 사용하시면 됩니다.")
-
 
 # --- [5] 세션 상태 관리 및 앱 구동 흐름 ---
 if 'logged_in' not in st.session_state:
