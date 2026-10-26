@@ -6,6 +6,7 @@ import json
 import os
 import uuid
 import base64
+import streamlit.components.v1 as components
 
 # --- [1] 페이지 기본 설정 ---
 st.set_page_config(
@@ -33,15 +34,19 @@ st.markdown("""
         -webkit-text-security: disc !important; 
     }
     
-    /* 배너 스타일 */
+    /* 배너 스타일 (상하 여백 완벽 균형) */
     .header-box { 
         background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); 
-        padding: 24px 15px 22px 15px; /* 상하 간격 완벽 밸런스 조정 */
+        padding: 24px 15px 22px 15px; 
         border-radius: 12px; 
         color: white; 
         margin-bottom: 15px; 
         text-align: center; 
         box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
     }
     .b-title { 
         font-size: clamp(18px, 4.5vw, 26px); 
@@ -86,37 +91,6 @@ st.markdown("""
         word-break: break-all; 
     }
 
-    /* 라디오 버튼 너비 100% 및 좌측 정렬 유지 */
-    .stRadio { 
-        width: 100% !important; 
-    }
-    div[data-testid="stRadio"] { 
-        width: 100% !important; 
-        margin-bottom: 10px !important; 
-    }
-    div[role="radiogroup"] { 
-        width: 100% !important; 
-        display: flex !important; 
-        flex-direction: row !important; 
-        justify-content: flex-start !important; 
-        gap: 30px !important; 
-        background-color: #f8fafc !important; 
-        padding: 15px 20px !important; 
-        border-radius: 8px !important; 
-        border: 1px solid #e2e8f0 !important; 
-        box-sizing: border-box !important; 
-    }
-    div[role="radiogroup"] > label { 
-        flex: 0 0 auto !important; 
-        margin: 0 !important; 
-    }
-    div[role="radiogroup"] label p { 
-        font-size: clamp(12px, 3vw, 14px) !important; 
-        white-space: nowrap !important; 
-    }
-    div[role="radiogroup"] label[data-baseweb="radio"] div:first-child { border-color: #1e293b !important; }
-    div[role="radiogroup"] label[data-baseweb="radio"] div:first-child > div { background-color: #1e293b !important; }
-
     /* 버튼 곤색 적용 */
     div.stButton > button[kind="primary"], div.stButton > button[kind="secondary"] { 
         background-color: #1e293b !important; 
@@ -128,17 +102,6 @@ st.markdown("""
         margin-top: 5px !important; 
     }
     div.stButton > button:hover { background-color: #0f172a !important; }
-
-    /* 모바일 반응형 */
-    @media (max-width: 600px) {
-        div[role="radiogroup"] { 
-            flex-direction: column !important; 
-            gap: 12px !important; 
-        }
-        div[role="radiogroup"] > label { 
-            justify-content: flex-start !important; 
-        }
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -160,7 +123,21 @@ def init_connection():
 
 # --- [4] 메인 화면 및 로그인/첫 접속 라우팅 ---
 def auth_screen():
-    # 배너 적용 (스트림릿의 여백 삽입 버그 방지를 위해 한 줄로 작성하여 완벽한 중앙 정렬 완성)
+    # 💡 팝업 차단용 스크립트
+    components.html(
+        """
+        <script>
+        const doc = window.parent.document;
+        const inputs = doc.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.setAttribute('autocomplete', 'new-password');
+            input.setAttribute('data-lpignore', 'true');
+        });
+        </script>
+        """, height=0, width=0
+    )
+
+    # 💡 배너 적용 (상하 균형을 위한 한 줄 코드)
     st.markdown('<div class="header-box"><div class="b-title">파로스 서류 기반 모의면접 트레이너</div><div class="b-sub">맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div></div>', unsafe_allow_html=True)
 
     # 로고 70px 중앙 고정
@@ -271,10 +248,10 @@ def auth_screen():
         with col2:
             st.markdown("<div style='text-align: center; color: #1e293b; font-size: 1.8rem; font-weight: 700; margin-bottom: 10px;'>시스템 첫 접속</div>", unsafe_allow_html=True)
             
-            path_choice = st.radio(
+            # 💡 라디오 버튼 삭제 및 드롭다운(selectbox) 복구 완료
+            path_choice = st.selectbox(
                 "사용자 선택",
-                ["네이버프리미엄콘텐츠 구독자", "네이버스토어 구매자"],
-                horizontal=True
+                ["네이버프리미엄콘텐츠 구독자", "네이버스토어 구매자"]
             )
 
             new_id = st.text_input("사용할 아이디", key=f"reg_id_{uuid.uuid4().hex[:8]}")
