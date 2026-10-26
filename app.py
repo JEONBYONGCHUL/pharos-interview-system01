@@ -34,7 +34,7 @@ st.markdown("""
         -webkit-text-security: disc !important; 
     }
     
-    /* 💡 [완벽 복구] 1.0 원본 배너 스타일 (상하 여백 완벽 균형) */
+    /* 💡 [완벽 복구] 1.0 원본 배너 스타일 */
     .header-box { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 20px 15px; border-radius: 14px; color: white; margin-bottom: 10px; text-align: center; box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.25); }
     .b-title { font-size: clamp(16px, 4vw, 30px); font-weight: 800; letter-spacing: -0.04em; color: #f8fafc; margin: 0; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .b-sub { font-size: clamp(11.5px, 2.5vw, 15px); color: #94a3b8; margin-top: 6px; margin-bottom: 0px; word-break: keep-all; }
@@ -98,15 +98,10 @@ def init_connection():
 
 # --- [4] 메인 화면 및 로그인/첫 접속 라우팅 ---
 def auth_screen():
-    # 💡 [완벽 복구] 1.0 원본 배너 출력 코드
-    st.markdown("""
-    <div class="header-box">
-        <div class="b-title">파로스 서류 기반 모의면접 트레이너</div>
-        <div class="b-sub">맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div>
-    </div>
-    """, unsafe_allow_html=True)
+    # 💡 선생님 제안 100% 반영: 스트림릿 여백 버그 차단을 위한 완벽한 한 줄 코드!
+    st.markdown('<div class="header-box"><div class="b-title">파로스 서류 기반 모의면접 트레이너</div><div class="b-sub">맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div></div>', unsafe_allow_html=True)
 
-    # 로고 70px 중앙 고정 유지 (건드리지 않음)
+    # 로고 70px 중앙 고정 유지
     if os.path.exists("logo.png"):
         with open("logo.png", "rb") as f:
             img_b64 = base64.b64encode(f.read()).decode()
@@ -137,7 +132,7 @@ def auth_screen():
         with col2:
             login_id = st.text_input("아이디", key="login_id")
             
-            # 비밀번호 마스킹 및 체크박스 유지 (건드리지 않음)
+            # 비밀번호 마스킹 및 체크박스 유지
             login_pw = st.text_input("비밀번호", placeholder="비밀번호 입력", key="login_pw")
             show_login_pw = st.checkbox("👁️ 비밀번호 보기", key="chk_login_pw")
             
@@ -222,7 +217,7 @@ def auth_screen():
         with col2:
             st.markdown("<div style='text-align: center; color: #1e293b; font-size: 1.8rem; font-weight: 700; margin-bottom: 10px;'>시스템 첫 접속</div>", unsafe_allow_html=True)
             
-            # 사용자 선택 드롭다운 유지 (건드리지 않음)
+            # 사용자 선택 드롭다운 유지
             path_choice = st.selectbox(
                 "사용자 선택",
                 ["네이버프리미엄콘텐츠 구독자", "네이버스토어 구매자"]
@@ -230,7 +225,7 @@ def auth_screen():
 
             new_id = st.text_input("사용할 아이디", key="reg_id")
             
-            # 비밀번호 마스킹 및 체크박스 유지 (건드리지 않음)
+            # 비밀번호 마스킹 및 체크박스 유지
             new_pw = st.text_input("사용할 비밀번호", placeholder="비밀번호 설정", key="reg_pw")
             show_reg_pw = st.checkbox("👁️ 비밀번호 보기", key="chk_reg_pw")
             
