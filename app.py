@@ -83,37 +83,6 @@ st.markdown("""
         word-break: break-all; 
     }
 
-    /* 💡 2.0 라디오 버튼 (PC에서 텍스트 입력창 너비 100%와 완벽 일치 및 좌측 정렬) */
-    .stRadio { 
-        width: 100% !important; 
-    }
-    div[data-testid="stRadio"] { 
-        width: 100% !important; 
-        margin-bottom: 10px !important; 
-    }
-    div[role="radiogroup"] { 
-        width: 100% !important; 
-        display: flex !important; 
-        flex-direction: row !important; 
-        justify-content: flex-start !important; /* PC에서도 모바일처럼 단정하게 좌측 정렬 */
-        gap: 30px !important; /* 두 라디오 버튼 사이의 간격 */
-        background-color: #f8fafc !important; 
-        padding: 15px 20px !important; 
-        border-radius: 8px !important; 
-        border: 1px solid #e2e8f0 !important; 
-        box-sizing: border-box !important; 
-    }
-    div[role="radiogroup"] > label { 
-        flex: 0 0 auto !important; /* 너비를 글자 크기에 맞추고 좌측부터 차례로 배치 */
-        margin: 0 !important; 
-    }
-    div[role="radiogroup"] label p { 
-        font-size: clamp(12px, 3vw, 14px) !important; 
-        white-space: nowrap !important; 
-    }
-    div[role="radiogroup"] label[data-baseweb="radio"] div:first-child { border-color: #1e293b !important; }
-    div[role="radiogroup"] label[data-baseweb="radio"] div:first-child > div { background-color: #1e293b !important; }
-
     /* 2.0 버튼 고급 곤색 적용 */
     div.stButton > button[kind="primary"], div.stButton > button[kind="secondary"] { 
         background-color: #1e293b !important; 
@@ -125,17 +94,6 @@ st.markdown("""
         margin-top: 5px !important; 
     }
     div.stButton > button:hover { background-color: #0f172a !important; }
-
-    /* 모바일 전용 라디오 버튼 세로 배열 (글자 겹침 방지) */
-    @media (max-width: 600px) {
-        div[role="radiogroup"] { 
-            flex-direction: column !important; 
-            gap: 12px !important; 
-        }
-        div[role="radiogroup"] > label { 
-            justify-content: flex-start !important; 
-        }
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -157,7 +115,7 @@ def init_connection():
 
 # --- [4] 메인 화면 및 로그인/첫 접속 라우팅 ---
 def auth_screen():
-    # 💡 비밀번호 팝업 원천 차단 스크립트 (공간 띄우기 없이 기술적 해결)
+    # 💡 비밀번호 팝업 원천 차단 스크립트 (공간 띄우기 없이 완벽 차단)
     components.html(
         """
         <script>
@@ -184,7 +142,7 @@ def auth_screen():
     </div>
     """, unsafe_allow_html=True)
 
-    # 💡 로고 완벽 중앙 정렬 및 모바일 확대 방지 (HTML + Base64 렌더링)
+    # 💡 로고 완벽 중앙 정렬 및 모바일 확대 방지 (HTML + Base64 렌더링 유지)
     if os.path.exists("logo.png"):
         with open("logo.png", "rb") as f:
             img_b64 = base64.b64encode(f.read()).decode()
@@ -213,7 +171,6 @@ def auth_screen():
     if st.session_state['view_mode'] == 'login':
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            # 상단 '로그인' 텍스트 제목 삭제됨
             login_id = st.text_input("아이디", key="login_id")
             login_pw = st.text_input("비밀번호", type="password", key="login_pw")
             
@@ -291,11 +248,10 @@ def auth_screen():
         with col2:
             st.markdown("<div style='text-align: center; color: #1e293b; font-size: 1.8rem; font-weight: 700; margin-bottom: 10px;'>시스템 첫 접속</div>", unsafe_allow_html=True)
             
-            # 사용자 선택 (가로 100% 꽉 채우기 적용)
-            path_choice = st.radio(
+            # 💡 골치 아픈 라디오 버튼 대신 디자인과 너비가 100% 일치하는 깔끔한 드롭다운 선택창 적용
+            path_choice = st.selectbox(
                 "사용자 선택",
-                ["네이버프리미엄콘텐츠 구독자", "네이버스토어 구매자"],
-                horizontal=True
+                ["네이버프리미엄콘텐츠 구독자", "네이버스토어 구매자"]
             )
 
             new_id = st.text_input("사용할 아이디", key=f"reg_id_{uuid.uuid4().hex[:8]}")
@@ -304,6 +260,7 @@ def auth_screen():
             master_key = ""
             proof_info = ""
 
+            # 경로에 따라 맞춤형 입력창 제공
             if path_choice == "네이버프리미엄콘텐츠 구독자":
                 master_key = st.text_input("파로스대입랩 공지 마스터 키", key="np_key_v2")
             else:
