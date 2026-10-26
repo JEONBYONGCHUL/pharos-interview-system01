@@ -11,11 +11,11 @@ import streamlit.components.v1 as components
 # --- [1] 페이지 기본 설정 ---
 st.set_page_config(
     page_title="파로스 서류 기반 모의면접 트레이너 1.5",
-    page_icon="logo.png",
+    page_icon="logo.png" if os.path.exists("logo.png") else "🎓",
     layout="wide"
 )
 
-# --- [2] UI 디자인 및 완벽한 상하 균형 CSS ---
+# --- [2] UI 디자인 및 1.0 비밀번호 마스킹 CSS ---
 st.markdown("""
 <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -29,15 +29,15 @@ st.markdown("""
         padding-bottom: 2rem !important;
     }
     
-    /* 💡 [핵심 유지] 비밀번호 마스킹 기법 (구글 팝업 완벽 차단) */
+    /* 💡 [보조] 1.0 비밀번호 마스킹 기법 CSS */
     input[placeholder="비밀번호 입력"], input[placeholder="비밀번호 설정"] { 
         -webkit-text-security: disc !important; 
     }
     
-    /* 💡 [완벽 해결] 메인 타이틀 박스 상하 완벽 균형 정렬 CSS */
+    /* 배너 스타일 (상하 여백 완벽 균형 유지) */
     .header-box { 
         background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); 
-        padding: 30px 15px !important; /* 상하 패딩을 넉넉하고 완벽한 대칭으로 고정 */
+        padding: 24px 15px 22px 15px; 
         border-radius: 12px; 
         color: white; 
         margin-bottom: 15px; 
@@ -48,25 +48,20 @@ st.markdown("""
         justify-content: center;
         align-items: center;
     }
-    .header-box div {
-        margin: 0 !important;
-        padding: 0 !important;
-    }
     .b-title { 
         font-size: clamp(18px, 4.5vw, 26px); 
         font-weight: 800; 
         letter-spacing: -0.04em; 
-        margin: 0 !important; 
-        line-height: 1.4 !important; 
+        margin: 0; 
+        line-height: 1.3; 
         white-space: nowrap; 
         color: white !important; 
     }
     .b-sub { 
         font-size: clamp(11.5px, 2.8vw, 15px); 
         color: #94a3b8; 
-        margin-top: 8px !important; /* 타이틀과 서브타이틀 사이의 간격 정밀 제어 */
-        margin-bottom: 0 !important; 
-        line-height: 1.4 !important; 
+        margin-top: 6px; 
+        margin-bottom: 0px; 
     }
     
     /* 브랜드 및 링크 스타일 */
@@ -128,10 +123,30 @@ def init_connection():
 
 # --- [4] 메인 화면 및 로그인/첫 접속 라우팅 ---
 def auth_screen():
-    # 💡 배너 적용 (완벽한 상하 균형 구조)
+    # 💡 [핵심] 눈알 아이콘 유지 + 팝업 원천 차단 자바스크립트
+    components.html(
+        """
+        <script>
+        const doc = window.parent.document;
+        const inputs = doc.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.setAttribute('autocomplete', 'new-password');
+            input.setAttribute('data-lpignore', 'true');
+        });
+        const pwInputs = doc.querySelectorAll('input[type="password"]');
+        pwInputs.forEach(pw => {
+            pw.setAttribute('readonly', 'true');
+            pw.addEventListener('focus', function() { this.removeAttribute('readonly'); });
+            pw.addEventListener('blur', function() { this.setAttribute('readonly', 'true'); });
+        });
+        </script>
+        """, height=0, width=0
+    )
+
+    # 💡 배너 적용 (상하 균형을 위한 한 줄 코드 유지)
     st.markdown('<div class="header-box"><div class="b-title">파로스 서류 기반 모의면접 트레이너</div><div class="b-sub">맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div></div>', unsafe_allow_html=True)
 
-    # 로고 70px 중앙 고정
+    # 로고 70px 중앙 고정 유지
     if os.path.exists("logo.png"):
         with open("logo.png", "rb") as f:
             img_b64 = base64.b64encode(f.read()).decode()
@@ -162,16 +177,8 @@ def auth_screen():
         with col2:
             login_id = st.text_input("아이디", key="login_id")
             
-            # 비밀번호 마스킹 및 체크박스 유지
-            login_pw = st.text_input("비밀번호", placeholder="비밀번호 입력", key="login_pw")
-            show_login_pw = st.checkbox("👁️ 비밀번호 보기", key="chk_login_pw")
-            
-            if not show_login_pw:
-                st.markdown("""
-                <style>
-                input[placeholder="비밀번호 입력"] { -webkit-text-security: disc !important; }
-                </style>
-                """, unsafe_allow_html=True)
+            # 💡 [핵심] type="password" 유지 (눈알 아이콘 표시용) + placeholder 적용
+            login_pw = st.text_input("비밀번호", type="password", placeholder="비밀번호 입력", key="login_pw")
             
             if st.button("로그인", type="primary", use_container_width=True):
                 if not login_id or not login_pw:
@@ -247,24 +254,17 @@ def auth_screen():
         with col2:
             st.markdown("<div style='text-align: center; color: #1e293b; font-size: 1.8rem; font-weight: 700; margin-bottom: 10px;'>시스템 첫 접속</div>", unsafe_allow_html=True)
             
-            # 사용자 선택 드롭다운 유지
+            # 💡 [핵심] 깔끔한 드롭다운(selectbox) 유지
             path_choice = st.selectbox(
                 "사용자 선택",
                 ["네이버프리미엄콘텐츠 구독자", "네이버스토어 구매자"]
             )
 
+            # 💡 [핵심] 고정된 key 할당 (커서 이동 시 입력값 날아감 방지)
             new_id = st.text_input("사용할 아이디", key="reg_id")
             
-            # 비밀번호 마스킹 및 체크박스 유지
-            new_pw = st.text_input("사용할 비밀번호", placeholder="비밀번호 설정", key="reg_pw")
-            show_reg_pw = st.checkbox("👁️ 비밀번호 보기", key="chk_reg_pw")
-            
-            if not show_reg_pw:
-                st.markdown("""
-                <style>
-                input[placeholder="비밀번호 설정"] { -webkit-text-security: disc !important; }
-                </style>
-                """, unsafe_allow_html=True)
+            # 💡 [핵심] type="password" 유지 + placeholder 적용
+            new_pw = st.text_input("사용할 비밀번호", type="password", placeholder="비밀번호 설정", key="reg_pw")
 
             master_key = ""
             proof_info = ""
