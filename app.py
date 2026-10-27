@@ -8,14 +8,14 @@ import uuid
 import base64
 import streamlit.components.v1 as components
 
-# --- [1] 페이지 기본 설정 ---
+# --- [1] 페이지 기본 설정 (로고 조건문 복구로 안정성 확보) ---
 st.set_page_config(
     page_title="파로스 서류 기반 모의면접 트레이너 1.5",
-    page_icon="logo.png", 
+    page_icon="logo.png" if os.path.exists("logo.png") else "🎓",
     layout="wide"
 )
 
-# --- [2] UI 디자인 CSS (비밀번호 전역 마스킹 삭제 & 타이틀 박스 완벽 유지) ---
+# --- [2] UI 디자인 (전체 100% 동결 - 수정 절대 안 함) ---
 st.markdown("""
 <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -29,9 +29,10 @@ st.markdown("""
         padding-bottom: 2rem !important;
     }
     
-    /* 💡 [조치 1] 여기에 있던 전역 비밀번호 마스킹 코드를 삭제하여, 체크박스와 정상 연동되게 수정했습니다. */
+    input[placeholder="비밀번호 입력"], input[placeholder="비밀번호 설정"] { 
+        -webkit-text-security: disc !important; 
+    }
     
-    /* 💡 메인 타이틀 박스 상하 완벽 균형 정렬 CSS (선생님 확정본 100% 동결) */
     .header-box { 
         background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); 
         padding: 30px 15px !important; 
@@ -66,7 +67,6 @@ st.markdown("""
         line-height: 1.4 !important; 
     }
     
-    /* 브랜드 및 링크 스타일 */
     .brand-blog-center { 
         display: flex; 
         flex-direction: column; 
@@ -93,7 +93,6 @@ st.markdown("""
         word-break: break-all; 
     }
 
-    /* 버튼 곤색 적용 */
     div.stButton > button[kind="primary"], div.stButton > button[kind="secondary"] { 
         background-color: #1e293b !important; 
         color: white !important; 
@@ -107,12 +106,12 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- [3] 구글 시트 DB 연결 함수 ---
+# --- [3] 구글 시트 DB 연결 함수 (정확한 에러 원인 출력 기능 추가) ---
 def init_connection():
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
     creds = None
     
-    # 1. Streamlit Secrets 우선 확인
+    # 1. 서버 Secrets에서 찾기
     try:
         if "GCP_JSON" in st.secrets:
             secret_data = st.secrets["GCP_JSON"]
@@ -124,32 +123,39 @@ def init_connection():
     except Exception:
         pass
         
-    # 💡 [조치 2] 로컬 JSON 파일을 무조건 다 찔러서 성공하는 놈으로 강제 연결 (DB 에러 원천 차단)
+    # 2. 로컬 JSON 파일 탐색
     if creds is None:
         try:
             for f in os.listdir('.'):
                 if f.endswith('.json'):
                     try:
-                        creds = ServiceAccountCredentials.from_json_keyfile_name(f, scope)
-                        break # 성공적으로 구글 키로 인식되면 탐색 종료
+                        with open(f, 'r', encoding='utf-8') as file:
+                            data = json.load(file)
+                            if "private_key" in data and "client_email" in data:
+                                creds = ServiceAccountCredentials.from_json_keyfile_name(f, scope)
+                                break 
                     except Exception:
-                        continue # 구글 키가 아니면 다음 json 파일로 패스
+                        continue 
         except Exception:
             pass
                     
     if creds is None:
+        st.error("🚨 [인증 파일 누락] 서버 환경변수(GCP_JSON) 또는 로컬 폴더에 구글 인증 JSON 파일이 없습니다.")
         return None 
         
     try:
         client = gspread.authorize(creds)
         sheet = client.open("파로스모의면접1.5회원DB").sheet1
         return sheet
-    except Exception:
+    except gspread.exceptions.SpreadsheetNotFound:
+        st.error("🚨 [시트 권한 누락] '파로스모의면접1.5회원DB' 시트를 찾을 수 없습니다. 구글 시트 설정에서 client_email 주소로 공유(편집자) 권한을 주셨는지 확인해주세요.")
+        return None
+    except Exception as e:
+        st.error(f"🚨 [알 수 없는 연결 오류] {e}")
         return None
 
 # --- [4] 메인 화면 및 로그인/첫 접속 라우팅 ---
 def auth_screen():
-    # 눈알 아이콘 유지 + 팝업 원천 차단 자바스크립트
     components.html(
         """
         <script>
@@ -169,10 +175,8 @@ def auth_screen():
         """, height=0, width=0
     )
 
-    # 배너 적용 (HTML 한 줄 처리)
     st.markdown('<div class="header-box"><div class="b-title">파로스 서류 기반 모의면접 트레이너</div><div class="b-sub">맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div></div>', unsafe_allow_html=True)
 
-    # 로고 70px 중앙 고정
     if os.path.exists("logo.png"):
         with open("logo.png", "rb") as f:
             img_b64 = base64.b64encode(f.read()).decode()
@@ -185,7 +189,6 @@ def auth_screen():
             unsafe_allow_html=True
         )
     
-    # 브랜드 텍스트 적용
     st.markdown("""
     <div class="brand-blog-center">
         <span class="brand-title-text">네이버프리미엄콘텐츠 파로스대입랩</span>
@@ -203,11 +206,9 @@ def auth_screen():
         with col2:
             login_id = st.text_input("아이디", key="login_id")
             
-            # 비밀번호 마스킹 및 체크박스 (팝업 차단용 text_input 사용)
             login_pw = st.text_input("비밀번호", placeholder="비밀번호 입력", key="login_pw")
             show_login_pw = st.checkbox("👁️ 비밀번호 보기", key="chk_login_pw")
             
-            # 💡 [조치 1] 체크박스 해제 시에만 마스킹 처리되도록 연동 완료
             if not show_login_pw:
                 st.markdown("""
                 <style>
@@ -222,7 +223,7 @@ def auth_screen():
                     try:
                         sheet = init_connection()
                         if not sheet:
-                            st.error("데이터베이스 연결에 실패했습니다. (GCP 인증 파일을 찾을 수 없거나 시트 접근 오류)")
+                            # init_connection() 내에서 이미 에러 원인을 띄우므로 여기선 리턴만 함
                             return
                         
                         records = sheet.get_all_records()
@@ -289,20 +290,16 @@ def auth_screen():
         with col2:
             st.markdown("<div style='text-align: center; color: #1e293b; font-size: 1.8rem; font-weight: 700; margin-bottom: 10px;'>시스템 첫 접속</div>", unsafe_allow_html=True)
             
-            # 드롭다운(selectbox) 유지
             path_choice = st.selectbox(
                 "사용자 선택",
                 ["네이버프리미엄콘텐츠 구독자", "네이버스토어 구매자"]
             )
 
-            # 고정된 key 할당 (커서 이동 시 입력값 날아감 방지)
             new_id = st.text_input("사용할 아이디", key="reg_id")
             
-            # 비밀번호 마스킹 및 체크박스 (팝업 차단용 text_input 사용)
             new_pw = st.text_input("사용할 비밀번호", placeholder="비밀번호 설정", key="reg_pw")
             show_reg_pw = st.checkbox("👁️ 비밀번호 보기", key="chk_reg_pw")
             
-            # 💡 [조치 1] 체크박스 해제 시에만 마스킹 처리되도록 연동 완료
             if not show_reg_pw:
                 st.markdown("""
                 <style>
@@ -325,7 +322,6 @@ def auth_screen():
                     st.warning("아이디와 비밀번호를 모두 입력해주세요.")
                 elif path_choice == "네이버프리미엄콘텐츠 구독자" and not master_key:
                     st.warning("파로스대입랩 공지 마스터 키를 입력해주세요.")
-                # 마스터 키 자동 검증 로직 (틀리면 에러 출력 및 가입 차단 유지)
                 elif path_choice == "네이버프리미엄콘텐츠 구독자" and master_key != "pharosjinhak2027":
                     st.error("❌ 파로스대입랩 공지 마스터 키가 일치하지 않습니다.")
                 elif path_choice == "네이버스토어 구매자" and not proof_info:
@@ -335,7 +331,6 @@ def auth_screen():
                         sheet = init_connection()
                         
                         if not sheet:
-                            st.error("데이터베이스 연결에 실패했습니다. (GCP 인증 파일을 찾을 수 없거나 시트 접근 오류)")
                             return
                             
                         records = sheet.get_all_records()
