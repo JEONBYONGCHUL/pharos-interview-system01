@@ -468,4 +468,3 @@ if 'logged_in' not in st.session_state: st.session_state['logged_in'] = False
 
 if not st.session_state['logged_in']: auth_screen()
 else: main_app()
-```<FollowUp>완전히 마무리되셨군요! 나중에 렌더 배포까지 마치고 직접 실행해 보셨을 때, 모의 면접 질문이 시원하게 뽑혀 나오는지 꼭 말씀해 주세요.</FollowUp>
