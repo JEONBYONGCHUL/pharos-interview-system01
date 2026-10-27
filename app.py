@@ -493,4 +493,3 @@ if 'logged_in' not in st.session_state: st.session_state['logged_in'] = False
 
 if not st.session_state['logged_in']: auth_screen()
 else: main_app()
-```<FollowUp>요청하신 라이브러리 파일 반영 후 이제 주소창 로고와 기기 인식 모두 문제없이 작동하는지 최종 확인 부탁드립니다.</FollowUp>
