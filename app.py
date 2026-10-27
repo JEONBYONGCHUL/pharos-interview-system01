@@ -15,7 +15,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- [2] UI 디자인 (전체 100% 동결 / 문제의 전역 비밀번호 마스킹 코드 완전 삭제 완료) ---
+# --- [2] UI 디자인 (로그인 및 시스템 공통 디자인 동결) ---
 st.markdown("""
 <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -28,8 +28,6 @@ st.markdown("""
         padding-top: 1.5rem !important;
         padding-bottom: 2rem !important;
     }
-    
-    /* 💡 여기에 남아있던 비밀번호 가림막 코드를 완전히 삭제했습니다! */
     
     .header-box { 
         background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); 
@@ -104,15 +102,13 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- [3] 구글 시트 DB 연결 함수 (Render 환경 변수 인식 완벽 해결) ---
+# --- [3] 구글 시트 DB 연결 함수 (동결) ---
 def init_connection():
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
     creds = None
     
-    # 💡 1. Render 환경 변수(os.environ)를 1순위로 읽도록 수정 (가장 핵심적인 조치)
     secret_data = os.environ.get("GCP_JSON")
     
-    # 2. Render 환경 변수가 없으면 Streamlit Secrets 확인
     if not secret_data:
         try:
             if "GCP_JSON" in st.secrets:
@@ -131,7 +127,6 @@ def init_connection():
             st.error(f"🚨 [JSON 파싱 오류] 등록하신 GCP_JSON 데이터의 형태가 잘못되었습니다: {e}")
             return None
         
-    # 3. 로컬 JSON 파일 탐색 (서버 변수가 없을 경우 예비)
     if creds is None:
         try:
             for f in os.listdir('.'):
@@ -162,7 +157,7 @@ def init_connection():
         st.error(f"🚨 [알 수 없는 연결 오류] {e}")
         return None
 
-# --- [4] 메인 화면 및 로그인/첫 접속 라우팅 ---
+# --- [4] 로그인 및 첫 접속 라우팅 (비밀번호 및 마스터키 검증 완벽 동결) ---
 def auth_screen():
     components.html(
         """
@@ -213,16 +208,11 @@ def auth_screen():
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             login_id = st.text_input("아이디", key="login_id")
-            
             login_pw = st.text_input("비밀번호", placeholder="비밀번호 입력", key="login_pw")
             show_login_pw = st.checkbox("👁️ 비밀번호 보기", key="chk_login_pw")
             
             if not show_login_pw:
-                st.markdown("""
-                <style>
-                input[placeholder="비밀번호 입력"] { -webkit-text-security: disc !important; }
-                </style>
-                """, unsafe_allow_html=True)
+                st.markdown('<style>input[placeholder="비밀번호 입력"] { -webkit-text-security: disc !important; }</style>', unsafe_allow_html=True)
             
             if st.button("로그인", type="primary", use_container_width=True):
                 if not login_id or not login_pw:
@@ -297,22 +287,13 @@ def auth_screen():
         with col2:
             st.markdown("<div style='text-align: center; color: #1e293b; font-size: 1.8rem; font-weight: 700; margin-bottom: 10px;'>시스템 첫 접속</div>", unsafe_allow_html=True)
             
-            path_choice = st.selectbox(
-                "사용자 선택",
-                ["네이버프리미엄콘텐츠 구독자", "네이버스토어 구매자"]
-            )
-
+            path_choice = st.selectbox("사용자 선택", ["네이버프리미엄콘텐츠 구독자", "네이버스토어 구매자"])
             new_id = st.text_input("사용할 아이디", key="reg_id")
-            
             new_pw = st.text_input("사용할 비밀번호", placeholder="비밀번호 설정", key="reg_pw")
             show_reg_pw = st.checkbox("👁️ 비밀번호 보기", key="chk_reg_pw")
             
             if not show_reg_pw:
-                st.markdown("""
-                <style>
-                input[placeholder="비밀번호 설정"] { -webkit-text-security: disc !important; }
-                </style>
-                """, unsafe_allow_html=True)
+                st.markdown('<style>input[placeholder="비밀번호 설정"] { -webkit-text-security: disc !important; }</style>', unsafe_allow_html=True)
 
             master_key = ""
             proof_info = ""
@@ -336,12 +317,10 @@ def auth_screen():
                 else:
                     try:
                         sheet = init_connection()
-                        
                         if not sheet:
                             return
                             
                         records = sheet.get_all_records()
-
                         for record in records:
                             if str(record.get('아이디')) == new_id:
                                 st.error("이미 사용 중인 아이디입니다. 다른 아이디를 입력해주세요.")
@@ -355,7 +334,6 @@ def auth_screen():
                                 return
 
                         expire_date = (datetime.now() + timedelta(days=days_to_add)).strftime("%Y-%m-%d")
-                        
                         if 'device_token' not in st.session_state:
                             st.session_state['device_token'] = str(uuid.uuid4())
                         current_device = st.session_state['device_token']
@@ -377,20 +355,74 @@ def auth_screen():
                 st.session_state['view_mode'] = 'login'
                 st.rerun()
 
-# --- [5] 메인 면접 앱 실행 영역 ---
+# --- [5] 메인 면접 앱 실행 영역 (1.0 메인화면 완벽 복원 이식) ---
 def main_app():
-    st.sidebar.title("👤 회원 정보")
-    st.sidebar.write(f"접속 계정: **{st.session_state.get('user_id')}**님")
-    if st.sidebar.button("로그아웃"):
+    # 💡 1. 사이드바 복원
+    st.sidebar.markdown(f"<div style='background-color: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 20px;'><h3 style='margin:0; color: #1e293b; font-size: 1.2rem;'>👤 회원 정보</h3><p style='margin: 10px 0 0 0; color: #475569;'>접속 계정: <b>{st.session_state.get('user_id')}</b>님</p></div>", unsafe_allow_html=True)
+    
+    if st.sidebar.button("로그아웃", use_container_width=True):
         st.session_state['logged_in'] = False
         st.session_state['user_id'] = None
         st.rerun()
 
-    st.sidebar.markdown("---")
+    st.sidebar.markdown("<hr style='margin: 20px 0; border: none; border-top: 1px solid #cbd5e1;'>", unsafe_allow_html=True)
     
-    st.title("🎓 파로스 서류 기반 모의면접 트레이너 v1.5")
-    st.write("선생님께서 기존에 다듬어두신 모의면접 및 제미나이 AI 질문 추출, TTS 음성 출력 코드가 이 아래로 매끄럽게 이어집니다.")
-    st.info("여기에 기존의 탐구 활동 요약 입력 및 면접 질문 생성 기능 코드를 붙여넣어 사용하시면 됩니다.")
+    # 사이드바 면접 조건 설정
+    st.sidebar.markdown("<div style='background-color: #1e293b; color: white; padding: 12px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 15px; font-size: 1.05rem;'>⚙️ 모의 면접 조건 설정</div>", unsafe_allow_html=True)
+    
+    major = st.sidebar.text_input("지원 모집단위 및 희망 전공", placeholder="예: 경영학부, 컴퓨터공학과")
+    q_count = st.sidebar.selectbox("추출 면접 문항 수", ["3문항", "4문항", "5문항", "6문항"], index=2)
+    difficulty = st.sidebar.selectbox("평가 난이도", ["하 (기초 사실 확인)", "중 (심층 질문)", "상 (꼬리 질문 및 압박)"])
+    
+    st.sidebar.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+    inc_motive = st.sidebar.checkbox("💡 지원 동기 (시작 공통 문항) 포함", value=True)
+    inc_last = st.sidebar.checkbox("💡 마지막 할 말 (마무리 공통 문항) 포함", value=True)
+
+    # 💡 2. 메인 바디 복원 (상단 배너 및 로고)
+    st.markdown('<div class="header-box"><div class="b-title">파로스 서류 기반 모의면접 트레이너</div><div class="b-sub">맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div></div>', unsafe_allow_html=True)
+
+    if os.path.exists("logo.png"):
+        with open("logo.png", "rb") as f:
+            img_b64 = base64.b64encode(f.read()).decode()
+        st.markdown(
+            f'''
+            <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin: 5px 0 10px 0;">
+                <img src="data:image/png;base64,{img_b64}" style="width: 70px; height: auto;" />
+            </div>
+            ''',
+            unsafe_allow_html=True
+        )
+    
+    st.markdown("""
+    <div class="brand-blog-center">
+        <span class="brand-title-text">네이버프리미엄콘텐츠 파로스대입랩</span>
+        <a class="brand-link-text" href="https://contents.premium.naver.com/pharoslab/jinhak" target="_blank">https://contents.premium.naver.com/pharoslab/jinhak</a>
+    </div>
+    <hr style="margin: 5px 0 15px 0; border: none; border-top: 1px solid #e2e8f0;">
+    """, unsafe_allow_html=True)
+
+    # 💡 3. 관련 법령 준수 안내 박스 복원
+    st.markdown("""
+    <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 25px 20px; text-align: center; margin: 20px 0;">
+        <div style="color: #1e3a8a; font-weight: 800; font-size: 1.05rem; margin-bottom: 12px;">관련 법령 준수 안내</div>
+        <div style="color: #2563eb; font-size: 0.95rem; line-height: 1.6; word-break: keep-all;">
+            본 시스템은 「초·중등교육법」 제25조의2에 유의하여 학교생활기록부를 취득하지 않습니다. 학교생활기록부의 수집·업로드를 전면 차단하며, 수험생 본인의 탐구 활동 등 내용 입력 사항을 기반으로 모의 면접 질문을 지원합니다.
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 💡 4. 탐구 활동 입력부 복원
+    st.markdown("<h3 style='text-align: center; color: #1e293b; font-weight: 800; margin-top: 40px; margin-bottom: 20px;'>본인 탐구 활동 등 내용 입력</h3>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #10b981; font-size: 0.9rem; margin-bottom: 8px; font-weight: 600;'>✅ 안심하고 사용하세요! 본 모의 면접 시스템은 완전 휘발성 구조로 설계되어, 입력하신 모든 내용은 서버에 일절 저장되지 않고 즉시 파기됩니다.</p>", unsafe_allow_html=True)
+    
+    activity_text = st.text_area("탐구활동내용", placeholder="본인의 탐구 활동 등 내용을 입력해 주세요.", height=300, label_visibility="collapsed")
+    
+    st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
+    if st.button("면접 질문 추출하기", type="primary", use_container_width=True):
+        if not activity_text:
+            st.warning("탐구 활동 내용을 입력해주세요.")
+        else:
+            st.info("여기에 기존 제미나이(Gemini) AI 연동 코드 및 면접 시작 로직을 이어붙이시면 1.5버전이 최종 완성됩니다.")
 
 # --- [6] 세션 상태 관리 및 앱 구동 흐름 ---
 if 'logged_in' not in st.session_state:
