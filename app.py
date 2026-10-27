@@ -8,14 +8,14 @@ import uuid
 import base64
 import streamlit.components.v1 as components
 
-# --- [1] 페이지 기본 설정 (로고 조건문 복구로 안정성 확보) ---
+# --- [1] 페이지 기본 설정 ---
 st.set_page_config(
     page_title="파로스 서류 기반 모의면접 트레이너 1.5",
     page_icon="logo.png" if os.path.exists("logo.png") else "🎓",
     layout="wide"
 )
 
-# --- [2] UI 디자인 (전체 100% 동결 - 수정 절대 안 함) ---
+# --- [2] UI 디자인 (전체 100% 동결 / 문제의 전역 비밀번호 마스킹 코드 완전 삭제 완료) ---
 st.markdown("""
 <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -29,9 +29,7 @@ st.markdown("""
         padding-bottom: 2rem !important;
     }
     
-    input[placeholder="비밀번호 입력"], input[placeholder="비밀번호 설정"] { 
-        -webkit-text-security: disc !important; 
-    }
+    /* 💡 여기에 남아있던 비밀번호 가림막 코드를 완전히 삭제했습니다! */
     
     .header-box { 
         background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); 
@@ -106,24 +104,34 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- [3] 구글 시트 DB 연결 함수 (정확한 에러 원인 출력 기능 추가) ---
+# --- [3] 구글 시트 DB 연결 함수 (Render 환경 변수 인식 완벽 해결) ---
 def init_connection():
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
     creds = None
     
-    # 1. 서버 Secrets에서 찾기
-    try:
-        if "GCP_JSON" in st.secrets:
-            secret_data = st.secrets["GCP_JSON"]
+    # 💡 1. Render 환경 변수(os.environ)를 1순위로 읽도록 수정 (가장 핵심적인 조치)
+    secret_data = os.environ.get("GCP_JSON")
+    
+    # 2. Render 환경 변수가 없으면 Streamlit Secrets 확인
+    if not secret_data:
+        try:
+            if "GCP_JSON" in st.secrets:
+                secret_data = st.secrets["GCP_JSON"]
+        except Exception:
+            pass
+            
+    if secret_data:
+        try:
             if isinstance(secret_data, str):
                 creds_dict = json.loads(secret_data)
             else:
                 creds_dict = dict(secret_data)
             creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-    except Exception:
-        pass
+        except Exception as e:
+            st.error(f"🚨 [JSON 파싱 오류] 등록하신 GCP_JSON 데이터의 형태가 잘못되었습니다: {e}")
+            return None
         
-    # 2. 로컬 JSON 파일 탐색
+    # 3. 로컬 JSON 파일 탐색 (서버 변수가 없을 경우 예비)
     if creds is None:
         try:
             for f in os.listdir('.'):
@@ -148,7 +156,7 @@ def init_connection():
         sheet = client.open("파로스모의면접1.5회원DB").sheet1
         return sheet
     except gspread.exceptions.SpreadsheetNotFound:
-        st.error("🚨 [시트 권한 누락] '파로스모의면접1.5회원DB' 시트를 찾을 수 없습니다. 구글 시트 설정에서 client_email 주소로 공유(편집자) 권한을 주셨는지 확인해주세요.")
+        st.error("🚨 [시트 권한 누락] '파로스모의면접1.5회원DB' 시트를 찾을 수 없습니다. 구글 시트 설정에서 편집자 권한을 주셨는지 확인해주세요.")
         return None
     except Exception as e:
         st.error(f"🚨 [알 수 없는 연결 오류] {e}")
@@ -223,7 +231,6 @@ def auth_screen():
                     try:
                         sheet = init_connection()
                         if not sheet:
-                            # init_connection() 내에서 이미 에러 원인을 띄우므로 여기선 리턴만 함
                             return
                         
                         records = sheet.get_all_records()
