@@ -52,14 +52,14 @@ st.markdown("""
     div.stButton > button[kind="primary"] { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important; color: white !important; border: none !important; border-radius: 10px !important; padding: 10px 24px !important; font-size: 16px !important; font-weight: 800 !important; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35) !important; margin-top: 5px; }
     div.stButton > button[kind="primary"]:hover { background: linear-gradient(135deg, #0369a1 0%, #075985 100%) !important; box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45) !important; }
     
-    /* 💡 1.0 버전 질문 카드 UI */
+    /* 1.0 버전 질문 카드 UI */
     .card { background: white; border: 1px solid #e2e8f0; border-left: 5px solid #0284c7; border-radius: 12px; padding: 20px 22px; margin-bottom: 14px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04); }
     .q-title { font-size: 17px; font-weight: 700; color: #0f172a; margin: 10px 0; line-height: 1.5; }
     .guide { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 10px 14px; border-radius: 8px; font-size: 13.5px; font-weight: 600; margin-top: 10px; }
 </style>
 """, unsafe_allow_html=True)
 
-# 💡 1.0 파로스 등대 SVG 로고
+# 파로스 등대 SVG 로고
 svg_logo = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 155" width="100%" height="100%">
 <polygon points="12,24 64,42 64,50 12,34" fill="#831843"/><polygon points="12,56 64,56 64,64 12,68" fill="#52525b"/>
 <polygon points="168,24 116,42 116,50 168,34" fill="#52525b"/><polygon points="168,56 116,56 116,64 168,68" fill="#831843"/>
@@ -71,7 +71,7 @@ svg_logo = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 155" widt
 <polygon points="107,92 114,103 81,134 71,134" fill="#fff" opacity="0.95"/><rect x="36" y="134" width="108" height="6" rx="2" fill="#831843"/>
 </svg>"""
 
-# --- [3] 구글 시트 DB 연결 함수 (보안 동결) ---
+# --- [3] 구글 시트 DB 연결 함수 ---
 def init_connection():
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
     creds, secret_data = None, os.environ.get("GCP_JSON")
@@ -113,7 +113,7 @@ def init_connection():
         st.error(f"🚨 [연결 오류] {e}")
         return None
 
-# --- [4] 로그인 및 첫 접속 인증 화면 (보안 동결) ---
+# --- [4] 로그인 및 첫 접속 인증 화면 ---
 def auth_screen():
     components.html(
         """<script>
@@ -128,7 +128,6 @@ def auth_screen():
     )
 
     st.markdown('<div class="header-box"><div class="b-title">파로스 서류 기반 모의면접 트레이너</div><div class="b-sub">맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div></div>', unsafe_allow_html=True)
-    # 💡 URL 중복 표시 해결: https:// 텍스트 제거
     st.markdown(f'<div class="brand-blog-center"><div class="logo-box">{svg_logo}</div><div class="brand-info-box"><span class="brand-title-text">네이버프리미엄콘텐츠 파로스대입랩</span><a class="brand-link-text" href="https://contents.premium.naver.com/pharoslab/jinhak" target="_blank">contents.premium.naver.com/pharoslab/jinhak</a></div></div><hr style="margin: 5px 0 15px 0; border: none; border-top: 1px solid #e2e8f0;">', unsafe_allow_html=True)
 
     if 'view_mode' not in st.session_state: st.session_state['view_mode'] = 'login'
@@ -165,7 +164,8 @@ def auth_screen():
                                 st.error("⚠️ 이용 기간이 만료되었습니다.")
                                 return
 
-                            devices = [str(user_row.get('기기1')), str(user_row.get('기기2')), str(user_row.get('기기3'))]
+                            # 💡 기기 4대 제한으로 변경 (기기4 시트에 없으면 빈칸 처리)
+                            devices = [str(user_row.get('기기1', '')), str(user_row.get('기기2', '')), str(user_row.get('기기3', '')), str(user_row.get('기기4', ''))]
                             if 'device_token' not in st.session_state: st.session_state['device_token'] = str(uuid.uuid4())
                             current_device = st.session_state['device_token']
                             matched_slot, empty_slot = None, None
@@ -180,7 +180,7 @@ def auth_screen():
                                     sheet.update_cell(row_idx, 5 + empty_slot, current_device)
                                     st.success("로그인 성공! 새로운 기기가 등록되었습니다.")
                                 else:
-                                    st.error("🚫 동시 접속 기기 초과! (최대 3대)")
+                                    st.error("🚫 동시 접속 기기 초과! (최대 4대)")
                                     return
                             else: st.success("로그인 성공!")
 
@@ -226,7 +226,8 @@ def auth_screen():
                         expire_date = (datetime.now() + timedelta(days=days_to_add)).strftime("%Y-%m-%d")
                         if 'device_token' not in st.session_state: st.session_state['device_token'] = str(uuid.uuid4())
                         
-                        sheet.append_row([new_id, new_pw, master_key, proof_info, expire_date, st.session_state['device_token'], "", ""])
+                        # 💡 기기 4대 제한으로 빈칸("" ) 한 개 추가 
+                        sheet.append_row([new_id, new_pw, master_key, proof_info, expire_date, st.session_state['device_token'], "", "", ""])
                         st.success("🎉 등록이 완료되었습니다! 로그인 화면으로 돌아갑니다.")
                         st.session_state['view_mode'] = 'login'
                         st.rerun()
@@ -236,7 +237,7 @@ def auth_screen():
                 st.session_state['view_mode'] = 'login'
                 st.rerun()
 
-# --- [5] 1.0버전 AI 데이터 처리 함수 및 프롬프트 복원 영역 ---
+# --- [5] AI 데이터 처리 함수 및 프롬프트 영역 ---
 def sanitize_text(text):
     t = text
     t = re.sub(r'[가-힣]{2,10}(고등학교|여고|남고|외고|과고|예고|체고|마이스터고|공고|상고|고)', "[OO고등학교]", t)
@@ -246,7 +247,6 @@ def sanitize_text(text):
     t = re.sub(r'\b(아버지|어머니|부모님|부친|모친|형|누나|오빠|언니|동생|외조부|조부|외조모|조모|삼촌|이모|고모)\b', "[가족관계]", t)
     return t
 
-# 💡 1.0 통신 방식 (urllib) 및 모델명 (gemini-3.8-flash) 복원
 def call_gemini(prompt, count, diff, api_key):
     diff_prompts = {
         "하": "기초 사실 확인 및 역량 균형 평가 (주요 초점: 진로 희망 변경 이유, 가장 의미 있었던 과목, 서류 내 기억에 남는 활동 등 팩트와 경험 위주의 개방형 질문 포함. ★ '학업역량', '진로역량', '공동체역량' 세 가지 측면의 질문을 고르게 균형 있게 혼합하여 출제할 것)",
@@ -310,7 +310,7 @@ def call_gemini(prompt, count, diff, api_key):
     except Exception as e:
         raise Exception(f"API 요청 실패: {str(e)}")
 
-# 💡 남성/중저음 TTS 및 모바일 스마트 팝업 대응 로직
+# 남성/중저음 TTS 및 모바일 스마트 팝업 대응 로직
 def render_tts(text, q_id):
     clean = json.dumps(text, ensure_ascii=False)
     html = f"""<button id="b_{q_id}" style="background:linear-gradient(180deg,#0284c7,#0369a1);color:white;border:none;border-radius:6px;padding:7px 15px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 5px rgba(2,132,199,0.25);">🔊 음성으로 질문 듣기</button>
@@ -369,7 +369,9 @@ def main_app():
     target_major = st.sidebar.text_input("지원 모집단위 및 희망 전공", placeholder="예: 경영학부, 컴퓨터공학과")
     q_sel = st.sidebar.selectbox("추출 면접 문항 수", ["5문항", "10문항", "15문항"], index=0)
     q_count = int(q_sel.replace("문항", ""))
-    diff_sel = st.sidebar.selectbox("평가 난이도", ["하 (기초 사실 확인)", "중 (탐구/문제해결)", "상 (심화 학술이론)"], index=0)
+    
+    # 💡 사이드바 난이도 용어 변경 (하, 중, 상 앞글자는 유지)
+    diff_sel = st.sidebar.selectbox("평가 난이도", ["하 (기본사실확인)", "중 (탐구문제해결)", "상 (심화학업역량,압박)"], index=0)
     difficulty = diff_sel[0]
     
     st.sidebar.markdown("---")
@@ -377,7 +379,6 @@ def main_app():
     include_closing = st.sidebar.checkbox("💡 마지막 할 말 (마무리 공통 문항) 포함", value=True, help="체크 시 면접을 마무리하는 '마지막으로 하고 싶은 말' 문항이 맨 끝에 자동 추가됩니다.")
 
     st.markdown('<div class="header-box"><div class="b-title">파로스 서류 기반 모의면접 트레이너</div><div class="b-sub">맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div></div>', unsafe_allow_html=True)
-    # 💡 URL 중복 표시 해결: https:// 텍스트 제거
     st.markdown(f'<div class="brand-blog-center"><div class="logo-box">{svg_logo}</div><div class="brand-info-box"><span class="brand-title-text">네이버프리미엄콘텐츠 파로스대입랩</span><a class="brand-link-text" href="[https://contents.premium.naver.com/pharoslab/jinhak](https://contents.premium.naver.com/pharoslab/jinhak)" target="_blank">[contents.premium.naver.com/pharoslab/jinhak](https://contents.premium.naver.com/pharoslab/jinhak)</a></div></div>', unsafe_allow_html=True)
     
     st.markdown("""
