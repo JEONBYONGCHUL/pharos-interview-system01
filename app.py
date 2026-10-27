@@ -8,8 +8,9 @@ import uuid
 import base64
 import time
 import re
+import urllib.request
+import urllib.error
 import streamlit.components.v1 as components
-import google.generativeai as genai
 
 # --- [1] 페이지 기본 설정 ---
 st.set_page_config(
@@ -127,7 +128,8 @@ def auth_screen():
     )
 
     st.markdown('<div class="header-box"><div class="b-title">파로스 서류 기반 모의면접 트레이너</div><div class="b-sub">맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div></div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="brand-blog-center"><div class="logo-box">{svg_logo}</div><div class="brand-info-box"><span class="brand-title-text">네이버프리미엄콘텐츠 파로스대입랩</span><a class="brand-link-text" href="https://contents.premium.naver.com/pharoslab/jinhak" target="_blank">https://contents.premium.naver.com/pharoslab/jinhak</a></div></div><hr style="margin: 5px 0 15px 0; border: none; border-top: 1px solid #e2e8f0;">', unsafe_allow_html=True)
+    # 💡 URL 중복 표시 해결: https:// 텍스트 제거
+    st.markdown(f'<div class="brand-blog-center"><div class="logo-box">{svg_logo}</div><div class="brand-info-box"><span class="brand-title-text">네이버프리미엄콘텐츠 파로스대입랩</span><a class="brand-link-text" href="https://contents.premium.naver.com/pharoslab/jinhak" target="_blank">contents.premium.naver.com/pharoslab/jinhak</a></div></div><hr style="margin: 5px 0 15px 0; border: none; border-top: 1px solid #e2e8f0;">', unsafe_allow_html=True)
 
     if 'view_mode' not in st.session_state: st.session_state['view_mode'] = 'login'
 
@@ -244,8 +246,8 @@ def sanitize_text(text):
     t = re.sub(r'\b(아버지|어머니|부모님|부친|모친|형|누나|오빠|언니|동생|외조부|조부|외조모|조모|삼촌|이모|고모)\b', "[가족관계]", t)
     return t
 
+# 💡 1.0 통신 방식 (urllib) 및 모델명 (gemini-3.8-flash) 복원
 def call_gemini(prompt, count, diff, api_key):
-    genai.configure(api_key=api_key)
     diff_prompts = {
         "하": "기초 사실 확인 및 역량 균형 평가 (주요 초점: 진로 희망 변경 이유, 가장 의미 있었던 과목, 서류 내 기억에 남는 활동 등 팩트와 경험 위주의 개방형 질문 포함. ★ '학업역량', '진로역량', '공동체역량' 세 가지 측면의 질문을 고르게 균형 있게 혼합하여 출제할 것)",
         "중": "탐구 과정/문제해결 및 학업·진로 중심 평가 (주요 초점: 프로젝트 내 구체적 역할과 수행 내용, 갈등 극복 경험 등 상황 대처 위주의 질문 포함. ★ '공동체역량'보다 '학업역량'과 '진로역량'에 관련된 질문의 비중을 높여서 출제할 것)",
@@ -283,19 +285,30 @@ def call_gemini(prompt, count, diff, api_key):
   ]
 }}"""
     
-    model = genai.GenerativeModel('gemini-1.5-flash', system_instruction=sys_prompt)
-    full_prompt = f"{prompt}\n\n[System 난수: {current_time_seed}]"
+    body = {
+        "contents": [{"role": "user", "parts": [{"text": f"{sys_prompt}\n\n{prompt}\n\n[System 난수: {current_time_seed}]"}]}],
+        "generationConfig": {"temperature": 0.85}
+    }
+    encoded_body = json.dumps(body).encode("utf-8")
     
-    response = model.generate_content(
-        full_prompt,
-        generation_config=genai.GenerationConfig(temperature=0.85, response_mime_type="application/json")
-    )
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={api_key}"
+    req = urllib.request.Request(url, data=encoded_body, headers={"Content-Type": "application/json"}, method="POST")
     
-    txt = response.text.strip()
-    if txt.startswith("```json"): txt = txt[7:]
-    if txt.startswith("```"): txt = txt[3:]
-    if txt.endswith("```"): txt = txt[:-3]
-    return json.loads(txt.strip())
+    try:
+        with urllib.request.urlopen(req) as resp:
+            res = json.loads(resp.read().decode("utf-8"))
+            if "candidates" not in res:
+                raise Exception("생성된 응답이 없습니다.")
+            txt = res["candidates"][0]["content"]["parts"][0]["text"].strip()
+            if txt.startswith("```json"): txt = txt[7:]
+            if txt.startswith("```"): txt = txt[3:]
+            if txt.endswith("```"): txt = txt[:-3]
+            return json.loads(txt.strip())
+    except urllib.error.HTTPError as e:
+        err_msg = e.read().decode("utf-8")
+        raise Exception(f"HTTP {e.code} 에러: {err_msg}")
+    except Exception as e:
+        raise Exception(f"API 요청 실패: {str(e)}")
 
 # 💡 남성/중저음 TTS 및 모바일 스마트 팝업 대응 로직
 def render_tts(text, q_id):
@@ -328,7 +341,6 @@ document.getElementById('b_{q_id}').onclick = function() {{
     u.onstart = () => {{ document.getElementById('b_{q_id}').style.background = '#475569'; document.getElementById('s_{q_id}').innerText = '낭독 중...'; }};
     u.onend = () => {{ document.getElementById('b_{q_id}').style.background = 'linear-gradient(180deg,#0284c7,#0369a1)'; document.getElementById('s_{q_id}').innerText = ''; }};
     
-    // 에러 발생 시(인앱 브라우저 차단 등)에도 동일한 팝업 호출
     u.onerror = (e) => {{
         if (e.error !== 'interrupted') {{
             alert('🚫 카카오톡, 네이버 등 앱 내부 브라우저에서는 음성 재생이 차단될 수 있습니다.\\n\\n화면 우측 하단(또는 상단)의 [ ⠇] 또는 [ ≡ ] 메뉴 기호를 눌러 반드시 \\'다른 브라우저로 열기(사파리, 크롬 등)\\'를 선택해 주세요.');
@@ -343,7 +355,7 @@ document.getElementById('b_{q_id}').onclick = function() {{
     components.html(html, height=46)
 
 
-# --- [6] 메인 면접 앱 실행 영역 (1.0 질문 추출 UI 완벽 이식) ---
+# --- [6] 메인 면접 앱 실행 영역 ---
 def main_app():
     st.sidebar.markdown(f"<div style='background-color: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 20px;'><h3 style='margin:0; color: #1e293b; font-size: 1.2rem;'>👤 회원 정보</h3><p style='margin: 10px 0 0 0; color: #475569;'>접속 계정: <b>{st.session_state.get('user_id')}</b>님</p></div>", unsafe_allow_html=True)
     if st.sidebar.button("로그아웃", use_container_width=True):
@@ -353,7 +365,6 @@ def main_app():
 
     st.sidebar.markdown("<hr style='margin: 20px 0; border: none; border-top: 1px solid #cbd5e1;'>", unsafe_allow_html=True)
     
-    # 💡 사이드바 조건 설정 복원
     st.sidebar.markdown('<div class="side-title">⚙️ 모의 면접 조건 설정</div>', unsafe_allow_html=True)
     target_major = st.sidebar.text_input("지원 모집단위 및 희망 전공", placeholder="예: 경영학부, 컴퓨터공학과")
     q_sel = st.sidebar.selectbox("추출 면접 문항 수", ["5문항", "10문항", "15문항"], index=0)
@@ -365,9 +376,9 @@ def main_app():
     include_intro = st.sidebar.checkbox("💡 지원 동기 (시작 공통 문항) 포함", value=True, help="체크 시 '왜 해당 모집단위/전공에 지원했는가?' 문항이 첫 번째로 자동 추가됩니다.")
     include_closing = st.sidebar.checkbox("💡 마지막 할 말 (마무리 공통 문항) 포함", value=True, help="체크 시 면접을 마무리하는 '마지막으로 하고 싶은 말' 문항이 맨 끝에 자동 추가됩니다.")
 
-    # 💡 배너 및 안내 박스 복원
     st.markdown('<div class="header-box"><div class="b-title">파로스 서류 기반 모의면접 트레이너</div><div class="b-sub">맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div></div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="brand-blog-center"><div class="logo-box">{svg_logo}</div><div class="brand-info-box"><span class="brand-title-text">네이버프리미엄콘텐츠 파로스대입랩</span><a class="brand-link-text" href="[https://contents.premium.naver.com/pharoslab/jinhak](https://contents.premium.naver.com/pharoslab/jinhak)" target="_blank">[https://contents.premium.naver.com/pharoslab/jinhak](https://contents.premium.naver.com/pharoslab/jinhak)</a></div></div>', unsafe_allow_html=True)
+    # 💡 URL 중복 표시 해결: https:// 텍스트 제거
+    st.markdown(f'<div class="brand-blog-center"><div class="logo-box">{svg_logo}</div><div class="brand-info-box"><span class="brand-title-text">네이버프리미엄콘텐츠 파로스대입랩</span><a class="brand-link-text" href="[https://contents.premium.naver.com/pharoslab/jinhak](https://contents.premium.naver.com/pharoslab/jinhak)" target="_blank">[contents.premium.naver.com/pharoslab/jinhak](https://contents.premium.naver.com/pharoslab/jinhak)</a></div></div>', unsafe_allow_html=True)
     
     st.markdown("""
     <div style="background-color: #eff6ff; border-radius: 8px; padding: 20px; margin-bottom: 24px; border: 1px solid #bfdbfe;">
@@ -405,7 +416,6 @@ def main_app():
                         
                         if "sections" not in res: res["sections"] = []
                         
-                        # 1. 시작 공통 문항 자동 샌드위치
                         if include_intro:
                             major_text = target_major.strip() if target_major.strip() else "해당 모집단위"
                             res["sections"].insert(0, {
@@ -419,7 +429,6 @@ def main_app():
                                 }]
                             })
 
-                        # 2. 마무리 공통 문항 자동 샌드위치
                         if include_closing:
                             res["sections"].append({
                                 "category": "최종 어필 및 마무리 (공통 필수)",
@@ -435,7 +444,6 @@ def main_app():
                         st.success(f"🎉 면접 문항 추출이 완료되었습니다. (난이도: {difficulty})")
                         st.markdown("---")
                         
-                        # 💡 1.0 카드 디자인 렌더링 루프
                         q_num = 1
                         for sec in res.get("sections", []):
                             st.markdown(f"#### 📁 {sec.get('category')}")
@@ -460,3 +468,4 @@ if 'logged_in' not in st.session_state: st.session_state['logged_in'] = False
 
 if not st.session_state['logged_in']: auth_screen()
 else: main_app()
+```<FollowUp>완전히 마무리되셨군요! 나중에 렌더 배포까지 마치고 직접 실행해 보셨을 때, 모의 면접 질문이 시원하게 뽑혀 나오는지 꼭 말씀해 주세요.</FollowUp>
