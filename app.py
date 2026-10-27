@@ -125,7 +125,7 @@ def auth_screen():
         <div class="logo-box">{svg_logo}</div>
         <div class="brand-info-box">
             <span class="brand-title-text">네이버프리미엄콘텐츠 파로스대입랩</span>
-            <a class="brand-link-text" href="https://contents.premium.naver.com/pharoslab/jinhak" target="_blank">https://contents.premium.naver.com/pharoslab/jinhak</a>
+            <a class="brand-link-text" href="https://contents.premium.naver.com/pharoslab/jinhak" target="_blank">https:&#8203;//contents.premium.naver.com/pharoslab/jinhak</a>
         </div>
     </div>
     <hr style="margin: 5px 0 15px 0; border: none; border-top: 1px solid #e2e8f0;">
@@ -370,7 +370,7 @@ def main_app():
         <div class="logo-box">{svg_logo}</div>
         <div class="brand-info-box">
             <span class="brand-title-text">네이버프리미엄콘텐츠 파로스대입랩</span>
-            <a class="brand-link-text" href="[https://contents.premium.naver.com/pharoslab/jinhak](https://contents.premium.naver.com/pharoslab/jinhak)" target="_blank">[https://contents.premium.naver.com/pharoslab/jinhak](https://contents.premium.naver.com/pharoslab/jinhak)</a>
+            <a class="brand-link-text" href="[https://contents.premium.naver.com/pharoslab/jinhak](https://contents.premium.naver.com/pharoslab/jinhak)" target="_blank">https:&#8203;//[contents.premium.naver.com/pharoslab/jinhak](https://contents.premium.naver.com/pharoslab/jinhak)</a>
         </div>
     </div>
     """, unsafe_allow_html=True)
