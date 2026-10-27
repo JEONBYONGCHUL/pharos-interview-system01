@@ -11,12 +11,11 @@ import streamlit.components.v1 as components
 # --- [1] 페이지 기본 설정 ---
 st.set_page_config(
     page_title="파로스 서류 기반 모의면접 트레이너 1.5",
-    page_icon="logo.png",
+    page_icon="logo.png", 
     layout="wide"
 )
 
-# --- [2] UI 디자인 및 1.0 비밀번호 마스킹 CSS ---
-# 💡 UI/CSS 절대 동결 (상하 폭, 간격 등 선생님 확정본 100% 유지)
+# --- [2] UI 디자인 CSS (비밀번호 전역 마스킹 삭제 & 타이틀 박스 완벽 유지) ---
 st.markdown("""
 <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -30,12 +29,9 @@ st.markdown("""
         padding-bottom: 2rem !important;
     }
     
-    /* 비밀번호 마스킹 기법 (구글 팝업 완벽 차단) */
-    input[placeholder="비밀번호 입력"], input[placeholder="비밀번호 설정"] { 
-        -webkit-text-security: disc !important; 
-    }
+    /* 💡 [조치 1] 여기에 있던 전역 비밀번호 마스킹 코드를 삭제하여, 체크박스와 정상 연동되게 수정했습니다. */
     
-    /* 메인 타이틀 박스 상하 완벽 균형 정렬 CSS */
+    /* 💡 메인 타이틀 박스 상하 완벽 균형 정렬 CSS (선생님 확정본 100% 동결) */
     .header-box { 
         background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); 
         padding: 30px 15px !important; 
@@ -116,7 +112,7 @@ def init_connection():
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
     creds = None
     
-    # 1. Streamlit Secrets 확인
+    # 1. Streamlit Secrets 우선 확인
     try:
         if "GCP_JSON" in st.secrets:
             secret_data = st.secrets["GCP_JSON"]
@@ -128,18 +124,18 @@ def init_connection():
     except Exception:
         pass
         
-    # 💡 [조치 2] DB 연결 오류 해결: 확실한 구글 키 특징(private_key, client_email)으로 서버 내 파일 추적
+    # 💡 [조치 2] 로컬 JSON 파일을 무조건 다 찔러서 성공하는 놈으로 강제 연결 (DB 에러 원천 차단)
     if creds is None:
-        for f in os.listdir('.'):
-            if f.endswith('.json'):
-                try:
-                    with open(f, 'r', encoding='utf-8') as file:
-                        data = json.load(file)
-                        if "private_key" in data and "client_email" in data:
-                            creds = ServiceAccountCredentials.from_json_keyfile_name(f, scope)
-                            break
-                except Exception:
-                    continue
+        try:
+            for f in os.listdir('.'):
+                if f.endswith('.json'):
+                    try:
+                        creds = ServiceAccountCredentials.from_json_keyfile_name(f, scope)
+                        break # 성공적으로 구글 키로 인식되면 탐색 종료
+                    except Exception:
+                        continue # 구글 키가 아니면 다음 json 파일로 패스
+        except Exception:
+            pass
                     
     if creds is None:
         return None 
@@ -207,10 +203,11 @@ def auth_screen():
         with col2:
             login_id = st.text_input("아이디", key="login_id")
             
-            # 비밀번호 마스킹 및 체크박스
+            # 비밀번호 마스킹 및 체크박스 (팝업 차단용 text_input 사용)
             login_pw = st.text_input("비밀번호", placeholder="비밀번호 입력", key="login_pw")
             show_login_pw = st.checkbox("👁️ 비밀번호 보기", key="chk_login_pw")
             
+            # 💡 [조치 1] 체크박스 해제 시에만 마스킹 처리되도록 연동 완료
             if not show_login_pw:
                 st.markdown("""
                 <style>
@@ -301,10 +298,11 @@ def auth_screen():
             # 고정된 key 할당 (커서 이동 시 입력값 날아감 방지)
             new_id = st.text_input("사용할 아이디", key="reg_id")
             
-            # 비밀번호 마스킹 및 체크박스 
+            # 비밀번호 마스킹 및 체크박스 (팝업 차단용 text_input 사용)
             new_pw = st.text_input("사용할 비밀번호", placeholder="비밀번호 설정", key="reg_pw")
             show_reg_pw = st.checkbox("👁️ 비밀번호 보기", key="chk_reg_pw")
             
+            # 💡 [조치 1] 체크박스 해제 시에만 마스킹 처리되도록 연동 완료
             if not show_reg_pw:
                 st.markdown("""
                 <style>
@@ -327,7 +325,7 @@ def auth_screen():
                     st.warning("아이디와 비밀번호를 모두 입력해주세요.")
                 elif path_choice == "네이버프리미엄콘텐츠 구독자" and not master_key:
                     st.warning("파로스대입랩 공지 마스터 키를 입력해주세요.")
-                # 💡 [조치 1] 마스터 키 자동 검증 로직 추가 (틀리면 에러 출력 및 가입 차단)
+                # 마스터 키 자동 검증 로직 (틀리면 에러 출력 및 가입 차단 유지)
                 elif path_choice == "네이버프리미엄콘텐츠 구독자" and master_key != "pharosjinhak2027":
                     st.error("❌ 파로스대입랩 공지 마스터 키가 일치하지 않습니다.")
                 elif path_choice == "네이버스토어 구매자" and not proof_info:
@@ -390,7 +388,7 @@ def main_app():
     
     st.title("🎓 파로스 서류 기반 모의면접 트레이너 v1.5")
     st.write("선생님께서 기존에 다듬어두신 모의면접 및 제미나이 AI 질문 추출, TTS 음성 출력 코드가 이 아래로 매끄럽게 이어집니다.")
-    st.info("여기에 기존의 생기부/자소서 업로드 및 면접 질문 생성 기능 코드를 붙여넣어 사용하시면 됩니다.")
+    st.info("여기에 기존의 탐구 활동 요약 입력 및 면접 질문 생성 기능 코드를 붙여넣어 사용하시면 됩니다.")
 
 # --- [6] 세션 상태 관리 및 앱 구동 흐름 ---
 if 'logged_in' not in st.session_state:
