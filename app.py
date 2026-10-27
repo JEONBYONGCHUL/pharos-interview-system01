@@ -164,7 +164,6 @@ def auth_screen():
                                 st.error("⚠️ 이용 기간이 만료되었습니다.")
                                 return
 
-                            # 기기 제한 로직 완전 삭제 - 유효한 계정이면 즉시 로그인 승인
                             st.success("로그인 성공!")
                             st.session_state['logged_in'] = True
                             st.session_state['user_id'] = login_id
@@ -180,7 +179,9 @@ def auth_screen():
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             st.markdown("<div style='text-align: center; color: #1e293b; font-size: 1.8rem; font-weight: 700; margin-bottom: 10px;'>시스템 첫 접속</div>", unsafe_allow_html=True)
-            path_choice = st.selectbox("사용자 선택", ["네이버프리미엄콘텐츠 구독자", "네이버스토어 구매자"])
+            
+            # 💡 네이버스토어 구매자가 먼저 보이도록 순서 변경
+            path_choice = st.selectbox("사용자 선택", ["네이버스토어 구매자", "네이버프리미엄콘텐츠 구독자"])
             new_id = st.text_input("사용할 아이디", key="reg_id")
             new_pw = st.text_input("사용할 비밀번호", placeholder="비밀번호 설정", key="reg_pw")
             show_reg_pw = st.checkbox("👁️ 비밀번호 보기", key="chk_reg_pw")
@@ -188,12 +189,20 @@ def auth_screen():
             if not show_reg_pw: st.markdown('<style>input[placeholder="비밀번호 설정"] { -webkit-text-security: disc !important; }</style>', unsafe_allow_html=True)
 
             master_key, proof_info = "", ""
-            if path_choice == "네이버프리미엄콘텐츠 구독자": master_key = st.text_input("파로스대입랩 공지 마스터 키", key="np_key_v2")
-            else: proof_info = st.text_input("네이버스토어 주문번호", key="store_order_v2")
+            
+            # 💡 선택한 유형에 맞게 필드 이름과 입력받을 값 변경
+            if path_choice == "네이버프리미엄콘텐츠 구독자":
+                master_key = st.text_input("공지 마스터 키", key="np_key_v2")
+                proof_info = st.text_input("네이버 아이디", key="np_id_v2")
+            else:
+                master_key = st.text_input("앱 마스터 키", key="store_key_v2")
+                proof_info = st.text_input("네이버스토어 주문번호", key="store_order_v2")
 
             if st.button("등록 완료 및 접속", type="primary", use_container_width=True):
-                if not new_id or not new_pw: st.warning("아이디와 비밀번호를 모두 입력해주세요.")
-                elif path_choice == "네이버프리미엄콘텐츠 구독자" and master_key != "pharosjinhak2027": st.error("❌ 파로스대입랩 공지 마스터 키가 일치하지 않습니다.")
+                if not new_id or not new_pw or not master_key or not proof_info:
+                    st.warning("모든 항목을 입력해 주세요.")
+                elif path_choice == "네이버프리미엄콘텐츠 구독자" and master_key != "pharosjinhak2027":
+                    st.error("❌ 공지 마스터 키가 일치하지 않습니다.")
                 else:
                     try:
                         sheet = init_connection()
@@ -207,7 +216,6 @@ def auth_screen():
                         days_to_add = 15 if path_choice == "네이버프리미엄콘텐츠 구독자" else 30
                         expire_date = (datetime.now() + timedelta(days=days_to_add)).strftime("%Y-%m-%d")
                         
-                        # 시트 구조 유지를 위해 빈칸(" ") 처리
                         sheet.append_row([new_id, new_pw, master_key, proof_info, expire_date, "", "", "", ""])
                         st.success("🎉 등록이 완료되었습니다! 로그인 화면으로 돌아갑니다.")
                         st.session_state['view_mode'] = 'login'
@@ -457,3 +465,4 @@ if 'logged_in' not in st.session_state: st.session_state['logged_in'] = False
 
 if not st.session_state['logged_in']: auth_screen()
 else: main_app()
+```<FollowUp>수정된 순서가 정상적으로 작동하는지 확인 부탁드립니다. 다음 작업은 무엇으로 진행할까요?</FollowUp>
