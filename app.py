@@ -11,7 +11,7 @@ import streamlit.components.v1 as components
 # --- [1] 페이지 기본 설정 ---
 st.set_page_config(
     page_title="파로스 서류 기반 모의면접 트레이너 1.5",
-    page_icon="logo.png", # 💡 [수정] 조건문을 삭제하고 명시적으로 로고 고정
+    page_icon="logo.png",
     layout="wide"
 )
 
@@ -29,12 +29,15 @@ st.markdown("""
         padding-bottom: 2rem !important;
     }
     
-    /* 💡 [수정] 비밀번호 마스킹 CSS는 눈알 체크박스 연동을 위해 여기서 삭제하고 아래 로그인/가입 영역으로 이동했습니다. */
+    /* 💡 [핵심 유지] 비밀번호 마스킹 기법 (구글 팝업 완벽 차단) */
+    input[placeholder="비밀번호 입력"], input[placeholder="비밀번호 설정"] { 
+        -webkit-text-security: disc !important; 
+    }
     
-    /* 배너 스타일 (상하 여백 완벽 균형 유지) */
+    /* 💡 [완벽 해결] 메인 타이틀 박스 상하 완벽 균형 정렬 CSS */
     .header-box { 
         background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); 
-        padding: 24px 15px 22px 15px; 
+        padding: 30px 15px !important; /* 상하 패딩을 넉넉하고 완벽한 대칭으로 고정 */
         border-radius: 12px; 
         color: white; 
         margin-bottom: 15px; 
@@ -45,20 +48,25 @@ st.markdown("""
         justify-content: center;
         align-items: center;
     }
+    .header-box div {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
     .b-title { 
         font-size: clamp(18px, 4.5vw, 26px); 
         font-weight: 800; 
         letter-spacing: -0.04em; 
-        margin: 0; 
-        line-height: 1.3; 
+        margin: 0 !important; 
+        line-height: 1.4 !important; 
         white-space: nowrap; 
         color: white !important; 
     }
     .b-sub { 
         font-size: clamp(11.5px, 2.8vw, 15px); 
         color: #94a3b8; 
-        margin-top: 6px; 
-        margin-bottom: 0px; 
+        margin-top: 8px !important; /* 타이틀과 서브타이틀 사이의 간격 정밀 제어 */
+        margin-bottom: 0 !important; 
+        line-height: 1.4 !important; 
     }
     
     /* 브랜드 및 링크 스타일 */
@@ -105,45 +113,33 @@ st.markdown("""
 # --- [3] 구글 시트 DB 연결 함수 ---
 def init_connection():
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-    if "GCP_JSON" in st.secrets:
-        creds_dict = json.loads(st.secrets["GCP_JSON"])
-        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-    else:
+    creds = None
+    
+    # 💡 [에러 해결] 서버 환경에서 secrets 파일이 없어 앱이 뻗는 현상(No secrets found)을 막기 위한 예외 처리 방어막
+    try:
+        if "GCP_JSON" in st.secrets:
+            creds_dict = json.loads(st.secrets["GCP_JSON"])
+            creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+    except Exception:
+        pass # 에러가 나더라도 무시하고 아래 json 파일 찾기로 부드럽게 넘어감
+        
+    if creds is None:
         json_files = [f for f in os.listdir('.') if f.endswith('.json') and ('gen-lang' in f or 'ais-gemini' in f)]
         if json_files:
             creds = ServiceAccountCredentials.from_json_keyfile_name(json_files[0], scope)
         else:
             return None
+            
     client = gspread.authorize(creds)
     sheet = client.open("파로스모의면접1.5회원DB").sheet1
     return sheet
 
 # --- [4] 메인 화면 및 로그인/첫 접속 라우팅 ---
 def auth_screen():
-    # 💡 [핵심] 눈알 아이콘 유지 + 팝업 원천 차단 자바스크립트
-    components.html(
-        """
-        <script>
-        const doc = window.parent.document;
-        const inputs = doc.querySelectorAll('input');
-        inputs.forEach(input => {
-            input.setAttribute('autocomplete', 'new-password');
-            input.setAttribute('data-lpignore', 'true');
-        });
-        const pwInputs = doc.querySelectorAll('input[type="password"]');
-        pwInputs.forEach(pw => {
-            pw.setAttribute('readonly', 'true');
-            pw.addEventListener('focus', function() { this.removeAttribute('readonly'); });
-            pw.addEventListener('blur', function() { this.setAttribute('readonly', 'true'); });
-        });
-        </script>
-        """, height=0, width=0
-    )
-
-    # 💡 배너 적용 (상하 균형을 위한 한 줄 코드 유지)
+    # 💡 배너 적용 (완벽한 상하 균형 구조)
     st.markdown('<div class="header-box"><div class="b-title">파로스 서류 기반 모의면접 트레이너</div><div class="b-sub">맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div></div>', unsafe_allow_html=True)
 
-    # 로고 70px 중앙 고정 유지
+    # 로고 70px 중앙 고정
     if os.path.exists("logo.png"):
         with open("logo.png", "rb") as f:
             img_b64 = base64.b64encode(f.read()).decode()
@@ -174,7 +170,7 @@ def auth_screen():
         with col2:
             login_id = st.text_input("아이디", key="login_id")
             
-            # 💡 [수정] 체크박스를 별도로 두어 비밀번호 팝업 방지 및 보기 기능 구현
+            # 비밀번호 마스킹 및 체크박스 유지
             login_pw = st.text_input("비밀번호", placeholder="비밀번호 입력", key="login_pw")
             show_login_pw = st.checkbox("👁️ 비밀번호 보기", key="chk_login_pw")
             
@@ -259,16 +255,15 @@ def auth_screen():
         with col2:
             st.markdown("<div style='text-align: center; color: #1e293b; font-size: 1.8rem; font-weight: 700; margin-bottom: 10px;'>시스템 첫 접속</div>", unsafe_allow_html=True)
             
-            # 💡 [핵심] 깔끔한 드롭다운(selectbox) 유지
+            # 드롭다운(selectbox) 유지
             path_choice = st.selectbox(
                 "사용자 선택",
                 ["네이버프리미엄콘텐츠 구독자", "네이버스토어 구매자"]
             )
 
-            # 💡 [핵심] 고정된 key 할당 (커서 이동 시 입력값 날아감 방지)
             new_id = st.text_input("사용할 아이디", key="reg_id")
             
-            # 💡 [수정] 체크박스를 별도로 두어 비밀번호 팝업 방지 및 보기 기능 구현
+            # 비밀번호 마스킹 및 체크박스 유지
             new_pw = st.text_input("사용할 비밀번호", placeholder="비밀번호 설정", key="reg_pw")
             show_reg_pw = st.checkbox("👁️ 비밀번호 보기", key="chk_reg_pw")
             
@@ -299,6 +294,11 @@ def auth_screen():
                 else:
                     try:
                         sheet = init_connection()
+                        
+                        if not sheet:
+                            st.error("데이터베이스 연결에 실패했습니다. (구글 시트 인증 오류)")
+                            return
+                            
                         records = sheet.get_all_records()
 
                         for record in records:
