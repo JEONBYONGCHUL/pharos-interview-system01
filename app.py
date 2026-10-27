@@ -201,6 +201,8 @@ def auth_screen():
                     st.warning("모든 항목을 입력해 주세요.")
                 elif path_choice == "네이버프리미엄콘텐츠 구독자" and master_key != "pharosjinhak2027":
                     st.error("❌ 공지 마스터 키가 일치하지 않습니다.")
+                elif path_choice == "네이버스토어 구매자" and master_key != "pharosstore2027sucess":
+                    st.error("❌ 앱 마스터 키가 일치하지 않습니다.")
                 else:
                     try:
                         sheet = init_connection()
@@ -432,7 +434,7 @@ def main_app():
                                     "source_quote": "대입 면접 마무리 공통 평가 항목",
                                     "question": "마지막으로 면접관에게 꼭 하고 싶은 말이나, 미처 다 보여주지 못한 본인의 장점이 있다면 편하게 말씀해 주세요.",
                                     "intent": "지원자의 최종적인 입학 의지, 자기 어필 능력, 그리고 면접에 임하는 태도와 진정성 확인",
-                                    "high_score_guide": "준비해온 답변을 단순히 암기해서 말하기보다는, 오늘 면접에서의 아쉬웠던 점을 보완하거나 이 대학/학과에 진학하고자 하는 간절함과 진정성을 진솔하게 표현하는 것이 좋습니다."
+                                    "high_score_guide": "준비해온 답변을 단순히 암기해서 말하기보다는, 오늘 면접에서의 아쉬웠던 점을 보완하거나 이 대학/학과에 진학하고자 하는 진정성을 진솔하게 표현하는 것이 좋습니다."
                                 }]
                             })
 
