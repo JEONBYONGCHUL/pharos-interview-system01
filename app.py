@@ -125,7 +125,7 @@ def auth_screen():
         <div class="logo-box">{svg_logo}</div>
         <div class="brand-info-box">
             <span class="brand-title-text">네이버프리미엄콘텐츠 파로스대입랩</span>
-            <a class="brand-link-text" href="https://contents.premium.naver.com/pharoslab/jinhak" target="_blank">https:&#8203;//contents.premium.naver.com/pharoslab/jinhak</a>
+            <a class="brand-link-text" href="https://contents.premium.naver.com/pharoslab/jinhak" target="_blank">https://contents.premium.naver.com/pharoslab/jinhak</a>
         </div>
     </div>
     <hr style="margin: 5px 0 15px 0; border: none; border-top: 1px solid #e2e8f0;">
@@ -138,7 +138,7 @@ def auth_screen():
         with col2:
             login_id = st.text_input("아이디", key="login_id")
             login_pw = st.text_input("비밀번호", placeholder="비밀번호 입력", key="login_pw")
-            show_login_pw = st.checkbox("👁️ 비밀번호 보기", key="chk_login_pw")
+            show_login_pw = st.checkbox(" 비밀번호 보기", key="chk_login_pw")
             
             if not show_login_pw: st.markdown('<style>input[placeholder="비밀번호 입력"] { -webkit-text-security: disc !important; }</style>', unsafe_allow_html=True)
             
@@ -183,7 +183,7 @@ def auth_screen():
             path_choice = st.selectbox("사용자 선택", ["네이버스토어 구매자", "네이버프리미엄콘텐츠 구독자"])
             new_id = st.text_input("사용할 아이디", key="reg_id")
             new_pw = st.text_input("사용할 비밀번호", placeholder="비밀번호 설정", key="reg_pw")
-            show_reg_pw = st.checkbox("👁️ 비밀번호 보기", key="chk_reg_pw")
+            show_reg_pw = st.checkbox(" 비밀번호 보기", key="chk_reg_pw")
             
             if not show_reg_pw: st.markdown('<style>input[placeholder="비밀번호 설정"] { -webkit-text-security: disc !important; }</style>', unsafe_allow_html=True)
 
@@ -215,7 +215,7 @@ def auth_screen():
                         expire_date = (datetime.now() + timedelta(days=days_to_add)).strftime("%Y-%m-%d")
                         
                         sheet.append_row([new_id, new_pw, master_key, proof_info, expire_date, "", "", "", ""])
-                        st.success("🎉 등록이 완료되었습니다! 로그인 화면으로 돌아갑니다.")
+                        st.success(" 등록이 완료되었습니다! 로그인 화면으로 돌아갑니다.")
                         st.session_state['view_mode'] = 'login'
                         st.rerun()
                     except Exception as e: st.error(f"처리 중 오류 발생: {e}")
@@ -304,7 +304,7 @@ def render_tts(text, q_id):
 <script>
 document.getElementById('b_{q_id}').onclick = function() {{
     if (!('speechSynthesis' in window)) {{ 
-        alert('🚫 카카오톡, 네이버 등 앱 내부 브라우저에서는 음성 재생이 차단될 수 있습니다.\\n\\n화면 우측 하단(또는 상단)의 [ ⠇] 또는 [ ≡ ] 메뉴 기호를 눌러 반드시 \\'다른 브라우저로 열기(사파리, 크롬 등)\\'를 선택해 주세요.'); 
+        alert(' 카카오톡, 네이버 등 앱 내부 브라우저에서는 음성 재생이 차단될 수 있습니다.\\n\\n화면 우측 하단(또는 상단)의 [ ⠇] 또는 [ ≡ ] 메뉴 기호를 눌러 반드시 \\'다른 브라우저로 열기(사파리, 크롬 등)\\'를 선택해 주세요.'); 
         return; 
     }}
     window.speechSynthesis.cancel();
@@ -329,7 +329,7 @@ document.getElementById('b_{q_id}').onclick = function() {{
     
     u.onerror = (e) => {{
         if (e.error !== 'interrupted') {{
-            alert('🚫 카카오톡, 네이버 등 앱 내부 브라우저에서는 음성 재생이 차단될 수 있습니다.\\n\\n화면 우측 하단(또는 상단)의 [ ⠇] 또는 [ ≡ ] 메뉴 기호를 눌러 반드시 \\'다른 브라우저로 열기(사파리, 크롬 등)\\'를 선택해 주세요.');
+            alert(' 카카오톡, 네이버 등 앱 내부 브라우저에서는 음성 재생이 차단될 수 있습니다.\\n\\n화면 우측 하단(또는 상단)의 [ ⠇] 또는 [ ≡ ] 메뉴 기호를 눌러 반드시 \\'다른 브라우저로 열기(사파리, 크롬 등)\\'를 선택해 주세요.');
             document.getElementById('b_{q_id}').style.background = 'linear-gradient(180deg,#0284c7,#0369a1)'; 
             document.getElementById('s_{q_id}').innerText = '';
         }}
@@ -360,8 +360,8 @@ def main_app():
     difficulty = diff_sel[0]
     
     st.sidebar.markdown("---")
-    include_intro = st.sidebar.checkbox("💡 지원 동기 (시작 공통 문항) 포함", value=True, help="체크 시 '왜 해당 모집단위/전공에 지원했는가?' 문항이 첫 번째로 자동 추가됩니다.")
-    include_closing = st.sidebar.checkbox("💡 마지막 할 말 (마무리 공통 문항) 포함", value=True, help="체크 시 면접을 마무리하는 '마지막으로 하고 싶은 말' 문항이 맨 끝에 자동 추가됩니다.")
+    include_intro = st.sidebar.checkbox(" 지원 동기 (시작 공통 문항) 포함", value=True, help="체크 시 '왜 해당 모집단위/전공에 지원했는가?' 문항이 첫 번째로 자동 추가됩니다.")
+    include_closing = st.sidebar.checkbox(" 마지막 할 말 (마무리 공통 문항) 포함", value=True, help="체크 시 면접을 마무리하는 '마지막으로 하고 싶은 말' 문항이 맨 끝에 자동 추가됩니다.")
 
     st.markdown('<div class="header-box"><div class="b-title">파로스 서류 기반 모의면접 트레이너</div><div class="b-sub">맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div></div>', unsafe_allow_html=True)
     
@@ -370,7 +370,7 @@ def main_app():
         <div class="logo-box">{svg_logo}</div>
         <div class="brand-info-box">
             <span class="brand-title-text">네이버프리미엄콘텐츠 파로스대입랩</span>
-            <a class="brand-link-text" href="[https://contents.premium.naver.com/pharoslab/jinhak](https://contents.premium.naver.com/pharoslab/jinhak)" target="_blank">https:&#8203;//[contents.premium.naver.com/pharoslab/jinhak](https://contents.premium.naver.com/pharoslab/jinhak)</a>
+            <a class="brand-link-text" href="https://contents.premium.naver.com/pharoslab/jinhak" target="_blank">https://contents.premium.naver.com/pharoslab/jinhak</a>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -393,7 +393,7 @@ def main_app():
     
     st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
     
-    if st.button("🚀 면접 질문 추출하기", type="primary", use_container_width=True):
+    if st.button(" 면접 질문 추출하기", type="primary", use_container_width=True):
         if not input_text.strip():
             st.warning("⚠️ 면접 대비를 원하는 탐구 활동 요약 내용을 입력해 주세요.")
         else:
@@ -436,7 +436,7 @@ def main_app():
                                 }]
                             })
 
-                        st.success(f"🎉 면접 문항 추출이 완료되었습니다. (난이도: {difficulty})")
+                        st.success(f" 면접 문항 추출이 완료되었습니다. (난이도: {difficulty})")
                         st.markdown("---")
                         
                         q_num = 1
