@@ -11,11 +11,12 @@ import streamlit.components.v1 as components
 # --- [1] 페이지 기본 설정 ---
 st.set_page_config(
     page_title="파로스 서류 기반 모의면접 트레이너 1.5",
-    page_icon="logo.png", # 💡 [조치 1] 조건문 삭제 후 파로스 로고 무조건 출력되도록 고정
+    page_icon="logo.png",
     layout="wide"
 )
 
 # --- [2] UI 디자인 및 1.0 비밀번호 마스킹 CSS ---
+# 💡 선생님께서 확인하신 상하 폭 완벽 균형 CSS (절대 수정 금지 - 영구 고정)
 st.markdown("""
 <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -29,12 +30,15 @@ st.markdown("""
         padding-bottom: 2rem !important;
     }
     
-    /* 💡 [보조] 1.0 비밀번호 마스킹 기법 CSS (체크박스와 연동하기 위해 여기서는 삭제하고 아래로 이동) */
+    /* 비밀번호 마스킹 기법 (구글 팝업 완벽 차단) */
+    input[placeholder="비밀번호 입력"], input[placeholder="비밀번호 설정"] { 
+        -webkit-text-security: disc !important; 
+    }
     
-    /* 배너 스타일 (상하 여백 완벽 균형 유지 - 선생님 원본 100% 유지) */
+    /* 메인 타이틀 박스 상하 완벽 균형 정렬 CSS */
     .header-box { 
         background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); 
-        padding: 24px 15px 22px 15px; 
+        padding: 30px 15px !important; 
         border-radius: 12px; 
         color: white; 
         margin-bottom: 15px; 
@@ -45,20 +49,25 @@ st.markdown("""
         justify-content: center;
         align-items: center;
     }
+    .header-box div {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
     .b-title { 
         font-size: clamp(18px, 4.5vw, 26px); 
         font-weight: 800; 
         letter-spacing: -0.04em; 
-        margin: 0; 
-        line-height: 1.3; 
+        margin: 0 !important; 
+        line-height: 1.4 !important; 
         white-space: nowrap; 
         color: white !important; 
     }
     .b-sub { 
         font-size: clamp(11.5px, 2.8vw, 15px); 
         color: #94a3b8; 
-        margin-top: 6px; 
-        margin-bottom: 0px; 
+        margin-top: 8px !important; 
+        margin-bottom: 0 !important; 
+        line-height: 1.4 !important; 
     }
     
     /* 브랜드 및 링크 스타일 */
@@ -105,30 +114,43 @@ st.markdown("""
 # --- [3] 구글 시트 DB 연결 함수 ---
 def init_connection():
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+    creds = None
     
-    # 💡 [조치 3] DB 오류 해결: Render 서버에 secrets 파일이 없을 때 앱이 죽는 것을 방지
+    # 1. Streamlit Secrets 파일/환경변수 우선 확인
     try:
-        has_secret = "GCP_JSON" in st.secrets
-    except FileNotFoundError:
-        has_secret = False
-
-    if has_secret:
-        creds_dict = json.loads(st.secrets["GCP_JSON"])
-        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-    else:
-        json_files = [f for f in os.listdir('.') if f.endswith('.json') and ('gen-lang' in f or 'ais-gemini' in f)]
-        if json_files:
-            creds = ServiceAccountCredentials.from_json_keyfile_name(json_files[0], scope)
-        else:
-            return None
-            
+        if "GCP_JSON" in st.secrets:
+            secret_data = st.secrets["GCP_JSON"]
+            if isinstance(secret_data, str):
+                creds_dict = json.loads(secret_data)
+            else:
+                creds_dict = dict(secret_data)
+            creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+    except Exception:
+        pass
+        
+    # 💡 [핵심 해결] 2. 로컬 JSON 파일 이름 제한 전면 해제 (서버 내 모든 JSON 중 서비스 계정 키만 자동 발췌)
+    if creds is None:
+        for f in os.listdir('.'):
+            if f.endswith('.json'):
+                try:
+                    with open(f, 'r', encoding='utf-8') as file:
+                        data = json.load(file)
+                        if data.get("type") == "service_account":
+                            creds = ServiceAccountCredentials.from_json_keyfile_name(f, scope)
+                            break
+                except Exception:
+                    continue
+                    
+    if creds is None:
+        return None # 인증 파일을 끝내 못 찾았을 경우
+        
     client = gspread.authorize(creds)
     sheet = client.open("파로스모의면접1.5회원DB").sheet1
     return sheet
 
 # --- [4] 메인 화면 및 로그인/첫 접속 라우팅 ---
 def auth_screen():
-    # 💡 [핵심] 눈알 아이콘 유지 + 팝업 원천 차단 자바스크립트
+    # 💡 눈알 아이콘 유지 + 팝업 원천 차단 자바스크립트
     components.html(
         """
         <script>
@@ -148,10 +170,10 @@ def auth_screen():
         """, height=0, width=0
     )
 
-    # 💡 배너 적용 (상하 균형을 위한 한 줄 코드 유지)
+    # 배너 적용 (HTML 한 줄 처리)
     st.markdown('<div class="header-box"><div class="b-title">파로스 서류 기반 모의면접 트레이너</div><div class="b-sub">맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div></div>', unsafe_allow_html=True)
 
-    # 로고 70px 중앙 고정 유지
+    # 로고 70px 중앙 고정
     if os.path.exists("logo.png"):
         with open("logo.png", "rb") as f:
             img_b64 = base64.b64encode(f.read()).decode()
@@ -182,7 +204,7 @@ def auth_screen():
         with col2:
             login_id = st.text_input("아이디", key="login_id")
             
-            # 💡 [조치 2] 로그인 시 비밀번호 확인용 체크박스 추가 및 팝업 차단
+            # 비밀번호 마스킹 및 체크박스
             login_pw = st.text_input("비밀번호", placeholder="비밀번호 입력", key="login_pw")
             show_login_pw = st.checkbox("👁️ 비밀번호 보기", key="chk_login_pw")
             
@@ -200,7 +222,7 @@ def auth_screen():
                     try:
                         sheet = init_connection()
                         if not sheet:
-                            st.error("데이터베이스 연결에 실패했습니다.")
+                            st.error("데이터베이스 연결에 실패했습니다. (GCP 인증 파일을 찾을 수 없거나 시트 접근 오류)")
                             return
                         
                         records = sheet.get_all_records()
@@ -267,15 +289,16 @@ def auth_screen():
         with col2:
             st.markdown("<div style='text-align: center; color: #1e293b; font-size: 1.8rem; font-weight: 700; margin-bottom: 10px;'>시스템 첫 접속</div>", unsafe_allow_html=True)
             
+            # 드롭다운(selectbox) 유지
             path_choice = st.selectbox(
                 "사용자 선택",
                 ["네이버프리미엄콘텐츠 구독자", "네이버스토어 구매자"]
             )
 
-            # 💡 [해결] 고정된 key를 할당하여 화면이 새로고침되어도 입력값이 초기화되지 않도록 수정
+            # 고정된 key 할당 (커서 이동 시 입력값 날아감 방지)
             new_id = st.text_input("사용할 아이디", key="reg_id")
             
-            # 💡 [조치 2] 첫 등록 시 비밀번호 확인용 체크박스 추가 및 팝업 차단
+            # 비밀번호 마스킹 및 체크박스 
             new_pw = st.text_input("사용할 비밀번호", placeholder="비밀번호 설정", key="reg_pw")
             show_reg_pw = st.checkbox("👁️ 비밀번호 보기", key="chk_reg_pw")
             
@@ -306,8 +329,9 @@ def auth_screen():
                 else:
                     try:
                         sheet = init_connection()
+                        
                         if not sheet:
-                            st.error("데이터베이스 연결에 실패했습니다.")
+                            st.error("데이터베이스 연결에 실패했습니다. (GCP 인증 파일을 찾을 수 없거나 시트 접근 오류)")
                             return
                             
                         records = sheet.get_all_records()
