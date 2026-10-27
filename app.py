@@ -465,4 +465,3 @@ if 'logged_in' not in st.session_state: st.session_state['logged_in'] = False
 
 if not st.session_state['logged_in']: auth_screen()
 else: main_app()
-```<FollowUp>수정된 순서가 정상적으로 작동하는지 확인 부탁드립니다. 다음 작업은 무엇으로 진행할까요?</FollowUp>
