@@ -4,16 +4,13 @@ from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime, timedelta
 import json
 import os
-import uuid
-import base64
 import time
 import re
 import urllib.request
 import urllib.error
 import streamlit.components.v1 as components
-import extra_streamlit_components as stx
 
-# --- [1] 페이지 기본 설정 (1.0 원본 로고 완벽 복구) ---
+# --- [1] 페이지 기본 설정 ---
 st.set_page_config(
     page_title="파로스 서류 기반 모의면접 트레이너",
     page_icon="logo.png",
@@ -65,12 +62,6 @@ svg_logo = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 155" widt
 <polygon points="107,92 114,103 81,134 71,134" fill="#fff" opacity="0.95"/><rect x="36" y="134" width="108" height="6" rx="2" fill="#831843"/>
 </svg>"""
 
-# 💡 쿠키 매니저 초기화 (브라우저 영구 저장용)
-@st.cache_resource(experimental_allow_widgets=True)
-def get_manager():
-    return stx.CookieManager()
-cookie_manager = get_manager()
-
 # --- [3] 구글 시트 DB 연결 함수 ---
 def init_connection():
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
@@ -113,7 +104,7 @@ def init_connection():
         st.error(f"🚨 [연결 오류] {e}")
         return None
 
-# --- [4] 로그인 및 첫 접속 인증 화면 (쿠키 기반 기기 검증) ---
+# --- [4] 로그인 및 첫 접속 인증 화면 (순수 계정 인증 방식) ---
 def auth_screen():
     components.html(
         """<script>
@@ -158,12 +149,11 @@ def auth_screen():
                         sheet = init_connection()
                         if not sheet: return
                         records = sheet.get_all_records()
-                        user_row, row_idx = None, 0
+                        user_row = None
 
                         for idx, record in enumerate(records):
                             if str(record.get('아이디')) == login_id:
                                 user_row = record
-                                row_idx = idx + 2
                                 break
 
                         if not user_row: st.error("존재하지 않는 아이디입니다.")
@@ -174,30 +164,8 @@ def auth_screen():
                                 st.error("⚠️ 이용 기간이 만료되었습니다.")
                                 return
 
-                            # 💡 쿠키 매니저를 통한 브라우저 영구 식별표 획득
-                            device_token = cookie_manager.get(cookie="pharos_device_token")
-                            if not device_token:
-                                device_token = str(uuid.uuid4())
-                                cookie_manager.set("pharos_device_token", device_token, expires_at=datetime.now() + timedelta(days=365))
-                                time.sleep(0.5)
-
-                            devices = [str(user_row.get('기기1', '')), str(user_row.get('기기2', '')), str(user_row.get('기기3', '')), str(user_row.get('기기4', ''))]
-                            matched_slot, empty_slot = None, None
-
-                            for i, d in enumerate(devices):
-                                if d == device_token: matched_slot = i + 1
-                                elif d == "" or d == "0":
-                                    if empty_slot is None: empty_slot = i + 1
-
-                            if matched_slot is None:
-                                if empty_slot is not None:
-                                    sheet.update_cell(row_idx, 5 + empty_slot, device_token)
-                                    st.success("로그인 성공! 새로운 기기가 등록되었습니다.")
-                                else:
-                                    st.error("🚫 동시 접속 기기 초과! (최대 4대)")
-                                    return
-                            else: st.success("로그인 성공!")
-
+                            # 기기 제한 로직 완전 삭제 - 유효한 계정이면 즉시 로그인 승인
+                            st.success("로그인 성공!")
                             st.session_state['logged_in'] = True
                             st.session_state['user_id'] = login_id
                             st.rerun()
@@ -239,12 +207,8 @@ def auth_screen():
                         days_to_add = 15 if path_choice == "네이버프리미엄콘텐츠 구독자" else 30
                         expire_date = (datetime.now() + timedelta(days=days_to_add)).strftime("%Y-%m-%d")
                         
-                        device_token = cookie_manager.get(cookie="pharos_device_token")
-                        if not device_token:
-                            device_token = str(uuid.uuid4())
-                            cookie_manager.set("pharos_device_token", device_token, expires_at=datetime.now() + timedelta(days=365))
-                        
-                        sheet.append_row([new_id, new_pw, master_key, proof_info, expire_date, device_token, "", "", ""])
+                        # 시트 구조 유지를 위해 빈칸(" ") 처리
+                        sheet.append_row([new_id, new_pw, master_key, proof_info, expire_date, "", "", "", ""])
                         st.success("🎉 등록이 완료되었습니다! 로그인 화면으로 돌아갑니다.")
                         st.session_state['view_mode'] = 'login'
                         st.rerun()
