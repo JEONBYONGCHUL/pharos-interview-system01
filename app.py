@@ -16,7 +16,7 @@ st.set_page_config(
 )
 
 # --- [2] UI 디자인 및 1.0 비밀번호 마스킹 CSS ---
-# 💡 선생님께서 확인하신 상하 폭 완벽 균형 CSS (절대 수정 금지 - 영구 고정)
+# 💡 UI/CSS 절대 동결 (상하 폭, 간격 등 선생님 확정본 100% 유지)
 st.markdown("""
 <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -116,7 +116,7 @@ def init_connection():
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
     creds = None
     
-    # 1. Streamlit Secrets 파일/환경변수 우선 확인
+    # 1. Streamlit Secrets 확인
     try:
         if "GCP_JSON" in st.secrets:
             secret_data = st.secrets["GCP_JSON"]
@@ -128,29 +128,32 @@ def init_connection():
     except Exception:
         pass
         
-    # 💡 [핵심 해결] 2. 로컬 JSON 파일 이름 제한 전면 해제 (서버 내 모든 JSON 중 서비스 계정 키만 자동 발췌)
+    # 💡 [조치 2] DB 연결 오류 해결: 확실한 구글 키 특징(private_key, client_email)으로 서버 내 파일 추적
     if creds is None:
         for f in os.listdir('.'):
             if f.endswith('.json'):
                 try:
                     with open(f, 'r', encoding='utf-8') as file:
                         data = json.load(file)
-                        if data.get("type") == "service_account":
+                        if "private_key" in data and "client_email" in data:
                             creds = ServiceAccountCredentials.from_json_keyfile_name(f, scope)
                             break
                 except Exception:
                     continue
                     
     if creds is None:
-        return None # 인증 파일을 끝내 못 찾았을 경우
+        return None 
         
-    client = gspread.authorize(creds)
-    sheet = client.open("파로스모의면접1.5회원DB").sheet1
-    return sheet
+    try:
+        client = gspread.authorize(creds)
+        sheet = client.open("파로스모의면접1.5회원DB").sheet1
+        return sheet
+    except Exception:
+        return None
 
 # --- [4] 메인 화면 및 로그인/첫 접속 라우팅 ---
 def auth_screen():
-    # 💡 눈알 아이콘 유지 + 팝업 원천 차단 자바스크립트
+    # 눈알 아이콘 유지 + 팝업 원천 차단 자바스크립트
     components.html(
         """
         <script>
@@ -324,6 +327,9 @@ def auth_screen():
                     st.warning("아이디와 비밀번호를 모두 입력해주세요.")
                 elif path_choice == "네이버프리미엄콘텐츠 구독자" and not master_key:
                     st.warning("파로스대입랩 공지 마스터 키를 입력해주세요.")
+                # 💡 [조치 1] 마스터 키 자동 검증 로직 추가 (틀리면 에러 출력 및 가입 차단)
+                elif path_choice == "네이버프리미엄콘텐츠 구독자" and master_key != "pharosjinhak2027":
+                    st.error("❌ 파로스대입랩 공지 마스터 키가 일치하지 않습니다.")
                 elif path_choice == "네이버스토어 구매자" and not proof_info:
                     st.warning("네이버스토어 주문번호를 입력해주세요.")
                 else:
