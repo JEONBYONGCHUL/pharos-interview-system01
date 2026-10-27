@@ -20,7 +20,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- [2] UI 디자인 및 스타일 정의 (1.0 질문 카드 스타일 포함) ---
+# --- [2] UI 디자인 및 스타일 정의 ---
 st.markdown("""
 <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -29,37 +29,30 @@ st.markdown("""
     .block-container { padding-top: 1.5rem !important; padding-bottom: 2rem !important; }
     [data-testid="stSidebar"] > div:first-child { padding-top: 2rem !important; }
     
-    /* 상단 툴바 및 기본 푸터 제거 */
     [data-testid="stHeader"] { background: transparent !important; box-shadow: none !important; }
     footer { visibility: hidden !important; }
 
-    /* 헤더 배너 */
     .header-box { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 20px 15px; border-radius: 14px; color: white; margin-bottom: 10px; text-align: center; box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.25); display: flex; flex-direction: column; justify-content: center; align-items: center; }
     .b-title { font-size: clamp(16px, 4vw, 26px); font-weight: 800; letter-spacing: -0.04em; margin: 0; line-height: 1.3; white-space: nowrap; }
     .b-sub { font-size: clamp(11.5px, 2.5vw, 15px); color: #94a3b8; margin-top: 6px; margin-bottom: 0; }
     
-    /* 네프콘 채널 링크 */
     .brand-blog-center { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 5px 0 10px 0; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; text-align: center; }
     .logo-box { width: 45px; height: 40px; display: flex; align-items: center; justify-content: center; }
     .brand-info-box { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 100%; padding: 0 5px; }
     .brand-title-text { font-size: 14.5px; font-weight: 800; color: #0f172a; line-height: 1.2; }
     .brand-link-text { font-size: clamp(10px, 3vw, 13px); color: #0284c7 !important; text-decoration: none !important; font-weight: 600; line-height: 1.3; letter-spacing: -0.5px; }
 
-    /* 사이드바 */
     .side-title { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white; padding: 14px; border-radius: 10px; text-align: center; font-weight: 800; font-size: 15.5px; margin-bottom: 16px; }
 
-    /* 버튼 스타일 */
     div.stButton > button[kind="primary"] { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important; color: white !important; border: none !important; border-radius: 10px !important; padding: 10px 24px !important; font-size: 16px !important; font-weight: 800 !important; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35) !important; margin-top: 5px; }
     div.stButton > button[kind="primary"]:hover { background: linear-gradient(135deg, #0369a1 0%, #075985 100%) !important; box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45) !important; }
     
-    /* 1.0 버전 질문 카드 UI */
     .card { background: white; border: 1px solid #e2e8f0; border-left: 5px solid #0284c7; border-radius: 12px; padding: 20px 22px; margin-bottom: 14px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04); }
     .q-title { font-size: 17px; font-weight: 700; color: #0f172a; margin: 10px 0; line-height: 1.5; }
     .guide { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 10px 14px; border-radius: 8px; font-size: 13.5px; font-weight: 600; margin-top: 10px; }
 </style>
 """, unsafe_allow_html=True)
 
-# 파로스 등대 SVG 로고
 svg_logo = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 155" width="100%" height="100%">
 <polygon points="12,24 64,42 64,50 12,34" fill="#831843"/><polygon points="12,56 64,56 64,64 12,68" fill="#52525b"/>
 <polygon points="168,24 116,42 116,50 168,34" fill="#52525b"/><polygon points="168,56 116,56 116,64 168,68" fill="#831843"/>
@@ -128,7 +121,17 @@ def auth_screen():
     )
 
     st.markdown('<div class="header-box"><div class="b-title">파로스 서류 기반 모의면접 트레이너</div><div class="b-sub">맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div></div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="brand-blog-center"><div class="logo-box">{svg_logo}</div><div class="brand-info-box"><span class="brand-title-text">네이버프리미엄콘텐츠 파로스대입랩</span><a class="brand-link-text" href="https://contents.premium.naver.com/pharoslab/jinhak" target="_blank">contents.premium.naver.com/pharoslab/jinhak</a></div></div><hr style="margin: 5px 0 15px 0; border: none; border-top: 1px solid #e2e8f0;">', unsafe_allow_html=True)
+    
+    st.markdown(f"""
+    <div class="brand-blog-center">
+        <div class="logo-box">{svg_logo}</div>
+        <div class="brand-info-box">
+            <span class="brand-title-text">네이버프리미엄콘텐츠 파로스대입랩</span>
+            <a class="brand-link-text" href="https://contents.premium.naver.com/pharoslab/jinhak" target="_blank">https://contents.premium.naver.com/pharoslab/jinhak</a>
+        </div>
+    </div>
+    <hr style="margin: 5px 0 15px 0; border: none; border-top: 1px solid #e2e8f0;">
+    """, unsafe_allow_html=True)
 
     if 'view_mode' not in st.session_state: st.session_state['view_mode'] = 'login'
 
@@ -164,7 +167,6 @@ def auth_screen():
                                 st.error("⚠️ 이용 기간이 만료되었습니다.")
                                 return
 
-                            # 💡 기기 4대 제한으로 변경 (기기4 시트에 없으면 빈칸 처리)
                             devices = [str(user_row.get('기기1', '')), str(user_row.get('기기2', '')), str(user_row.get('기기3', '')), str(user_row.get('기기4', ''))]
                             if 'device_token' not in st.session_state: st.session_state['device_token'] = str(uuid.uuid4())
                             current_device = st.session_state['device_token']
@@ -226,7 +228,6 @@ def auth_screen():
                         expire_date = (datetime.now() + timedelta(days=days_to_add)).strftime("%Y-%m-%d")
                         if 'device_token' not in st.session_state: st.session_state['device_token'] = str(uuid.uuid4())
                         
-                        # 💡 기기 4대 제한으로 빈칸("" ) 한 개 추가 
                         sheet.append_row([new_id, new_pw, master_key, proof_info, expire_date, st.session_state['device_token'], "", "", ""])
                         st.success("🎉 등록이 완료되었습니다! 로그인 화면으로 돌아갑니다.")
                         st.session_state['view_mode'] = 'login'
@@ -310,7 +311,6 @@ def call_gemini(prompt, count, diff, api_key):
     except Exception as e:
         raise Exception(f"API 요청 실패: {str(e)}")
 
-# 남성/중저음 TTS 및 모바일 스마트 팝업 대응 로직
 def render_tts(text, q_id):
     clean = json.dumps(text, ensure_ascii=False)
     html = f"""<button id="b_{q_id}" style="background:linear-gradient(180deg,#0284c7,#0369a1);color:white;border:none;border-radius:6px;padding:7px 15px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 5px rgba(2,132,199,0.25);">🔊 음성으로 질문 듣기</button>
@@ -370,7 +370,6 @@ def main_app():
     q_sel = st.sidebar.selectbox("추출 면접 문항 수", ["5문항", "10문항", "15문항"], index=0)
     q_count = int(q_sel.replace("문항", ""))
     
-    # 💡 사이드바 난이도 용어 변경 (하, 중, 상 앞글자는 유지)
     diff_sel = st.sidebar.selectbox("평가 난이도", ["하 (기본사실확인)", "중 (탐구문제해결)", "상 (심화학업역량,압박)"], index=0)
     difficulty = diff_sel[0]
     
@@ -379,7 +378,16 @@ def main_app():
     include_closing = st.sidebar.checkbox("💡 마지막 할 말 (마무리 공통 문항) 포함", value=True, help="체크 시 면접을 마무리하는 '마지막으로 하고 싶은 말' 문항이 맨 끝에 자동 추가됩니다.")
 
     st.markdown('<div class="header-box"><div class="b-title">파로스 서류 기반 모의면접 트레이너</div><div class="b-sub">맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div></div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="brand-blog-center"><div class="logo-box">{svg_logo}</div><div class="brand-info-box"><span class="brand-title-text">네이버프리미엄콘텐츠 파로스대입랩</span><a class="brand-link-text" href="[https://contents.premium.naver.com/pharoslab/jinhak](https://contents.premium.naver.com/pharoslab/jinhak)" target="_blank">[contents.premium.naver.com/pharoslab/jinhak](https://contents.premium.naver.com/pharoslab/jinhak)</a></div></div>', unsafe_allow_html=True)
+    
+    st.markdown(f"""
+    <div class="brand-blog-center">
+        <div class="logo-box">{svg_logo}</div>
+        <div class="brand-info-box">
+            <span class="brand-title-text">네이버프리미엄콘텐츠 파로스대입랩</span>
+            <a class="brand-link-text" href="[https://contents.premium.naver.com/pharoslab/jinhak](https://contents.premium.naver.com/pharoslab/jinhak)" target="_blank">[https://contents.premium.naver.com/pharoslab/jinhak](https://contents.premium.naver.com/pharoslab/jinhak)</a>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
     
     st.markdown("""
     <div style="background-color: #eff6ff; border-radius: 8px; padding: 20px; margin-bottom: 24px; border: 1px solid #bfdbfe;">
