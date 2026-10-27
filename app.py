@@ -1,160 +1,241 @@
-import os, json, urllib.request, urllib.error, time
 import streamlit as st
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+from datetime import datetime, timedelta
+import json
+import os
+import uuid
+import base64
+import time
+import re
 import streamlit.components.v1 as components
+import google.generativeai as genai
 
-# 1. 페이지 설정
+# --- [1] 페이지 기본 설정 ---
 st.set_page_config(
     page_title="파로스 서류 기반 모의면접 트레이너",
-    page_icon="logo.png",
+    page_icon="logo.png" if os.path.exists("logo.png") else "🎓",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# 2. 스타일링 CSS (모바일 URL 줄바꿈 및 반응형 최적화)
+# --- [2] UI 디자인 및 스타일 정의 (1.0 질문 카드 스타일 포함) ---
 st.markdown("""
 <style>
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-* { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; }
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    * { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; word-break: keep-all; }
+    
+    .block-container { padding-top: 1.5rem !important; padding-bottom: 2rem !important; }
+    [data-testid="stSidebar"] > div:first-child { padding-top: 2rem !important; }
+    
+    /* 상단 툴바 및 기본 푸터 제거 */
+    [data-testid="stHeader"] { background: transparent !important; box-shadow: none !important; }
+    footer { visibility: hidden !important; }
 
-.block-container { padding-top: 1.5rem !important; padding-bottom: 2rem !important; }
-[data-testid="stSidebar"] > div:first-child { padding-top: 2rem !important; }
+    /* 헤더 배너 */
+    .header-box { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 20px 15px; border-radius: 14px; color: white; margin-bottom: 10px; text-align: center; box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.25); display: flex; flex-direction: column; justify-content: center; align-items: center; }
+    .b-title { font-size: clamp(16px, 4vw, 26px); font-weight: 800; letter-spacing: -0.04em; margin: 0; line-height: 1.3; white-space: nowrap; }
+    .b-sub { font-size: clamp(11.5px, 2.5vw, 15px); color: #94a3b8; margin-top: 6px; margin-bottom: 0; }
+    
+    /* 네프콘 채널 링크 */
+    .brand-blog-center { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 5px 0 10px 0; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; text-align: center; }
+    .logo-box { width: 45px; height: 40px; display: flex; align-items: center; justify-content: center; }
+    .brand-info-box { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 100%; padding: 0 5px; }
+    .brand-title-text { font-size: 14.5px; font-weight: 800; color: #0f172a; line-height: 1.2; }
+    .brand-link-text { font-size: clamp(10px, 3vw, 13px); color: #0284c7 !important; text-decoration: none !important; font-weight: 600; line-height: 1.3; letter-spacing: -0.5px; }
 
-/* 🚫 상단 툴바 및 하단 기본 푸터 안전하게 제거 */
-[data-testid="stHeader"] { background: transparent !important; box-shadow: none !important; }
-[data-testid="stToolbarActions"], .stDeployButton, [data-testid="stDeployButton"], [data-testid="manage-app-button"] { display: none !important; }
-footer { visibility: hidden !important; }
+    /* 사이드바 */
+    .side-title { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white; padding: 14px; border-radius: 10px; text-align: center; font-weight: 800; font-size: 15.5px; margin-bottom: 16px; }
 
-/* 헤더 배너 스타일 */
-.header-box { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 20px 15px; border-radius: 14px; color: white; margin-bottom: 10px; text-align: center; box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.25); }
-.b-title { font-size: clamp(16px, 4vw, 30px); font-weight: 800; letter-spacing: -0.04em; color: #f8fafc; margin: 0; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.b-sub { font-size: clamp(11.5px, 2.5vw, 15px); color: #94a3b8; margin-top: 6px; margin-bottom: 0px; word-break: keep-all; }
-
-/* 네프콘 채널 링크 박스 스타일 */
-.brand-blog-center { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 5px 0 10px 0; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; text-align: center; }
-.logo-box { width: 45px; height: 40px; display: flex; align-items: center; justify-content: center; }
-.brand-info-box { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 100%; padding: 0 5px; box-sizing: border-box; }
-.brand-title-text { font-size: 14.5px; font-weight: 800; color: #0f172a; word-break: keep-all; line-height: 1.2; }
-.brand-link-text { font-size: clamp(10px, 3vw, 13px); color: #0284c7 !important; text-decoration: none !important; font-weight: 600; word-break: break-all; overflow-wrap: break-word; line-height: 1.3; max-width: 100%; letter-spacing: -0.5px; }
-
-/* 사이드바 스타일 */
-[data-testid="stSidebar"] { background-color: #f8fafc; border-right: 1px solid #e2e8f0; }
-.side-title { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white; padding: 14px; border-radius: 10px; text-align: center; font-weight: 800; font-size: 15.5px; margin-bottom: 16px; }
-
-/* 실행 버튼 및 결과 카드 */
-div.stButton > button { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important; color: white !important; border: none !important; border-radius: 10px !important; padding: 14px 24px !important; font-size: 16px !important; font-weight: 800 !important; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35) !important; }
-div.stButton > button:hover { background: linear-gradient(135deg, #0369a1 0%, #075985 100%) !important; box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45) !important; }
-.card { background: white; border: 1px solid #e2e8f0; border-left: 5px solid #0284c7; border-radius: 12px; padding: 20px 22px; margin-bottom: 14px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04); }
-.q-title { font-size: 17px; font-weight: 700; color: #0f172a; margin: 10px 0; line-height: 1.5; word-break: keep-all; }
-.guide { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 10px 14px; border-radius: 8px; font-size: 13.5px; font-weight: 600; margin-top: 10px; word-break: keep-all; }
-
-/* 비밀번호 인증 박스 스타일 */
-.auth-box { background: white; border: 1px solid #e2e8f0; border-top: 5px solid #0f172a; border-radius: 12px; padding: 18px 20px; margin: 15px auto 20px auto; max-width: 360px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); text-align: center; }
-.auth-title { font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 6px; }
-.auth-desc { font-size: 13.5px; color: #64748b; margin-bottom: 10px; word-break: keep-all; line-height: 1.5; }
+    /* 버튼 스타일 */
+    div.stButton > button[kind="primary"] { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important; color: white !important; border: none !important; border-radius: 10px !important; padding: 10px 24px !important; font-size: 16px !important; font-weight: 800 !important; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35) !important; margin-top: 5px; }
+    div.stButton > button[kind="primary"]:hover { background: linear-gradient(135deg, #0369a1 0%, #075985 100%) !important; box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45) !important; }
+    
+    /* 💡 1.0 버전 질문 카드 UI */
+    .card { background: white; border: 1px solid #e2e8f0; border-left: 5px solid #0284c7; border-radius: 12px; padding: 20px 22px; margin-bottom: 14px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04); }
+    .q-title { font-size: 17px; font-weight: 700; color: #0f172a; margin: 10px 0; line-height: 1.5; }
+    .guide { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 10px 14px; border-radius: 8px; font-size: 13.5px; font-weight: 600; margin-top: 10px; }
 </style>
 """, unsafe_allow_html=True)
 
-# 파로스 등대 SVG 심볼
+# 💡 1.0 파로스 등대 SVG 로고
 svg_logo = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 155" width="100%" height="100%">
-<polygon points="12,24 64,42 64,50 12,34" fill="#831843"/>
-<polygon points="12,56 64,56 64,64 12,68" fill="#52525b"/>
-<polygon points="168,24 116,42 116,50 168,34" fill="#52525b"/>
-<polygon points="168,56 116,56 116,64 168,68" fill="#831843"/>
-<polygon points="90,10 87,22 93,22" fill="#831843"/>
-<path d="M72,36 Q90,22 108,36 Z" fill="#831843"/>
+<polygon points="12,24 64,42 64,50 12,34" fill="#831843"/><polygon points="12,56 64,56 64,64 12,68" fill="#52525b"/>
+<polygon points="168,24 116,42 116,50 168,34" fill="#52525b"/><polygon points="168,56 116,56 116,64 168,68" fill="#831843"/>
+<polygon points="90,10 87,22 93,22" fill="#831843"/><path d="M72,36 Q90,22 108,36 Z" fill="#831843"/>
 <rect x="75" y="36" width="30" height="16" fill="#fff" stroke="#831843" stroke-width="2.5"/>
-<line x1="82" y1="36" x2="82" y2="52" stroke="#831843" stroke-width="2"/>
-<line x1="90" y1="36" x2="90" y2="52" stroke="#831843" stroke-width="2"/>
-<line x1="98" y1="36" x2="98" y2="52" stroke="#831843" stroke-width="2"/>
-<polygon points="70,52 110,52 106,58 74,58" fill="#831843"/>
-<polygon points="73,59 107,59 116,134 64,134" fill="#831843"/>
-<polygon points="96,59 105,59 74,102 69,96" fill="#fff" opacity="0.95"/>
-<polygon points="107,92 114,103 81,134 71,134" fill="#fff" opacity="0.95"/>
-<rect x="36" y="134" width="108" height="6" rx="2" fill="#831843"/>
+<line x1="82" y1="36" x2="82" y2="52" stroke="#831843" stroke-width="2"/><line x1="90" y1="36" x2="90" y2="52" stroke="#831843" stroke-width="2"/>
+<line x1="98" y1="36" x2="98" y2="52" stroke="#831843" stroke-width="2"/><polygon points="70,52 110,52 106,58 74,58" fill="#831843"/>
+<polygon points="73,59 107,59 116,134 64,134" fill="#831843"/><polygon points="96,59 105,59 74,102 69,96" fill="#fff" opacity="0.95"/>
+<polygon points="107,92 114,103 81,134 71,134" fill="#fff" opacity="0.95"/><rect x="36" y="134" width="108" height="6" rx="2" fill="#831843"/>
 </svg>"""
 
-# 3. 메인 배너
-st.markdown("""
-<div class="header-box">
-    <div class="b-title">파로스 서류 기반 모의면접 트레이너</div>
-    <div class="b-sub">맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div>
-</div>
-""", unsafe_allow_html=True)
-
-# 4. 네이버프리미엄콘텐츠 채널 링크
-st.markdown(f"""
-<div class="brand-blog-center">
-    <div class="logo-box">{svg_logo}</div>
-    <div class="brand-info-box">
-        <span class="brand-title-text">네이버프리미엄콘텐츠 파로스대입랩</span>
-        <a class="brand-link-text" href="https://contents.premium.naver.com/pharoslab/jinhak" target="_blank">https://contents.premium.naver.com/pharoslab/jinhak</a>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-# ==========================================================
-# 💡 [보안] 프리미엄 콘텐츠 및 단건 구매자용 입장 코드 인증 로직
-# ==========================================================
-if "authenticated" not in st.session_state:
-    st.session_state["authenticated"] = False
-
-if not st.session_state["authenticated"]:
-    st.markdown("""
-    <div class="auth-box">
-        <div class="auth-title">🔒 프리미엄 시스템 입장</div>
-        <div class="auth-desc">안내받으신 <b>입장 코드</b>를 입력해 주세요.</div>
-    </div>
-    """, unsafe_allow_html=True)
+# --- [3] 구글 시트 DB 연결 함수 (보안 동결) ---
+def init_connection():
+    scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+    creds, secret_data = None, os.environ.get("GCP_JSON")
     
-    col1, col2, col3 = st.columns([1, 1.5, 1])
-    with col2:
-        access_code = st.text_input(
-            "입장 코드 입력", 
-            label_visibility="collapsed", 
-            placeholder="입장 코드를 입력하세요", 
-            key="access_input"
-        )
-        
-        show_code = st.checkbox("👁️ 입력한 코드 보기")
-        
-        if not show_code:
-            st.markdown("""
-            <style>
-            input[placeholder="입장 코드를 입력하세요"] { -webkit-text-security: disc !important; }
-            </style>
-            """, unsafe_allow_html=True)
+    if not secret_data:
+        try:
+            if "GCP_JSON" in st.secrets: secret_data = st.secrets["GCP_JSON"]
+        except Exception: pass
             
-        if st.button("시스템 접속하기", use_container_width=True):
-            valid_codes = ["pharosjinhak2027", "storepharos2027"]
+    if secret_data:
+        try:
+            creds_dict = json.loads(secret_data) if isinstance(secret_data, str) else dict(secret_data)
+            creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+        except Exception as e:
+            st.error(f"🚨 [JSON 파싱 오류] 등록하신 GCP_JSON 데이터의 형태가 잘못되었습니다: {e}")
+            return None
+        
+    if creds is None:
+        try:
+            for f in os.listdir('.'):
+                if f.endswith('.json'):
+                    try:
+                        with open(f, 'r', encoding='utf-8') as file:
+                            data = json.load(file)
+                            if "private_key" in data and "client_email" in data:
+                                creds = ServiceAccountCredentials.from_json_keyfile_name(f, scope)
+                                break 
+                    except Exception: continue 
+        except Exception: pass
+                    
+    if creds is None:
+        st.error("🚨 [인증 파일 누락] 서버 환경변수(GCP_JSON) 또는 로컬 폴더에 구글 인증 JSON 파일이 없습니다.")
+        return None 
+        
+    try:
+        client = gspread.authorize(creds)
+        return client.open("파로스모의면접1.5회원DB").sheet1
+    except Exception as e:
+        st.error(f"🚨 [연결 오류] {e}")
+        return None
+
+# --- [4] 로그인 및 첫 접속 인증 화면 (보안 동결) ---
+def auth_screen():
+    components.html(
+        """<script>
+        const doc = window.parent.document;
+        doc.querySelectorAll('input').forEach(input => { input.setAttribute('autocomplete', 'new-password'); input.setAttribute('data-lpignore', 'true'); });
+        doc.querySelectorAll('input[type="password"]').forEach(pw => {
+            pw.setAttribute('readonly', 'true');
+            pw.addEventListener('focus', function() { this.removeAttribute('readonly'); });
+            pw.addEventListener('blur', function() { this.setAttribute('readonly', 'true'); });
+        });
+        </script>""", height=0, width=0
+    )
+
+    st.markdown('<div class="header-box"><div class="b-title">파로스 서류 기반 모의면접 트레이너</div><div class="b-sub">맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="brand-blog-center"><div class="logo-box">{svg_logo}</div><div class="brand-info-box"><span class="brand-title-text">네이버프리미엄콘텐츠 파로스대입랩</span><a class="brand-link-text" href="https://contents.premium.naver.com/pharoslab/jinhak" target="_blank">https://contents.premium.naver.com/pharoslab/jinhak</a></div></div><hr style="margin: 5px 0 15px 0; border: none; border-top: 1px solid #e2e8f0;">', unsafe_allow_html=True)
+
+    if 'view_mode' not in st.session_state: st.session_state['view_mode'] = 'login'
+
+    if st.session_state['view_mode'] == 'login':
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            login_id = st.text_input("아이디", key="login_id")
+            login_pw = st.text_input("비밀번호", placeholder="비밀번호 입력", key="login_pw")
+            show_login_pw = st.checkbox("👁️ 비밀번호 보기", key="chk_login_pw")
             
-            if access_code in valid_codes:
-                st.session_state["authenticated"] = True
+            if not show_login_pw: st.markdown('<style>input[placeholder="비밀번호 입력"] { -webkit-text-security: disc !important; }</style>', unsafe_allow_html=True)
+            
+            if st.button("로그인", type="primary", use_container_width=True):
+                if not login_id or not login_pw: st.error("아이디와 비밀번호를 모두 입력해주세요.")
+                else:
+                    try:
+                        sheet = init_connection()
+                        if not sheet: return
+                        records = sheet.get_all_records()
+                        user_row, row_idx = None, 0
+
+                        for idx, record in enumerate(records):
+                            if str(record.get('아이디')) == login_id:
+                                user_row = record
+                                row_idx = idx + 2
+                                break
+
+                        if not user_row: st.error("존재하지 않는 아이디입니다.")
+                        elif str(user_row.get('비밀번호')) != login_pw: st.error("비밀번호가 일치하지 않습니다.")
+                        else:
+                            expire_date = datetime.strptime(str(user_row.get('만료일')), "%Y-%m-%d")
+                            if datetime.now() > expire_date:
+                                st.error("⚠️ 이용 기간이 만료되었습니다.")
+                                return
+
+                            devices = [str(user_row.get('기기1')), str(user_row.get('기기2')), str(user_row.get('기기3'))]
+                            if 'device_token' not in st.session_state: st.session_state['device_token'] = str(uuid.uuid4())
+                            current_device = st.session_state['device_token']
+                            matched_slot, empty_slot = None, None
+
+                            for i, d in enumerate(devices):
+                                if d == current_device: matched_slot = i + 1
+                                elif d == "" or d == "0":
+                                    if empty_slot is None: empty_slot = i + 1
+
+                            if matched_slot is None:
+                                if empty_slot is not None:
+                                    sheet.update_cell(row_idx, 5 + empty_slot, current_device)
+                                    st.success("로그인 성공! 새로운 기기가 등록되었습니다.")
+                                else:
+                                    st.error("🚫 동시 접속 기기 초과! (최대 3대)")
+                                    return
+                            else: st.success("로그인 성공!")
+
+                            st.session_state['logged_in'] = True
+                            st.session_state['user_id'] = login_id
+                            st.rerun()
+                    except Exception as e: st.error(f"로그인 처리 중 오류 발생: {e}")
+
+            st.markdown("<hr style='margin: 15px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
+            if st.button("시스템 첫 접속하기 (사용자 등록)", type="secondary", use_container_width=True):
+                st.session_state['view_mode'] = 'register'
                 st.rerun()
-            else:
-                st.error("❌ 올바르지 않은 코드입니다. 다시 확인해 주세요.")
-    
-    st.stop()
-# ==========================================================
 
-# 5. 관련 법령 준수 안내 배너
-st.markdown("""
-<div style="background-color: #eff6ff; border-radius: 8px; padding: 20px; margin-bottom: 24px; border: 1px solid #bfdbfe;">
-    <div style="font-weight: 800; margin-bottom: 10px; font-size: 16px; color: #1e3a8a; text-align: center;">관련 법령 준수 안내</div>
-    <div style="color: #1e3a8a; font-size: 14.5px; line-height: 1.6; text-align: left; word-break: keep-all;">
-        본 시스템은 「초·중등교육법」 제25조의2에 유의하여 학교생활기록부를 취득하지 않습니다. 학교생활기록부의 수집·업로드를 전면 차단하며, 수험생 본인의 탐구 활동 등 내용 입력 사항을 기반으로 모의 면접 질문을 지원합니다.
-    </div>
-</div>
-""", unsafe_allow_html=True)
+    elif st.session_state['view_mode'] == 'register':
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.markdown("<div style='text-align: center; color: #1e293b; font-size: 1.8rem; font-weight: 700; margin-bottom: 10px;'>시스템 첫 접속</div>", unsafe_allow_html=True)
+            path_choice = st.selectbox("사용자 선택", ["네이버프리미엄콘텐츠 구독자", "네이버스토어 구매자"])
+            new_id = st.text_input("사용할 아이디", key="reg_id")
+            new_pw = st.text_input("사용할 비밀번호", placeholder="비밀번호 설정", key="reg_pw")
+            show_reg_pw = st.checkbox("👁️ 비밀번호 보기", key="chk_reg_pw")
+            
+            if not show_reg_pw: st.markdown('<style>input[placeholder="비밀번호 설정"] { -webkit-text-security: disc !important; }</style>', unsafe_allow_html=True)
 
-# API 키 연동 
-try:
-    API_KEY = os.environ["GEMINI_API_KEY"]
-except KeyError:
-    st.error("⚠️ 환경 변수(Environment Variables)에 GEMINI_API_KEY가 등록되지 않았습니다.")
-    st.stop()
+            master_key, proof_info = "", ""
+            if path_choice == "네이버프리미엄콘텐츠 구독자": master_key = st.text_input("파로스대입랩 공지 마스터 키", key="np_key_v2")
+            else: proof_info = st.text_input("네이버스토어 주문번호", key="store_order_v2")
 
+            if st.button("등록 완료 및 접속", type="primary", use_container_width=True):
+                if not new_id or not new_pw: st.warning("아이디와 비밀번호를 모두 입력해주세요.")
+                elif path_choice == "네이버프리미엄콘텐츠 구독자" and master_key != "pharosjinhak2027": st.error("❌ 파로스대입랩 공지 마스터 키가 일치하지 않습니다.")
+                else:
+                    try:
+                        sheet = init_connection()
+                        if not sheet: return
+                        records = sheet.get_all_records()
+                        for record in records:
+                            if str(record.get('아이디')) == new_id:
+                                st.error("이미 사용 중인 아이디입니다.")
+                                return
+
+                        days_to_add = 15 if path_choice == "네이버프리미엄콘텐츠 구독자" else 30
+                        expire_date = (datetime.now() + timedelta(days=days_to_add)).strftime("%Y-%m-%d")
+                        if 'device_token' not in st.session_state: st.session_state['device_token'] = str(uuid.uuid4())
+                        
+                        sheet.append_row([new_id, new_pw, master_key, proof_info, expire_date, st.session_state['device_token'], "", ""])
+                        st.success("🎉 등록이 완료되었습니다! 로그인 화면으로 돌아갑니다.")
+                        st.session_state['view_mode'] = 'login'
+                        st.rerun()
+                    except Exception as e: st.error(f"처리 중 오류 발생: {e}")
+
+            if st.button("돌아가기 (로그인 화면)", type="secondary", use_container_width=True):
+                st.session_state['view_mode'] = 'login'
+                st.rerun()
+
+# --- [5] 1.0버전 AI 데이터 처리 함수 및 프롬프트 복원 영역 ---
 def sanitize_text(text):
-    import re
     t = text
     t = re.sub(r'[가-힣]{2,10}(고등학교|여고|남고|외고|과고|예고|체고|마이스터고|공고|상고|고)', "[OO고등학교]", t)
     t = re.sub(r'\b\d{6}[-\s]?[1-4]\d{6}\b', '[주민번호 마스킹]', t)
@@ -163,7 +244,8 @@ def sanitize_text(text):
     t = re.sub(r'\b(아버지|어머니|부모님|부친|모친|형|누나|오빠|언니|동생|외조부|조부|외조모|조모|삼촌|이모|고모)\b', "[가족관계]", t)
     return t
 
-def call_gemini(prompt, count, diff):
+def call_gemini(prompt, count, diff, api_key):
+    genai.configure(api_key=api_key)
     diff_prompts = {
         "하": "기초 사실 확인 및 역량 균형 평가 (주요 초점: 진로 희망 변경 이유, 가장 의미 있었던 과목, 서류 내 기억에 남는 활동 등 팩트와 경험 위주의 개방형 질문 포함. ★ '학업역량', '진로역량', '공동체역량' 세 가지 측면의 질문을 고르게 균형 있게 혼합하여 출제할 것)",
         "중": "탐구 과정/문제해결 및 학업·진로 중심 평가 (주요 초점: 프로젝트 내 구체적 역할과 수행 내용, 갈등 극복 경험 등 상황 대처 위주의 질문 포함. ★ '공동체역량'보다 '학업역량'과 '진로역량'에 관련된 질문의 비중을 높여서 출제할 것)",
@@ -201,33 +283,21 @@ def call_gemini(prompt, count, diff):
   ]
 }}"""
     
-    body = {
-        "contents": [{"role": "user", "parts": [{"text": f"{sys_prompt}\n\n{prompt}\n\n[System 난수: {current_time_seed}]"}]}],
-        "generationConfig": {"temperature": 0.85}
-    }
-    encoded_body = json.dumps(body).encode("utf-8")
+    model = genai.GenerativeModel('gemini-1.5-flash', system_instruction=sys_prompt)
+    full_prompt = f"{prompt}\n\n[System 난수: {current_time_seed}]"
     
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={API_KEY}"
+    response = model.generate_content(
+        full_prompt,
+        generation_config=genai.GenerationConfig(temperature=0.85, response_mime_type="application/json")
+    )
     
-    req = urllib.request.Request(url, data=encoded_body, headers={"Content-Type": "application/json"}, method="POST")
-    
-    try:
-        with urllib.request.urlopen(req) as resp:
-            res = json.loads(resp.read().decode("utf-8"))
-            if "candidates" not in res:
-                raise Exception("생성된 응답이 없습니다.")
-            txt = res["candidates"][0]["content"]["parts"][0]["text"].strip()
-            if txt.startswith("```json"): txt = txt[7:]
-            if txt.startswith("```"): txt = txt[3:]
-            if txt.endswith("```"): txt = txt[:-3]
-            return json.loads(txt.strip())
-    except urllib.error.HTTPError as e:
-        err_msg = e.read().decode("utf-8")
-        raise Exception(f"HTTP {e.code} 에러: {err_msg}")
-    except Exception as e:
-        raise Exception(f"API 요청 실패: {str(e)}")
+    txt = response.text.strip()
+    if txt.startswith("```json"): txt = txt[7:]
+    if txt.startswith("```"): txt = txt[3:]
+    if txt.endswith("```"): txt = txt[:-3]
+    return json.loads(txt.strip())
 
-# 💡 남성 목소리 탐색 및 피치(음조) 조절 로직 추가
+# 💡 남성/중저음 TTS 및 모바일 스마트 팝업 대응 로직
 def render_tts(text, q_id):
     clean = json.dumps(text, ensure_ascii=False)
     html = f"""<button id="b_{q_id}" style="background:linear-gradient(180deg,#0284c7,#0369a1);color:white;border:none;border-radius:6px;padding:7px 15px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 5px rgba(2,132,199,0.25);">🔊 음성으로 질문 듣기</button>
@@ -235,131 +305,158 @@ def render_tts(text, q_id):
 <script>
 document.getElementById('b_{q_id}').onclick = function() {{
     if (!('speechSynthesis' in window)) {{ 
-        alert('🚫 현재 열려있는 창에서는 보안상 음성 재생을 지원하지 않습니다.\\n다른 브라우저(크롬, 사파리 등)를 이용해 주세요.'); 
+        alert('🚫 카카오톡, 네이버 등 앱 내부 브라우저에서는 음성 재생이 차단될 수 있습니다.\\n\\n화면 우측 하단(또는 상단)의 [ ⠇] 또는 [ ≡ ] 메뉴 기호를 눌러 반드시 \\'다른 브라우저로 열기(사파리, 크롬 등)\\'를 선택해 주세요.'); 
         return; 
     }}
     window.speechSynthesis.cancel();
     let u = new SpeechSynthesisUtterance({clean});
     u.lang = 'ko-KR'; 
-    u.rate = 0.93; // 말하는 속도를 살짝 낮춰 진중하게
-    u.pitch = 0.75; // 💡 기본 피치(1.0)를 0.75로 낮춰 남성/중저음 톤으로 강제 변환
+    u.rate = 0.93; 
+    u.pitch = 0.75; 
     
     let voices = window.speechSynthesis.getVoices();
     let koVoices = voices.filter(x => x.lang && x.lang.includes('ko'));
-    
-    // 1순위: 기기에 진짜 남성(Male/InJoon/남성) 목소리가 설치되어 있으면 최우선 선택
     let maleVoice = koVoices.find(x => x.name.toLowerCase().includes('male') || x.name.includes('남성') || x.name.toLowerCase().includes('injoon'));
     
     if (maleVoice) {{
         u.voice = maleVoice;
-        u.pitch = 0.9; // 원래 남성 목소리라면 피치를 너무 많이 낮추지 않음
+        u.pitch = 0.9; 
     }} else if (koVoices.length > 0) {{
-        u.voice = koVoices[0]; // 남성 목소리가 없으면 기본 목소리를 쓰되, 위에서 설정한 pitch(0.75)가 적용되어 굵은 목소리가 됨
+        u.voice = koVoices[0]; 
     }}
 
     u.onstart = () => {{ document.getElementById('b_{q_id}').style.background = '#475569'; document.getElementById('s_{q_id}').innerText = '낭독 중...'; }};
     u.onend = () => {{ document.getElementById('b_{q_id}').style.background = 'linear-gradient(180deg,#0284c7,#0369a1)'; document.getElementById('s_{q_id}').innerText = ''; }};
+    
+    // 에러 발생 시(인앱 브라우저 차단 등)에도 동일한 팝업 호출
+    u.onerror = (e) => {{
+        if (e.error !== 'interrupted') {{
+            alert('🚫 카카오톡, 네이버 등 앱 내부 브라우저에서는 음성 재생이 차단될 수 있습니다.\\n\\n화면 우측 하단(또는 상단)의 [ ⠇] 또는 [ ≡ ] 메뉴 기호를 눌러 반드시 \\'다른 브라우저로 열기(사파리, 크롬 등)\\'를 선택해 주세요.');
+            document.getElementById('b_{q_id}').style.background = 'linear-gradient(180deg,#0284c7,#0369a1)'; 
+            document.getElementById('s_{q_id}').innerText = '';
+        }}
+    }};
+    
     window.speechSynthesis.speak(u);
 }};
 </script>"""
     components.html(html, height=46)
 
-# 6. 사이드바
-with st.sidebar:
-    st.markdown('<div class="side-title">⚙️ 모의 면접 조건 설정</div>', unsafe_allow_html=True)
+
+# --- [6] 메인 면접 앱 실행 영역 (1.0 질문 추출 UI 완벽 이식) ---
+def main_app():
+    st.sidebar.markdown(f"<div style='background-color: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 20px;'><h3 style='margin:0; color: #1e293b; font-size: 1.2rem;'>👤 회원 정보</h3><p style='margin: 10px 0 0 0; color: #475569;'>접속 계정: <b>{st.session_state.get('user_id')}</b>님</p></div>", unsafe_allow_html=True)
+    if st.sidebar.button("로그아웃", use_container_width=True):
+        st.session_state['logged_in'] = False
+        st.session_state['user_id'] = None
+        st.rerun()
+
+    st.sidebar.markdown("<hr style='margin: 20px 0; border: none; border-top: 1px solid #cbd5e1;'>", unsafe_allow_html=True)
     
-    target_major = st.text_input("지원 모집단위 및 희망 전공", placeholder="예: 경영학부, 컴퓨터공학과")
-    
-    q_sel = st.selectbox("추출 면접 문항 수", ["5문항", "10문항", "15문항"], index=0)
+    # 💡 사이드바 조건 설정 복원
+    st.sidebar.markdown('<div class="side-title">⚙️ 모의 면접 조건 설정</div>', unsafe_allow_html=True)
+    target_major = st.sidebar.text_input("지원 모집단위 및 희망 전공", placeholder="예: 경영학부, 컴퓨터공학과")
+    q_sel = st.sidebar.selectbox("추출 면접 문항 수", ["5문항", "10문항", "15문항"], index=0)
     q_count = int(q_sel.replace("문항", ""))
-    diff_sel = st.selectbox("평가 난이도", ["하 (기초 사실 확인)", "중 (탐구/문제해결)", "상 (심화 학술이론)"], index=0)
+    diff_sel = st.sidebar.selectbox("평가 난이도", ["하 (기초 사실 확인)", "중 (탐구/문제해결)", "상 (심화 학술이론)"], index=0)
     difficulty = diff_sel[0]
     
-    st.markdown("---")
-    include_intro = st.checkbox("💡 지원 동기 (시작 공통 문항) 포함", value=True, help="체크 시 '왜 해당 모집단위/전공에 지원했는가?' 문항이 첫 번째로 자동 추가됩니다.")
-    include_closing = st.checkbox("💡 마지막 할 말 (마무리 공통 문항) 포함", value=True, help="체크 시 면접을 마무리하는 '마지막으로 하고 싶은 말' 문항이 맨 끝에 자동 추가됩니다.")
+    st.sidebar.markdown("---")
+    include_intro = st.sidebar.checkbox("💡 지원 동기 (시작 공통 문항) 포함", value=True, help="체크 시 '왜 해당 모집단위/전공에 지원했는가?' 문항이 첫 번째로 자동 추가됩니다.")
+    include_closing = st.sidebar.checkbox("💡 마지막 할 말 (마무리 공통 문항) 포함", value=True, help="체크 시 면접을 마무리하는 '마지막으로 하고 싶은 말' 문항이 맨 끝에 자동 추가됩니다.")
 
-# 7. 메인 입력 영역
-st.markdown("""
-<div style="text-align: center; margin-top: 5px; margin-bottom: 5px;">
-    <h3 style='font-size: clamp(20px, 5vw, 26px); font-weight: 800; color: #0f172a; margin: 0; white-space: nowrap;'>본인 탐구 활동 등 내용 입력</h3>
-</div>
-""", unsafe_allow_html=True)
+    # 💡 배너 및 안내 박스 복원
+    st.markdown('<div class="header-box"><div class="b-title">파로스 서류 기반 모의면접 트레이너</div><div class="b-sub">맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="brand-blog-center"><div class="logo-box">{svg_logo}</div><div class="brand-info-box"><span class="brand-title-text">네이버프리미엄콘텐츠 파로스대입랩</span><a class="brand-link-text" href="[https://contents.premium.naver.com/pharoslab/jinhak](https://contents.premium.naver.com/pharoslab/jinhak)" target="_blank">[https://contents.premium.naver.com/pharoslab/jinhak](https://contents.premium.naver.com/pharoslab/jinhak)</a></div></div>', unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div style="background-color: #eff6ff; border-radius: 8px; padding: 20px; margin-bottom: 24px; border: 1px solid #bfdbfe;">
+        <div style="font-weight: 800; margin-bottom: 10px; font-size: 16px; color: #1e3a8a; text-align: center;">관련 법령 준수 안내</div>
+        <div style="color: #1e3a8a; font-size: 14.5px; line-height: 1.6; text-align: left; word-break: keep-all;">
+            본 시스템은 「초·중등교육법」 제25조의2에 유의하여 학교생활기록부를 취득하지 않습니다. 학교생활기록부의 수집·업로드를 전면 차단하며, 수험생 본인의 탐구 활동 등 내용 입력 사항을 기반으로 모의 면접 질문을 지원합니다.
+        </div>
+    </div>
+    <div style="text-align: center; margin-top: 5px; margin-bottom: 5px;">
+        <h3 style='font-size: clamp(20px, 5vw, 26px); font-weight: 800; color: #0f172a; margin: 0; white-space: nowrap;'>본인 탐구 활동 등 내용 입력</h3>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.caption("✅ **안심하고 사용하세요!** 본 모의 면접 시스템은 완전 휘발성 구조로 설계되어, 입력하신 모든 내용은 서버에 일절 저장되지 않고 즉시 파기됩니다.")
+    
+    input_text = st.text_area("활동 요약 텍스트 입력", placeholder="본인의 탐구 활동 등 내용을 입력해 주세요.", height=200, label_visibility="collapsed")
+    
+    st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+    
+    if st.button("🚀 면접 질문 추출하기", type="primary", use_container_width=True):
+        if not input_text.strip():
+            st.warning("⚠️ 면접 대비를 원하는 탐구 활동 요약 내용을 입력해 주세요.")
+        else:
+            api_key = os.environ.get("GEMINI_API_KEY") or (st.secrets.get("GEMINI_API_KEY") if "GEMINI_API_KEY" in st.secrets else None)
+            
+            if not api_key:
+                st.error("🚨 환경변수에 GEMINI_API_KEY가 설정되어 있지 않습니다.")
+            else:
+                with st.spinner("모의 면접관께서 기록 사항을 정밀 분석 중입니다..."):
+                    sanitized = sanitize_text(input_text)
+                    prompt = f"지원 모집단위 및 희망 전공: {target_major or '미지정'}\n\n[탐구 활동 요약]\n{sanitized}"
+                    
+                    try:
+                        res = call_gemini(prompt, q_count, difficulty, api_key)
+                        
+                        if "sections" not in res: res["sections"] = []
+                        
+                        # 1. 시작 공통 문항 자동 샌드위치
+                        if include_intro:
+                            major_text = target_major.strip() if target_major.strip() else "해당 모집단위"
+                            res["sections"].insert(0, {
+                                "category": "기본 소양 및 지원 동기 (공통 필수)",
+                                "questions": [{
+                                    "type": "공통/인성 면접",
+                                    "source_quote": "대입 면접 공통 필수 평가 항목",
+                                    "question": f"{major_text}에 지원하게 된 동기가 무엇인지 편하게 말씀해 주시고, 입학하게 된다면 어떤 학업 계획을 가지고 있는지도 함께 설명해 주세요.",
+                                    "intent": "지원 모집단위 및 전공에 대한 관심도, 학업에 대한 열정 및 진로 계획의 구체성 확인",
+                                    "high_score_guide": "단순한 흥미나 학교의 명성을 언급하기보다는, 본인의 기존 탐구 활동이나 관심 분야를 해당 전공의 커리큘럼(또는 대학의 인재상)과 연결지어 논리적이고 구체적으로 답변하는 것이 중요합니다."
+                                }]
+                            })
 
-st.caption("✅ **안심하고 사용하세요!** 본 모의 면접 시스템은 완전 휘발성 구조로 설계되어, 입력하신 모든 내용은 서버에 일절 저장되지 않고 즉시 파기됩니다.")
+                        # 2. 마무리 공통 문항 자동 샌드위치
+                        if include_closing:
+                            res["sections"].append({
+                                "category": "최종 어필 및 마무리 (공통 필수)",
+                                "questions": [{
+                                    "type": "공통/인성 면접",
+                                    "source_quote": "대입 면접 마무리 공통 평가 항목",
+                                    "question": "마지막으로 면접관에게 꼭 하고 싶은 말이나, 미처 다 보여주지 못한 본인의 장점이 있다면 편하게 말씀해 주세요.",
+                                    "intent": "지원자의 최종적인 입학 의지, 자기 어필 능력, 그리고 면접에 임하는 태도와 진정성 확인",
+                                    "high_score_guide": "준비해온 답변을 단순히 암기해서 말하기보다는, 오늘 면접에서의 아쉬웠던 점을 보완하거나 이 대학/학과에 진학하고자 하는 간절함과 진정성을 진솔하게 표현하는 것이 좋습니다."
+                                }]
+                            })
 
-placeholder_content = "본인의 탐구 활동 등 내용을 입력해 주세요."
+                        st.success(f"🎉 면접 문항 추출이 완료되었습니다. (난이도: {difficulty})")
+                        st.markdown("---")
+                        
+                        # 💡 1.0 카드 디자인 렌더링 루프
+                        q_num = 1
+                        for sec in res.get("sections", []):
+                            st.markdown(f"#### 📁 {sec.get('category')}")
+                            for item in sec.get("questions", []):
+                                st.markdown(f"""
+                                <div class="card">
+                                    <span style="background:#e0f2fe;color:#0369a1;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;">[{item.get('type', '심층 면접')}] · 난이도 {difficulty}</span>
+                                    <div class="q-title">Q{q_num}. {item.get('question')}</div>
+                                    <div style="font-size:13.5px;color:#475569;margin-bottom:5px;">📌 <b>활동 근거:</b> <i>"{item.get('source_quote')}"</i></div>
+                                    <div style="font-size:13.5px;color:#475569;margin-bottom:5px;">🎯 <b>출제 의도:</b> {item.get('intent')}</div>
+                                    <div class="guide">💡 <b>고득점 답변 가이드:</b> {item.get('high_score_guide')}</div>
+                                </div>
+                                """, unsafe_allow_html=True)
+                                render_tts(item.get('question'), f"q_{q_num}")
+                                q_num += 1
+                                
+                    except Exception as e:
+                        st.error(f"오류가 발생했습니다: {str(e)}")
 
-input_text = st.text_area(
-    label="활동 요약 텍스트 입력",
-    label_visibility="collapsed",
-    height=200,
-    placeholder=placeholder_content
-)
+# --- [7] 세션 상태 관리 및 앱 구동 흐름 ---
+if 'logged_in' not in st.session_state: st.session_state['logged_in'] = False
 
-# 8. 질문 추출 실행 버튼
-if st.button("🚀 면접 질문 추출하기", use_container_width=True):
-    if not input_text.strip():
-        st.warning("⚠️ 면접 대비를 원하는 탐구 활동 요약 내용을 입력해 주세요.")
-    else:
-        with st.spinner("모의 면접관께서 기록 사항을 정밀 분석 중입니다..."):
-            sanitized = sanitize_text(input_text)
-            prompt = f"지원 모집단위 및 희망 전공: {target_major or '미지정'}\n\n[탐구 활동 요약]\n{sanitized}"
-            try:
-                res = call_gemini(prompt, q_count, difficulty)
-                
-                if "sections" not in res:
-                    res["sections"] = []
-                
-                # 1. 시작 공통 문항 (맨 앞에 삽입)
-                if include_intro:
-                    major_text = target_major.strip() if target_major.strip() else "해당 모집단위"
-                    intro_section = {
-                        "category": "기본 소양 및 지원 동기 (공통 필수)",
-                        "questions": [
-                            {
-                                "type": "공통/인성 면접",
-                                "source_quote": "대입 면접 공통 필수 평가 항목",
-                                "question": f"{major_text}에 지원하게 된 동기가 무엇인지 편하게 말씀해 주시고, 입학하게 된다면 어떤 학업 계획을 가지고 있는지도 함께 설명해 주세요.",
-                                "intent": "지원 모집단위 및 전공에 대한 관심도, 학업에 대한 열정 및 진로 계획의 구체성 확인",
-                                "high_score_guide": "단순한 흥미나 학교의 명성을 언급하기보다는, 본인의 기존 탐구 활동이나 관심 분야를 해당 전공의 커리큘럼(또는 대학의 인재상)과 연결지어 논리적이고 구체적으로 답변하는 것이 중요합니다."
-                            }
-                        ]
-                    }
-                    res["sections"].insert(0, intro_section)
-
-                # 2. 마무리 공통 문항 (맨 끝에 삽입)
-                if include_closing:
-                    closing_section = {
-                        "category": "최종 어필 및 마무리 (공통 필수)",
-                        "questions": [
-                            {
-                                "type": "공통/인성 면접",
-                                "source_quote": "대입 면접 마무리 공통 평가 항목",
-                                "question": "마지막으로 면접관에게 꼭 하고 싶은 말이나, 미처 다 보여주지 못한 본인의 장점이 있다면 편하게 말씀해 주세요.",
-                                "intent": "지원자의 최종적인 입학 의지, 자기 어필 능력, 그리고 면접에 임하는 태도와 진정성 확인",
-                                "high_score_guide": "준비해온 답변을 단순히 암기해서 말하기보다는, 오늘 면접에서의 아쉬웠던 점을 보완하거나 이 대학/학과에 진학하고자 하는 간절함과 진정성을 진솔하게 표현하는 것이 좋습니다."
-                            }
-                        ]
-                    }
-                    res["sections"].append(closing_section)
-
-                st.success(f"🎉 면접 문항 추출이 완료되었습니다. (난이도: {difficulty})")
-                st.markdown("---")
-                q_num = 1
-                for sec in res.get("sections", []):
-                    st.markdown(f"#### 📁 {sec.get('category')}")
-                    for item in sec.get("questions", []):
-                        st.markdown(f"""
-                        <div class="card">
-                            <span style="background:#e0f2fe;color:#0369a1;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;">[{item.get('type', '심층 면접')}] · 난이도 {difficulty}</span>
-                            <div class="q-title">Q{q_num}. {item.get('question')}</div>
-                            <div style="font-size:13.5px;color:#475569;margin-bottom:5px;">📌 <b>활동 근거:</b> <i>"{item.get('source_quote')}"</i></div>
-                            <div style="font-size:13.5px;color:#475569;margin-bottom:5px;">🎯 <b>출제 의도:</b> {item.get('intent')}</div>
-                            <div class="guide">💡 <b>고득점 답변 가이드:</b> {item.get('high_score_guide')}</div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        render_tts(item.get('question'), f"q_{q_num}")
-                        q_num += 1
-            except Exception as e:
-                st.error(f"오류가 발생했습니다: {str(e)}")
+if not st.session_state['logged_in']: auth_screen()
+else: main_app()
