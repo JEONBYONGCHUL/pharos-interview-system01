@@ -2,3 +2,4 @@ streamlit
 pypdf
 gspread
 oauth2client
+extra-streamlit-components
