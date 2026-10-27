@@ -36,9 +36,9 @@ st.markdown("""
     
     .brand-blog-center { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 5px 0 10px 0; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; text-align: center; }
     .logo-box { width: 45px; height: 40px; display: flex; align-items: center; justify-content: center; }
-    .brand-info-box { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 100%; padding: 0 5px; }
-    .brand-title-text { font-size: 14.5px; font-weight: 800; color: #0f172a; line-height: 1.2; }
-    .brand-link-text { font-size: clamp(10px, 3vw, 13px); color: #0284c7 !important; text-decoration: none !important; font-weight: 600; line-height: 1.3; letter-spacing: -0.5px; }
+    .brand-info-box { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 100%; padding: 0 5px; box-sizing: border-box; }
+    .brand-title-text { font-size: 14.5px; font-weight: 800; color: #0f172a; word-break: keep-all; line-height: 1.2; }
+    .brand-link-text { font-size: clamp(10px, 3vw, 13px); color: #0284c7 !important; text-decoration: none !important; font-weight: 600; word-break: break-all; overflow-wrap: break-word; line-height: 1.3; max-width: 100%; letter-spacing: -0.5px; }
 
     .side-title { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white; padding: 14px; border-radius: 10px; text-align: center; font-weight: 800; font-size: 15.5px; margin-bottom: 16px; }
 
@@ -125,7 +125,7 @@ def auth_screen():
         <div class="logo-box">{svg_logo}</div>
         <div class="brand-info-box">
             <span class="brand-title-text">네이버프리미엄콘텐츠 파로스대입랩</span>
-            <a class="brand-link-text" href="https://contents.premium.naver.com/pharoslab/jinhak" target="_blank">https://contents.premium.naver.com/pharoslab/jinhak</a>
+            <a class="brand-link-text" href="https://contents.premium.naver.com/pharoslab/jinhak" target="_blank">https:&#8203;//contents.premium.naver.com/pharoslab/jinhak</a>
         </div>
     </div>
     <hr style="margin: 5px 0 15px 0; border: none; border-top: 1px solid #e2e8f0;">
@@ -180,7 +180,6 @@ def auth_screen():
         with col2:
             st.markdown("<div style='text-align: center; color: #1e293b; font-size: 1.8rem; font-weight: 700; margin-bottom: 10px;'>시스템 첫 접속</div>", unsafe_allow_html=True)
             
-            # 💡 네이버스토어 구매자가 먼저 보이도록 순서 변경
             path_choice = st.selectbox("사용자 선택", ["네이버스토어 구매자", "네이버프리미엄콘텐츠 구독자"])
             new_id = st.text_input("사용할 아이디", key="reg_id")
             new_pw = st.text_input("사용할 비밀번호", placeholder="비밀번호 설정", key="reg_pw")
@@ -190,7 +189,6 @@ def auth_screen():
 
             master_key, proof_info = "", ""
             
-            # 💡 선택한 유형에 맞게 필드 이름과 입력받을 값 변경
             if path_choice == "네이버프리미엄콘텐츠 구독자":
                 master_key = st.text_input("공지 마스터 키", key="np_key_v2")
                 proof_info = st.text_input("네이버 아이디", key="np_id_v2")
@@ -345,7 +343,7 @@ document.getElementById('b_{q_id}').onclick = function() {{
 
 # --- [6] 메인 면접 앱 실행 영역 ---
 def main_app():
-    st.sidebar.markdown(f"<div style='background-color: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 20px;'><h3 style='margin:0; color: #1e293b; font-size: 1.2rem;'>👤 회원 정보</h3><p style='margin: 10px 0 0 0; color: #475569;'>접속 계정: <b>{st.session_state.get('user_id')}</b>님</p></div>", unsafe_allow_html=True)
+    st.sidebar.markdown(f"<div style='background-color: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 20px;'><p style='margin: 0; color: #475569; font-weight: 600;'>👤 접속 계정: <b>{st.session_state.get('user_id')}</b>님</p></div>", unsafe_allow_html=True)
     if st.sidebar.button("로그아웃", use_container_width=True):
         st.session_state['logged_in'] = False
         st.session_state['user_id'] = None
@@ -372,7 +370,7 @@ def main_app():
         <div class="logo-box">{svg_logo}</div>
         <div class="brand-info-box">
             <span class="brand-title-text">네이버프리미엄콘텐츠 파로스대입랩</span>
-            <a class="brand-link-text" href="[https://contents.premium.naver.com/pharoslab/jinhak](https://contents.premium.naver.com/pharoslab/jinhak)" target="_blank">[https://contents.premium.naver.com/pharoslab/jinhak](https://contents.premium.naver.com/pharoslab/jinhak)</a>
+            <a class="brand-link-text" href="[https://contents.premium.naver.com/pharoslab/jinhak](https://contents.premium.naver.com/pharoslab/jinhak)" target="_blank">https:&#8203;//[contents.premium.naver.com/pharoslab/jinhak](https://contents.premium.naver.com/pharoslab/jinhak)</a>
         </div>
     </div>
     """, unsafe_allow_html=True)
