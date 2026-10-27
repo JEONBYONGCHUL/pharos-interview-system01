@@ -7,6 +7,7 @@ import os
 import uuid
 import base64
 import streamlit.components.v1 as components
+import google.generativeai as genai
 
 # --- [1] 페이지 기본 설정 ---
 st.set_page_config(
@@ -15,7 +16,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- [2] UI 디자인 (로그인 및 시스템 공통 디자인 동결) ---
+# --- [2] UI 디자인 및 스타일 정의 (동결) ---
 st.markdown("""
 <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -157,7 +158,7 @@ def init_connection():
         st.error(f"🚨 [알 수 없는 연결 오류] {e}")
         return None
 
-# --- [4] 로그인 및 첫 접속 라우팅 (비밀번호 및 마스터키 검증 완벽 동결) ---
+# --- [4] 로그인 및 첫 접속 인증 화면 (동결) ---
 def auth_screen():
     components.html(
         """
@@ -260,7 +261,7 @@ def auth_screen():
 
                             if matched_slot is None:
                                 if empty_slot is not None:
-                                    sheet.update_cell(row_idx, 5 + empty_slot, current_device)
+                                    sheet.update_cell(row_idx, 6 + empty_slot, current_device)
                                     st.success("로그인 성공! 새로운 기기가 등록되었습니다.")
                                 else:
                                     st.error("🚫 동시 접속 기기 초과! (최대 3대)")
@@ -355,9 +356,9 @@ def auth_screen():
                 st.session_state['view_mode'] = 'login'
                 st.rerun()
 
-# --- [5] 메인 면접 앱 실행 영역 (1.0 메인화면 완벽 복원 이식) ---
+# --- [5] 메인 면접 앱 실행 영역 (1.0 질문 추출 및 5/10/15문항, 난이도 하/중/상 완벽 이식) ---
 def main_app():
-    # 💡 1. 사이드바 복원
+    # 사이드바 회원 정보 및 로그아웃
     st.sidebar.markdown(f"<div style='background-color: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 20px;'><h3 style='margin:0; color: #1e293b; font-size: 1.2rem;'>👤 회원 정보</h3><p style='margin: 10px 0 0 0; color: #475569;'>접속 계정: <b>{st.session_state.get('user_id')}</b>님</p></div>", unsafe_allow_html=True)
     
     if st.sidebar.button("로그아웃", use_container_width=True):
@@ -371,14 +372,18 @@ def main_app():
     st.sidebar.markdown("<div style='background-color: #1e293b; color: white; padding: 12px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 15px; font-size: 1.05rem;'>⚙️ 모의 면접 조건 설정</div>", unsafe_allow_html=True)
     
     major = st.sidebar.text_input("지원 모집단위 및 희망 전공", placeholder="예: 경영학부, 컴퓨터공학과")
-    q_count = st.sidebar.selectbox("추출 면접 문항 수", ["3문항", "4문항", "5문항", "6문항"], index=2)
+    
+    # 💡 요청하신 5문항, 10문항, 15문항 반영
+    q_count = st.sidebar.selectbox("추출 면접 문항 수", ["5문항", "10문항", "15문항"], index=0)
+    
+    # 💡 난이도 (하, 중, 상) 반영
     difficulty = st.sidebar.selectbox("평가 난이도", ["하 (기초 사실 확인)", "중 (심층 질문)", "상 (꼬리 질문 및 압박)"])
     
     st.sidebar.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
     inc_motive = st.sidebar.checkbox("💡 지원 동기 (시작 공통 문항) 포함", value=True)
     inc_last = st.sidebar.checkbox("💡 마지막 할 말 (마무리 공통 문항) 포함", value=True)
 
-    # 💡 2. 메인 바디 복원 (상단 배너 및 로고)
+    # 메인 바디 (배너 및 로고)
     st.markdown('<div class="header-box"><div class="b-title">파로스 서류 기반 모의면접 트레이너</div><div class="b-sub">맞춤형 면접 질문 추출 및 실전 구술 음성 지원 시스템</div></div>', unsafe_allow_html=True)
 
     if os.path.exists("logo.png"):
@@ -401,7 +406,7 @@ def main_app():
     <hr style="margin: 5px 0 15px 0; border: none; border-top: 1px solid #e2e8f0;">
     """, unsafe_allow_html=True)
 
-    # 💡 3. 관련 법령 준수 안내 박스 복원
+    # 법령 준수 안내 박스
     st.markdown("""
     <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 25px 20px; text-align: center; margin: 20px 0;">
         <div style="color: #1e3a8a; font-weight: 800; font-size: 1.05rem; margin-bottom: 12px;">관련 법령 준수 안내</div>
@@ -411,18 +416,66 @@ def main_app():
     </div>
     """, unsafe_allow_html=True)
 
-    # 💡 4. 탐구 활동 입력부 복원
+    # 탐구 활동 입력부
     st.markdown("<h3 style='text-align: center; color: #1e293b; font-weight: 800; margin-top: 40px; margin-bottom: 20px;'>본인 탐구 활동 등 내용 입력</h3>", unsafe_allow_html=True)
     st.markdown("<p style='color: #10b981; font-size: 0.9rem; margin-bottom: 8px; font-weight: 600;'>✅ 안심하고 사용하세요! 본 모의 면접 시스템은 완전 휘발성 구조로 설계되어, 입력하신 모든 내용은 서버에 일절 저장되지 않고 즉시 파기됩니다.</p>", unsafe_allow_html=True)
     
     activity_text = st.text_area("탐구활동내용", placeholder="본인의 탐구 활동 등 내용을 입력해 주세요.", height=300, label_visibility="collapsed")
     
     st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
+    
+    # 💡 [핵심] 제미나이(Gemini) AI 면접 질문 추출 로직 연동
     if st.button("면접 질문 추출하기", type="primary", use_container_width=True):
         if not activity_text:
             st.warning("탐구 활동 내용을 입력해주세요.")
+        elif not major:
+            st.warning("지원 모집단위 및 희망 전공을 입력해주세요.")
         else:
-            st.info("여기에 기존 제미나이(Gemini) AI 연동 코드 및 면접 시작 로직을 이어붙이시면 1.5버전이 최종 완성됩니다.")
+            # Render 환경변수 또는 st.secrets에서 GEMINI_API_KEY 로드
+            gemini_key = os.environ.get("GEMINI_API_KEY")
+            if not gemini_key:
+                try:
+                    gemini_key = st.secrets.get("GEMINI_API_KEY")
+                except Exception:
+                    pass
+
+            if not gemini_key:
+                st.error("🚨 [API 키 오류] 렌더 서버 환경변수에 GEMINI_API_KEY가 설정되어 있지 않습니다.")
+            else:
+                try:
+                    genai.configure(api_key=gemini_key)
+                    # 안정적인 제미나이 모델 지정
+                    model = genai.GenerativeModel('gemini-1.5-flash')
+                    
+                    # 프롬프트 구성 (문항 수, 난이도, 지원동기/마지막할말 옵션 반영)
+                    prompt = f"""
+                    당신은 대학 입학사정관 및 베테랑 면접관입니다. 아래 수험생이 입력한 탐구 활동 내용과 지원 전공을 바탕으로 실전 모의 면접 질문을 생성해 주세요.
+
+                    [면접 조건]
+                    - 지원 전공/모집단위: {major}
+                    - 추출 문항 수: {q_count} (공통 문항 포함 총 개수)
+                    - 평가 난이도: {difficulty}
+                    - 지원 동기 포함 여부: {'포함' if inc_motive else '제외'}
+                    - 마지막 할 말 포함 여부: {'포함' if inc_last else '제외'}
+
+                    [수험생 탐구 활동 내용]
+                    {activity_text}
+
+                    [작성 지침]
+                    1. 난이도({difficulty})에 걸맞은 수준 높은 질문을 구성해 주세요.
+                    2. 각 질문마다 출제 의도와 답변 팁을 함께 제공해 주시면 더욱 좋습니다.
+                    3. 마크다운 형식으로 깔끔하게 정리해 주세요.
+                    """
+
+                    with st.spinner("🤖 제미나이 AI가 맞춤형 면접 질문을 정밀하게 분석 및 추출하고 있습니다..."):
+                        response = model.generate_content(prompt)
+                        
+                    st.success("🎉 면접 질문 추출이 완료되었습니다!")
+                    st.markdown("---")
+                    st.markdown(response.text)
+                    
+                except Exception as e:
+                    st.error(f"🚨 [AI 질문 추출 오류] 질문 생성 중 문제가 발생했습니다: {e}")
 
 # --- [6] 세션 상태 관리 및 앱 구동 흐름 ---
 if 'logged_in' not in st.session_state:
