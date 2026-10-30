@@ -9,6 +9,7 @@ import re
 import urllib.request
 import urllib.error
 import streamlit.components.v1 as components
+import random
 
 # --- [1] 페이지 기본 설정 ---
 st.set_page_config(
@@ -385,7 +386,7 @@ def main_app():
         </div>
     </div>
     <div style="text-align: center; margin-top: 5px; margin-bottom: 5px;">
-        <h3 style='font-size: clamp(20px, 5vw, 26px); font-weight: 800; color: #0f172a; margin: 0; white-space: nowrap;'>본인 탐구 활동 등 내용 입력</h3>
+        <h3 style='font-size: clamp(20px, 5vw, 26px); font-weight: 800; color: #0f172a; margin: 0; white-space: nowrap;'>탐구 활동 등 내용 입력</h3>
     </div>
     """, unsafe_allow_html=True)
     
@@ -397,7 +398,7 @@ def main_app():
     
     if st.button(" 면접 질문 추출하기", type="primary", use_container_width=True):
         if not input_text.strip():
-            st.warning("⚠️ 면접 대비를 원하는 탐구 활동 요약 내용을 입력해 주세요.")
+            st.warning("⚠️ 면접 대비를 원하는 탐구 활동 내용을 입력해 주세요.")
         else:
             api_key = os.environ.get("GEMINI_API_KEY") or (st.secrets.get("GEMINI_API_KEY") if "GEMINI_API_KEY" in st.secrets else None)
             
@@ -415,14 +416,65 @@ def main_app():
                         
                         if include_intro:
                             major_text = target_major.strip() if target_major.strip() else "해당 모집단위"
+                            
+                            # 💡 여기에 사용자가 난이도를 선택했을 때, 그에 따라 지원 동기 질문 4가지 중 무작위 믹스 추출하도록 수정했습니다.
+                            
+                            intro_pool = []
+                            if difficulty.startswith("하"):
+                                intro_pool.extend([
+                                    {
+                                        "question": f"{major_text}에 지원하게 된 동기가 무엇인지 편하게 말씀해 주시고, 입학하게 된다면 어떤 학업 계획을 가지고 있는지도 함께 설명해 주세요.",
+                                        "intent": "지원 모집단위 및 전공에 대한 관심도, 학업에 대한 열정 및 진로 계획의 구체성 확인",
+                                        "high_score_guide": "단순한 흥미나 학교의 명성을 언급하기보다는, 본인의 기존 탐구 활동이나 관심 분야를 해당 전공의 커리큘럼(또는 대학의 인재상)과 연결지어 논리적이고 구체적으로 답변하는 것이 중요합니다."
+                                    },
+                                    {
+                                        "question": f"수많은 대학과 학과 중에서, 하필 우리 대학의 {major_text}에 지원하게 된 이유는 무엇인가요?",
+                                        "intent": "대학 및 학과에 대한 로열티 확인",
+                                        "high_score_guide": "대학의 건학 이념이나 학과 커리큘럼의 특징을 미리 조사하여 자신의 진로 목표와 어떻게 시너지를 낼 수 있는지 구체적으로 풀어내는 것이 핵심입니다."
+                                    }
+                                ])
+                            elif difficulty.startswith("중"):
+                                intro_pool.extend([
+                                    {
+                                        "question": f"수많은 대학과 학과 중에서, 하필 우리 대학의 {major_text}에 지원하게 된 이유는 무엇인가요?",
+                                        "intent": "대학 및 학과에 대한 로열티 확인",
+                                        "high_score_guide": "대학의 건학 이념이나 학과 커리큘럼의 특징을 미리 조사하여 자신의 진로 목표와 어떻게 시너지를 낼 수 있는지 구체적으로 풀어내는 것이 핵심입니다."
+                                    },
+                                    {
+                                        "question": "우리 대학만의 교육 철학이나 학내 특성화 프로그램 중에서, 본인의 향후 진로 계획과 가장 시너지가 날 것이라고 기대하는 부분은 무엇인지 구체적으로 설명해 주세요.",
+                                        "intent": "대학 특성화와 학생의 진로 방향성 간의 적합도 확인",
+                                        "high_score_guide": "단순한 흥미나 학교의 명성을 언급하기보다는, 본인의 기존 탐구 활동이나 관심 분야를 해당 전공의 커리큘럼(또는 대학의 인재상)과 연결지어 논리적이고 구체적으로 답변하는 것이 중요합니다."
+                                    },
+                                    {
+                                        "question": f"본인이 이룬 여러 활동 성과 중 {major_text} 분야에 가장 큰 자양분이 되었다고 생각하는 경험을 하나 들고, 이를 우리 대학의 교육 환경 속에서 어떻게 더 발전시키고 싶은지 말씀해 주세요.",
+                                        "intent": "과거 경험의 전공 연계성 및 대학 내 학업 성장에 대한 구체적 청사진 확인",
+                                        "high_score_guide": "본인의 핵심 역량이 대학이 제공하는 교육 환경(특정 연구실, 비교과 프로그램 등)과 맞물려 어떻게 극대화될 수 있는지 설득력 있게 제시하는 것이 좋습니다."
+                                    }
+                                ])
+                            elif difficulty.startswith("상"):
+                                intro_pool.extend([
+                                    {
+                                        "question": "우리 대학만의 교육 철학이나 학내 특성화 프로그램 중에서, 본인의 향후 진로 계획과 가장 시너지가 날 것이라고 기대하는 부분은 무엇인지 구체적으로 설명해 주세요.",
+                                        "intent": "대학 특성화와 학생의 진로 방향성 간의 적합도 확인",
+                                        "high_score_guide": "단순한 흥미나 학교의 명성을 언급하기보다는, 본인의 기존 탐구 활동이나 관심 분야를 해당 전공의 커리큘럼(또는 대학의 인재상)과 연결지어 논리적이고 구체적으로 답변하는 것이 중요합니다."
+                                    },
+                                    {
+                                        "question": f"본인이 이룬 여러 활동 성과 중 {major_text} 분야에 가장 큰 자양분이 되었다고 생각하는 경험을 하나 들고, 이를 우리 대학의 교육 환경 속에서 어떻게 더 발전시키고 싶은지 말씀해 주세요.",
+                                        "intent": "과거 경험의 전공 연계성 및 대학 내 학업 성장에 대한 구체적 청사진 확인",
+                                        "high_score_guide": "본인의 핵심 역량이 대학이 제공하는 교육 환경(특정 연구실, 비교과 프로그램 등)과 맞물려 어떻게 극대화될 수 있는지 설득력 있게 제시하는 것이 좋습니다."
+                                    }
+                                ])
+                            
+                            selected_intro = random.choice(intro_pool)
+                            
                             res["sections"].insert(0, {
                                 "category": "기본 소양 및 지원 동기 (공통 필수)",
                                 "questions": [{
                                     "type": "공통/인성 면접",
                                     "source_quote": "대입 면접 공통 필수 평가 항목",
-                                    "question": f"{major_text}에 지원하게 된 동기가 무엇인지 편하게 말씀해 주시고, 입학하게 된다면 어떤 학업 계획을 가지고 있는지도 함께 설명해 주세요.",
-                                    "intent": "지원 모집단위 및 전공에 대한 관심도, 학업에 대한 열정 및 진로 계획의 구체성 확인",
-                                    "high_score_guide": "단순한 흥미나 학교의 명성을 언급하기보다는, 본인의 기존 탐구 활동이나 관심 분야를 해당 전공의 커리큘럼(또는 대학의 인재상)과 연결지어 논리적이고 구체적으로 답변하는 것이 중요합니다."
+                                    "question": selected_intro["question"],
+                                    "intent": selected_intro["intent"],
+                                    "high_score_guide": selected_intro["high_score_guide"]
                                 }]
                             })
 
@@ -434,7 +486,7 @@ def main_app():
                                     "source_quote": "대입 면접 마무리 공통 평가 항목",
                                     "question": "마지막으로 면접관에게 꼭 하고 싶은 말이나, 미처 다 보여주지 못한 본인의 장점이 있다면 편하게 말씀해 주세요.",
                                     "intent": "지원자의 최종적인 입학 의지, 자기 어필 능력, 그리고 면접에 임하는 태도와 진정성 확인",
-                                    "high_score_guide": "준비해온 답변을 단순히 암기해서 말하기보다는, 오늘 면접에서의 아쉬웠던 점을 보완하거나 이 대학/학과에 진학하고자 하는 진정성을 진솔하게 표현하는 것이 좋습니다."
+                                    "high_score_guide": "준비해온 답변을 단순히 암기해서 말하기보다는, 오늘 면접에서의 아쉬웠던 점을 보완하거나 이 대학/학과에 진학하고자 하는 간절함과 진정성을 진솔하게 표현하는 것이 좋습니다."
                                 }]
                             })
 
@@ -449,8 +501,8 @@ def main_app():
                                 <div class="card">
                                     <span style="background:#e0f2fe;color:#0369a1;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;">[{item.get('type', '심층 면접')}] · 난이도 {difficulty}</span>
                                     <div class="q-title">Q{q_num}. {item.get('question')}</div>
-                                    <div style="font-size:13.5px;color:#475569;margin-bottom:5px;">📌 <b>활동 근거:</b> <i>"{item.get('source_quote')}"</i></div>
-                                    <div style="font-size:13.5px;color:#475569;margin-bottom:5px;">🎯 <b>출제 의도:</b> {item.get('intent')}</div>
+                                    <div style="font-size:13.5px;color:#475569;margin-bottom:5px;"> <b>활동 근거:</b> <i>"{item.get('source_quote')}"</i></div>
+                                    <div style="font-size:13.5px;color:#475569;margin-bottom:5px;"> <b>출제 의도:</b> {item.get('intent')}</div>
                                     <div class="guide">💡 <b>고득점 답변 가이드:</b> {item.get('high_score_guide')}</div>
                                 </div>
                                 """, unsafe_allow_html=True)
