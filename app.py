@@ -385,9 +385,9 @@ def main_app():
             본 시스템은 「초·중등교육법」 제25조의2에 유의하여 학교생활기록부를 취득하지 않습니다. 학교생활기록부의 수집·업로드를 전면 차단하며, 수험생 본인의 탐구 활동 등 내용 입력 사항을 기반으로 모의 면접 질문을 지원합니다.
         </div>
     </div>
-    <div style="text-align: center; margin-top: 5px; margin-bottom: 5px;">
-        <h3 style='font-size: clamp(20px, 5vw, 26px); font-weight: 800; color: #0f172a; margin: 0; white-space: nowrap;'>탐구 활동 등 내용 입력</h3>
-    </div>
+    <div style="display: flex; justify-content: center; margin-top: 5px; margin-bottom: 5px;">
+    <h3 style='font-size: clamp(20px, 5vw, 26px); font-weight: 800; color: #0f172a; margin: 0; text-align: center; white-space: nowrap;'>탐구 활동 등 내용 입력</h3>
+</div>
     """, unsafe_allow_html=True)
     
     st.caption("✅ **안심하고 사용하세요!** 본 모의 면접 시스템은 완전 휘발성 구조로 설계되어, 입력하신 모든 내용은 서버에 일절 저장되지 않고 즉시 파기됩니다.")
