@@ -214,7 +214,7 @@ def auth_screen():
                                 st.error("이미 사용 중인 아이디입니다.")
                                 return
 
-                        days_to_add = 15 if path_choice == "네이버프리미엄콘텐츠 구독자" else 30
+                        days_to_add = 7 if path_choice == "네이버프리미엄콘텐츠 구독자" else 30
                         expire_date = (datetime.now() + timedelta(days=days_to_add)).strftime("%Y-%m-%d")
                         
                         sheet.append_row([new_id, new_pw, master_key, proof_info, expire_date, "", "", "", ""])
